@@ -1,8 +1,8 @@
 set (TARGET_NAME Engine)
 
 file (GLOB ENGINE_SOURCE Core/*.cpp Core/*.h
-Core/Runtime/*.cpp Core/Runtime/*.h
-Core/Runtime/Settings/*.cpp Core/Runtime/Settings/*.h)
+Core/**/*.cpp Core/**/*.h
+Core/**/**/*.cpp Core/**/**/*.h)
 
 set(ENGINE_LIBRARY_TYPE SHARED)
 add_library(Engine ${ENGINE_LIBRARY_TYPE} ${ENGINE_SOURCE})

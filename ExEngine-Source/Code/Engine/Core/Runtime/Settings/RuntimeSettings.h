@@ -2,7 +2,10 @@
 
 class RuntimeSettings{
     private:
-        int targetFramesPerSeconds;
+        static int targetFramesPerSeconds;
+        static float timePerFrame;
     public:
-        void SetTargetFps(int targetFps);
+        static void SetTargetFps(int targetFps);
+        static int GetTargetFps();
+        static float GetTimePerFrame();
 };
