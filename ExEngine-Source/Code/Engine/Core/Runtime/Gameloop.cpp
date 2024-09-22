@@ -1,21 +1,38 @@
+#include <SDL.h>
 #include "Gameloop.h"
+#include "Settings/RuntimeSettings.h"
+#include "Time/Time.h"
 
-void Gameloop::InitializeGameloop(){
+void Gameloop::ExecuteGameLoop(){
+    if(!isRunning) return;
 
+    ProcessInputPhase();
+
+    if(Time::PermissionForUpdate())
+    {
+        FixedUpdate();
+    }
+
+    ProcessCollisionPhase();
 };
 
-void Gameloop::Start(){
-
-};
-
-void Gameloop::Update(){
-
+void Gameloop::Initialize(){
+    isRunning = true;
+    lastUpdate = 0;
 };
 
 void Gameloop::FixedUpdate(){
 
 };
 
-bool Gameloop::CheckFixedUpdatePermission(){
-    return true;
+void Gameloop::Stop(){
+    isRunning = false;
+};
+
+void Gameloop::ProcessInputPhase(){
+
+};
+
+void Gameloop::ProcessCollisionPhase(){
+
 };

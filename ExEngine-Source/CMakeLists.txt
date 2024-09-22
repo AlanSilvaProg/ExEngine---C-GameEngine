@@ -5,7 +5,11 @@ project(ExEngine-Source)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if(APPLE)
 set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
+elseif(WIN32)
+set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
+endif()
 
 find_package(glm CONFIG REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -13,6 +17,7 @@ find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
 
 add_subdirectory(Code)
+add_subdirectory(ThirdParty)
 add_executable(${PROJECT_NAME} main.cpp)
 
 include_directories(${PROJECT_NAME} ${SDL2_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})

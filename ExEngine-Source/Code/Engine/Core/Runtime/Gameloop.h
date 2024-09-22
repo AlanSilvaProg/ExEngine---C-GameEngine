@@ -2,10 +2,15 @@
 
 class Gameloop{
     private:
-        void Start();
-        void Update();
+        bool isRunning;
+        float lastUpdate;
+
         void FixedUpdate();
-        bool CheckFixedUpdatePermission();
+        void Stop();
+
+        void ProcessInputPhase();
+        void ProcessCollisionPhase();
     public:
-        void InitializeGameloop();
+        void Initialize();
+        void ExecuteGameLoop();
 };
