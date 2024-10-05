@@ -18,6 +18,6 @@ private:
     void ProcessRenderPhase();
 public:
     Engine();
-    ~Engine() = default;
+    ~Engine();
     void InitializeEngine();
 };

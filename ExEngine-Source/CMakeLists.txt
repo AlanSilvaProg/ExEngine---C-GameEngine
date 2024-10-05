@@ -21,8 +21,7 @@ add_subdirectory(ThirdParty)
 add_executable(${PROJECT_NAME} main.cpp)
 
 include_directories(${PROJECT_NAME} ${SDL2_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm ${SDL2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE Engine)
 
 if(WIN32)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExEngineWin")
