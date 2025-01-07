@@ -1,9 +1,10 @@
 #include <SDL.h>
 #include "Engine.h" 
+#include "../Logger/Logger.h"
+#include "Rendering/Renderer/ExRenderer.h"
 
 Engine::Engine(){
     gameLoop = std::make_unique<Gameloop>();
-    ResetGameState();
 };
 
 Engine::~Engine(){
@@ -23,17 +24,14 @@ void Engine::InitializeEngine(){
 void Engine::StartEngine(){
     running = true;
     gameLoop->Initialize();
+    ExRenderer::Initialize();
 };
 
 void Engine::StopEngine(){
     running = false;
-    ResetGameState();
-};
-
-void Engine::ResetGameState(){
-    //ToDo - Create a load and save and read file system to configure the initial state of each scene
+    ExRenderer::Quit();
 };
 
 void Engine::ProcessRenderPhase(){
-
+    ExRenderer::RenderSequence();
 };

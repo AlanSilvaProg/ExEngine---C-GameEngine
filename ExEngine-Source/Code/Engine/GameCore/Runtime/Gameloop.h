@@ -2,6 +2,7 @@
 
 class Gameloop{
     private:
+        bool enableUpdate = false;
         bool isRunning;
         float lastUpdate;
 

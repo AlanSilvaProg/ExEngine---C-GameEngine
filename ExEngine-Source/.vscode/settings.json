@@ -64,6 +64,8 @@
         "algorithm": "cpp",
         "deque": "cpp",
         "unordered_set": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "__tree": "cpp",
+        "map": "cpp"
     }
 }

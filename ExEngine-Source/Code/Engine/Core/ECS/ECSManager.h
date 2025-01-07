@@ -1,9 +1,14 @@
 #pragma once
 #include <vector>
 #include <deque>
+#include <memory>
+#include <typeindex>
+#include <unordered_map>
 #include "ECSSignature.h"
-
-unsigned int previousId = 0;
+#include "Component/EComponentS.h"
+#include "EntityCounter/EntityCSCounter.h"
+#include "Pool/IPool.h"
+#include "Pool/EComponentSPoolManager.h"
 
 //Entity
 
@@ -21,32 +26,14 @@ public:
     void Kill();
     Signature GetComponentSignature();
 
-    template<typename TComponent>
-    void AddComponent() const;
+    template<typename TComponent, typename ...TArgs>
+    void AddComponent(TArgs&& ...args) const;
 
     template<typename TComponent>
     bool HasComponent() const;
 
     template<typename TComponent>
     void RemoveComponent() const;
-};
-
-
-//Component
-
-
-struct IEComponentS {
-protected:
-    static unsigned int previousId;
-};
-
-template<typename T>
-class EComponentS : public IEComponentS{
-public:
-    static unsigned int GetId(){
-        static auto id = previousId + 1;
-        return id;
-    };
 };
 
 
@@ -66,9 +53,11 @@ public:
         SetupRequirements();
     };
 
+    virtual ~ECSystem() = default;
+
     virtual void UpdateSystem(){};
     virtual void SetupRequirements(){};
-
+    
     bool CheckEntitySignatureMatch(Signature entitySignature);
     void AddEntity(EntityCS entity);
     void ValidateEntity(EntityCS entity);
@@ -84,22 +73,27 @@ private:
     std::vector<Signature> entitiesSignature; // each entity will have it own signature
 
     std::vector<EntityCS> entities;
-    unsigned int enitiesCreated; 
 
-    std::vector<ECSystem> systems;
+    std::unordered_map<std::type_index, std::shared_ptr<ECSystem>> systems;
+
+    std::vector<std::unique_ptr<IPool>> componentPools; // one pool by each component id 
 
     std::deque<int> entitiesToBeValidated; // validated to a system
     std::deque<int> entitiesToBeKilled; // removed from system and remove all components
     std::deque<int> freeEntities;
 
 public:
+    ECSManager();
+    ~ECSManager() = default;
+
+
     void Update();
 
     EntityCS CreateEntity();
     void DestroyEntity(EntityCS entity);
 
-    template<typename TComponent>
-    void AddComponent(EntityCS entity);
+    template<typename TComponent, typename ...TArgs>
+    void AddComponent(EntityCS entity, TArgs&& ...args);
     template<typename TComponent>
     bool HasComponent(EntityCS entity) const;
     template<typename TComponent>
@@ -107,14 +101,18 @@ public:
     void RemoveAllComponents(EntityCS entity);
     Signature GetEntitySignature(const int id) const;
 
+    template<typename TSystem, typename ...TArgs>
+    std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
     template<typename TSystem>
-    void CreateSystem();
+    std::shared_ptr<TSystem> GetSystem();
+    template<typename TSystem>
+    void UpdateSystem();
 
     void SetToValidation(int entityId);
 };
 
-template<typename TComponent>
-void ECSManager::AddComponent(EntityCS entity){
+template<typename TComponent, typename ...TArgs>
+void ECSManager::AddComponent(EntityCS entity, TArgs&& ...args){
     auto componentId = EComponentS<TComponent>::GetId();
     auto entityId = entity.GetId();
     auto entitySignature = entitiesSignature[entityId];
@@ -126,6 +124,16 @@ void ECSManager::AddComponent(EntityCS entity){
     }
 
     if(HasComponent<TComponent>(entity)) return;
+
+    //Creating Component pool as needed
+
+    if(componentPools.size() <= componentId)
+        componentPools.resize(componentId * 2, nullptr);
+
+    if(componentPools[componentId] == nullptr)
+        componentPools[componentId] = std::make_unique<EComponentSPoolManager<TComponent>>();
+        
+    componentPools[componentId]->ComponentAddedToEntity(entityId, std::make_shared<TComponent>(forward(args)...));
 
     SetToValidation(entityId);
     entitySignature[componentId] = true;
@@ -154,19 +162,36 @@ void ECSManager::RemoveComponent(EntityCS entity){
     entitySignature[componentId] = false;
 };
 
+template<typename TSystem, typename ...TArgs>
+std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
+    if(systems.find(std::type_index(typeid(TSystem))) != systems.end()) return;
+
+    auto newSystem = std::make_shared<TSystem>(forward(args)...);
+    systems.insert(make_pair(std::type_index(typeid(TSystem)), static_cast<std::shared_ptr<ECSystem>>(newSystem)));
+    return newSystem;
+};
 
 template<typename TSystem>
-void CreateSystem(){
-    //ToDo Create System
+std::shared_ptr<TSystem> ECSManager::GetSystem(){
+    return systems.find(std::type_index(typeid(TSystem)));
+};
+
+template<typename TSystem>
+void ECSManager::UpdateSystem(){
+    auto system = GetSystem<TSystem>();
+    if(system != systems.end())
+    {
+        static_cast<std::shared_ptr<ECSystem>>(system)->UpdateSystem();
+    }
 };
 
 
 //Entity
 
 
-template<typename TComponent>
-void EntityCS::AddComponent() const{    
-    ecsManager->AddComponent<TComponent>(*this);
+template<typename TComponent, typename ...TArgs>
+void EntityCS::AddComponent(TArgs&& ...args) const{    
+    ecsManager->AddComponent<TComponent>(*this, forward(args)...);
 };
 
 template<typename TComponent>

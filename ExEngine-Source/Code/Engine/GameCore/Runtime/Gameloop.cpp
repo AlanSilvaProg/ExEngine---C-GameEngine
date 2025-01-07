@@ -1,14 +1,15 @@
 #include <SDL.h>
 #include "Gameloop.h"
-#include "Settings/RuntimeSettings.h"
-#include "Time/Time.h"
+#include "../../Core/Runtime/Settings/RuntimeSettings.h"
+#include "../../Core/Runtime/Time/Time.h"
 
 void Gameloop::ExecuteGameLoop(){
     if(!isRunning) return;
 
     ProcessInputPhase();
+    auto fixedUpdatePermission = Time::PermissionForUpdate();
 
-    if(Time::PermissionForUpdate())
+    if(fixedUpdatePermission)
     {
         FixedUpdate();
     }
@@ -22,7 +23,7 @@ void Gameloop::Initialize(){
 };
 
 void Gameloop::FixedUpdate(){
-
+    
 };
 
 void Gameloop::Stop(){

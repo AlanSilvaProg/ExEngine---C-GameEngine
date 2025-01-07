@@ -1,6 +1,10 @@
 #include "ECSManager.h"
 #include <new>
 
+ECSManager::ECSManager(){
+    
+};
+
 void ECSManager::Update(){
     if(entitiesToBeKilled.size() > 0)
     {
@@ -15,23 +19,23 @@ void ECSManager::Update(){
         {
             for(auto entityId : entitiesToBeValidated)
             {
-                system.ValidateEntity(entities[entityId]);
+                system.second->ValidateEntity(entities[entityId]);
             }
         }
         entitiesToBeValidated.clear();
-        system.UpdateSystem();
+        system.second->UpdateSystem();
     }
 };
 
 EntityCS ECSManager::CreateEntity(){
     if(freeEntities.empty()){
-        EntityCS entity(enitiesCreated, this);
+        EntityCS entity(EntityCSCounter::GetEntitiesCreated(), this);
         auto entityId = entity.GetId();
 
-        enitiesCreated++;
+        auto entitiesCreated = EntityCSCounter::IncreaseEntitiesCreated();
 
-        if(entities.size() >= enitiesCreated){
-            entities.resize(enitiesCreated * 2);
+        if(entities.size() >= entitiesCreated){
+            entities.resize(entitiesCreated * 2);
         }
 
         entities[entityId] = entity;
