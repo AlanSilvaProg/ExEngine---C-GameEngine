@@ -2,34 +2,38 @@
 #include "../../../Logger/Logger.h"
 #include "../../Settings/EngineSettings.h"
 #include "../../Utils/Color.h"
+#include "ExRendererGetters.h"
 
-SDL_Renderer* ExRenderer::renderer;
-SDL_Window* ExRenderer::window;
-bool ExRenderer::initialized;
+bool ExRenderer::initialized = false;
+std::shared_ptr<ECSManager> ExRenderer::ecsManager = nullptr;
+std::shared_ptr<RenderingSystem2D> ExRenderer::renderingSystem2D = nullptr;
 
-void ExRenderer::Initialize(){
+void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
         Logger::LogError("SDL initialization error with the message: " + std::string(SDL_GetError()));
         return;
     }
 
-    window = window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_BORDERLESS);
+    ExRendererGetters::window = ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_BORDERLESS);
 
-    if(!window)
+    if(!ExRendererGetters::window)
     {
         Logger::LogError("SDL Window creation error with the message: " + std::string(SDL_GetError()));
         return;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, 0);
+    ExRendererGetters::renderer = SDL_CreateRenderer(ExRendererGetters::window, -1, 0);
 
-    if(!renderer)
+    if(!ExRendererGetters::renderer)
     {
         Logger::LogError("SDL Renderer creation error with the message: " + std::string(SDL_GetError()));
         return;
     }
     
     SDL_PumpEvents();
+
+    ecsManager = ecsManagerPtr;
+    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
     initialized = true;
 };
 
@@ -43,20 +47,18 @@ void ExRenderer::RenderSequence(){
 void ExRenderer::PreRender(){
     //cleaning window with a base color 
     auto color = Color::BLUE;
-    SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, color->a);
-    SDL_RenderClear(renderer);
-    SDL_RenderPresent(renderer);
+    SDL_SetRenderDrawColor(ExRendererGetters::renderer, color->r, color->g, color->b, color->a);
+    SDL_RenderClear(ExRendererGetters::renderer);
 };
 
 void ExRenderer::Render(){
+    renderingSystem2D->UpdateSystem();
 };
 
 void ExRenderer::PostRender(){
     //Post effects + window render
-};
 
-SDL_Renderer* ExRenderer::GetRenderer(){
-    return renderer;
+    SDL_RenderPresent(ExRendererGetters::renderer);
 };
 
 void ExRenderer::Quit(){

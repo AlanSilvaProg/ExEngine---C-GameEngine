@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "../../Core/ECS/ECSManager.h"
+#include "../ECS/ECSManager.h"
 
 struct TransformComponent : public EComponentS<TransformComponent>{
 public:

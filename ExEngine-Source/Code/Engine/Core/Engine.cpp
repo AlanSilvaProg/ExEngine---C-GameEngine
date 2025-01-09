@@ -4,6 +4,7 @@
 #include "Rendering/Renderer/ExRenderer.h"
 
 Engine::Engine(){
+    ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>();
 };
 
@@ -24,7 +25,7 @@ void Engine::InitializeEngine(){
 void Engine::StartEngine(){
     running = true;
     gameLoop->Initialize();
-    ExRenderer::Initialize();
+    ExRenderer::Initialize(ecsManager);
 };
 
 void Engine::StopEngine(){

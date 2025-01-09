@@ -1,7 +1,7 @@
 #include <SDL2/SDL_image.h>
 #include "AssetManager.h"
 #include "../../Logger/Logger.h"
-#include "../Rendering/Renderer/ExRenderer.h"
+#include "../Rendering/Renderer/ExRendererGetters.h"
 
 AssetManager::AssetManager(){
     if(TTF_Init() != 0){
@@ -13,15 +13,21 @@ AssetManager::~AssetManager(){
     Release();
 };
 
-
 SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path)
 {
-    if(textureMap.find(id) != textureMap.end()){
-        return textureMap[id];
+    auto textureFinded = textureMap.find(id);
+    if(textureFinded != textureMap.end()){
+        return textureFinded->second;
     }
 
     SDL_Surface* surface = IMG_Load(path.c_str());
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(ExRenderer::GetRenderer(), surface);
+
+    if(surface == nullptr){
+        Logger::LogError("Fail to load Image at path : " + path + " \n With the follow message: " + IMG_GetError());
+        return NULL;
+    }
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(ExRendererGetters::renderer, surface);
     SDL_FreeSurface(surface);
 
     textureMap[id] = texture;
