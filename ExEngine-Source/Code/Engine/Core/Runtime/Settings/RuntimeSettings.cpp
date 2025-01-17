@@ -1,11 +1,13 @@
+#include <SDL.h>
 #include "RuntimeSettings.h"
 
-int RuntimeSettings::targetFramesPerSeconds = 60;
+const int MILLI = 1000;
+int RuntimeSettings::targetFramesPerSeconds = 120; // -1 to unlimited fps
 float RuntimeSettings::timePerFrame = 0;
 
 void RuntimeSettings::SetTargetFps(int targetFps){
     targetFramesPerSeconds = targetFps;
-    timePerFrame = static_cast<float>(targetFramesPerSeconds) / 1000;
+    timePerFrame = MILLI / static_cast<float>(targetFramesPerSeconds);
 };
 
 int RuntimeSettings::GetTargetFps(){

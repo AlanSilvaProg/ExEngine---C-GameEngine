@@ -61,6 +61,13 @@
         "unordered_map": "cpp",
         "variant": "cpp",
         "vector": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "deque": "cpp",
+        "unordered_set": "cpp",
+        "typeindex": "cpp",
+        "__tree": "cpp",
+        "map": "cpp",
+        "filesystem": "cpp",
+        "stack": "cpp"
     }
 }

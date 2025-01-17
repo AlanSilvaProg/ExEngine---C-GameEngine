@@ -4,16 +4,28 @@
 
 float Time::lastUpdate = 0;
 float Time::deltaTime = 0;
+float Time::lastFixedUpdate = 0;
+float Time::fixedDeltaTime = 0;
 
 bool Time::PermissionForUpdate(){
-    float timeSinceLastPermission = SDL_GetTicks() - lastUpdate;
+    if(RuntimeSettings::GetTargetFps() == -1)
+        return true;
+
+    auto ticks = SDL_GetTicks();
+
+    auto timeSinceLastFrame = ticks - lastUpdate;
+    auto timeSinceLastPermission = ticks - lastFixedUpdate;
+
     bool permission = timeSinceLastPermission > RuntimeSettings::GetTimePerFrame();
 
-    lastUpdate = SDL_GetTicks();
     if(permission)
     {
-        deltaTime = timeSinceLastPermission;
+        lastFixedUpdate = ticks;
+        fixedDeltaTime = timeSinceLastPermission / 1000;
     }
+
+    lastUpdate = ticks;
+    deltaTime = timeSinceLastFrame / 1000;
 
     return permission;
 }
