@@ -35,8 +35,8 @@ void Engine::StartEngine(){
     ExRenderer::Initialize(ecsManager);
 
     auto entity = ecsManager->CreateEntity();
-    entity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
-    entity.AddComponent<SpriteComponent>("tank-image", "/tank.png", 0, 0);
+    entity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(55,0,0), glm::vec3(1,1,1));
+    entity.AddComponent<SpriteComponent>("tank-image", "/tank.png", 0, 0, false, false);
 };
 
 void Engine::StopEngine(){

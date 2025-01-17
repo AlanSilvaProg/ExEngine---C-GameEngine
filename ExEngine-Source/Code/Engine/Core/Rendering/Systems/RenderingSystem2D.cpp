@@ -37,8 +37,21 @@ void RenderingSystem2D::UpdateSystem() {
             static_cast<int>(spriteComponent->srcRect->w * transformComponent->scale.x),
             static_cast<int>(spriteComponent->srcRect->h * transformComponent->scale.y)
         };
-    
-        SDL_RenderCopy(ExRendererGetters::renderer, texture, spriteComponent->srcRect, &dstRect);
+
+        double angle = transformComponent->rotation.x;
+        int flip = SDL_FLIP_NONE;
+
+        if(spriteComponent->flipX)
+        {
+            flip |= SDL_FLIP_HORIZONTAL;
+        }
+
+        if(spriteComponent->flipY)
+        {
+            flip |= SDL_FLIP_VERTICAL;
+        }
+
+        SDL_RenderCopyEx(ExRendererGetters::renderer, texture, spriteComponent->srcRect, &dstRect, angle, NULL, static_cast<SDL_RendererFlip>(flip));
     }
 };
 

@@ -15,8 +15,10 @@ public:
     LayerAttributes layerAttributes;
     SDL_Texture* texture;
     SDL_Rect* srcRect;
+    bool flipX;
+    bool flipY;
 
-    SpriteComponent(std::string id, std::string path, int layerIndex, int layerOrderIndex) : id(id), path(path)
+    SpriteComponent(std::string id, std::string path, int layerIndex, int layerOrderIndex, bool flipX, bool flipY) : id(id), path(path), flipX(flipX), flipY(flipY)
     {
         layerAttributes.layerIndex = layerIndex;
         layerAttributes.layerOrderIndex = layerOrderIndex;
