@@ -14,3 +14,4 @@ include_directories(${TARGET_NAME} ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS}
 target_link_libraries(${TARGET_NAME} PUBLIC glm::glm ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
 
 include_directories (${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(Engine PUBLIC ASSETS_PATH="${CMAKE_BINARY_DIR}/Assets")

@@ -13,9 +13,6 @@ private:
 
     void StartEngine();
     void StopEngine();
-
-    void GameloopSequence();
-    void ProcessRenderPhase();
 public:
     Engine();
     ~Engine();

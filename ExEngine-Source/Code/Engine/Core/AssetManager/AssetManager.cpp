@@ -2,6 +2,9 @@
 #include "AssetManager.h"
 #include "../../Logger/Logger.h"
 #include "../Rendering/Renderer/ExRendererGetters.h"
+#include <new>
+
+std::shared_ptr<AssetManager> AssetManager::instance = nullptr;
 
 AssetManager::AssetManager(){
     if(TTF_Init() != 0){
@@ -17,26 +20,22 @@ SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path)
 {
     auto textureFinded = textureMap.find(id);
     if(textureFinded != textureMap.end()){
-        return textureFinded->second;
+        return textureFinded->second->GetNewReference();
     }
 
-    SDL_Surface* surface = IMG_Load(path.c_str());
+    auto assetReference = new AssetReference(path);
+    textureMap[id] =  assetReference;
 
-    if(surface == nullptr){
-        Logger::LogError("Fail to load Image at path : " + path + " \n With the follow message: " + IMG_GetError());
-        return NULL;
-    }
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(ExRendererGetters::renderer, surface);
-    SDL_FreeSurface(surface);
-
-    textureMap[id] = texture;
-    return texture;
+    return assetReference->GetNewReference();
 };
 
 SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path, TTF_Font* font)
 {
-    return NULL;
+    return nullptr;
+};
+
+void AssetManager::FreeAsset(std::string id){
+    textureMap[id]->ReleaseReference();
 };
 
 void AssetManager::Release(){
@@ -46,8 +45,17 @@ void AssetManager::Release(){
     }
 
     for(auto keyPair : textureMap){
-        SDL_DestroyTexture(keyPair.second);
+        keyPair.second->FreeAllResources();
+        delete(keyPair.second);
     }
 
     textureMap.clear();
+};
+
+std::shared_ptr<AssetManager> AssetManager::GetInstance(){
+    if(instance == nullptr){
+        instance = std::make_shared<AssetManager>();
+    }
+
+    return instance;
 };

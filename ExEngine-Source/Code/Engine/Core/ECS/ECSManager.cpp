@@ -1,4 +1,5 @@
 #include "ECSManager.h"
+#include "../../Logger/Logger.h"
 #include <new>
 
 ECSManager::ECSManager(){
@@ -13,9 +14,9 @@ void ECSManager::Update(){
         }
     }
 
-    for(auto system : systems)
+    if(entitiesToBeValidated.size() > 0)
     {
-        if(entitiesToBeValidated.size() > 0)
+        for(auto system : systems)
         {
             for(auto entityId : entitiesToBeValidated)
             {
@@ -23,7 +24,6 @@ void ECSManager::Update(){
             }
         }
         entitiesToBeValidated.clear();
-        system.second->UpdateSystem();
     }
 };
 
@@ -34,16 +34,26 @@ EntityCS ECSManager::CreateEntity(){
 
         auto entitiesCreated = EntityCSCounter::IncreaseEntitiesCreated();
 
-        if(entities.size() >= entitiesCreated){
+        if(entities.size() <= entitiesCreated){
             entities.resize(entitiesCreated * 2);
+            entitiesSignature.resize(entities.size());
         }
 
         entities[entityId] = entity;
+        Logger::Log("Entity created with ID: " + std::to_string(entityId));
+
+        SetToValidation(entityId);
+
         return entity;
     }
 
     auto entityId = freeEntities.front();
+
+    SetToValidation(entityId);
     freeEntities.pop_front();
+
+    Logger::Log("Entity created with a recycled ID: " + std::to_string(entityId));
+
     return entities[entityId];
 };
 
@@ -100,7 +110,7 @@ void EntityCS::Kill(){
 bool ECSystem::CheckEntitySignatureMatch(Signature entitySignature){
     for(auto signatureId : systemSignatureIds)
     {
-        if(!entitySignature[signatureId])
+        if(entitySignature.size() <= signatureId || !entitySignature[signatureId])
             return false;
     }
     return true;
@@ -112,13 +122,22 @@ void ECSystem::AddEntity(EntityCS entity){
 
 void ECSystem::ValidateEntity(EntityCS entity)
 {
+    auto entityId = entity.GetId();
     for(int i = 0; i < systemEntities.size(); i++)
     {
-        if(systemEntities[i].GetId() == entity.GetId())
+        if(systemEntities[i].GetId() == entityId)
         {
             if(!CheckEntitySignatureMatch(entity.GetComponentSignature()))
-            break;
+            {
+                RemoveEntity(entityId);
+            }
+            return;
         }
+    }
+
+    if(CheckEntitySignatureMatch(entity.GetComponentSignature()))
+    {
+        AddEntity(entity);
     }
 };
 

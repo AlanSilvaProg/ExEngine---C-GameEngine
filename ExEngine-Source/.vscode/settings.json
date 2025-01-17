@@ -66,6 +66,8 @@
         "unordered_set": "cpp",
         "typeindex": "cpp",
         "__tree": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "filesystem": "cpp",
+        "stack": "cpp"
     }
 }

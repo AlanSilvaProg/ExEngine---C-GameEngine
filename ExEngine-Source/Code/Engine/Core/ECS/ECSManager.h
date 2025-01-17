@@ -9,6 +9,7 @@
 #include "EntityCounter/EntityCSCounter.h"
 #include "Pool/IPool.h"
 #include "Pool/EComponentSPoolManager.h"
+#include "EntityCounter/EntityCSCounter.h"
 
 //Entity
 
@@ -109,29 +110,38 @@ public:
 template<typename TComponent, typename ...TArgs>
 void ECSManager::AddComponent(EntityCS entity, TArgs&& ...args){
     auto componentId = EComponentS<TComponent>::GetId();
+    auto componentCreationIndex = componentId + 1;
     auto entityId = entity.GetId();
-    auto entitySignature = entitiesSignature[entityId];
-    auto signatureSize = entitiesSignature.size();
+    auto entitiesSignatureSize = entitiesSignature.size();
 
-    if(signatureSize <= componentId)
+    if(entitiesSignatureSize <= entityId)
     {
-        entitiesSignature.resize(signatureSize * 2); // making it power of two to improve performance ( less time resizing )
+        entitiesSignature.resize(EntityCSCounter::GetEntitiesCreated() * 2); // making it power of two to improve performance ( less time resizing )
+    }
+
+    auto entitySignature = &entitiesSignature[entityId];
+    
+    if(entitySignature->size() < componentCreationIndex)
+    {
+        entitySignature->resize(componentCreationIndex * 2, false);
     }
 
     if(HasComponent<TComponent>(entity)) return;
-
+    
     //Creating Component pool as needed
-
-    if(componentPools.size() <= componentId)
-        componentPools.resize(componentId * 2, nullptr);
+    
+    if(componentPools.size() <= componentCreationIndex)
+        componentPools.resize(componentCreationIndex * 2, nullptr);
 
     if(componentPools[componentId] == nullptr)
         componentPools[componentId] = std::make_shared<EComponentSPoolManager<TComponent>>();
-        
-    componentPools[componentId]->ComponentAddedToEntity(entityId, std::make_shared<TComponent>(forward(args)...));
+
+    auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager<TComponent>>(componentPools[componentId]);
+
+    castedPoolManager->ComponentAddedToEntity(entityId, std::make_shared<TComponent>(std::forward<TArgs>(args)...));
 
     SetToValidation(entityId);
-    entitySignature[componentId] = true;
+    entitiesSignature[entityId][componentId] = true;
 };
 
 template<typename TComponent>
@@ -140,7 +150,7 @@ std::shared_ptr<TComponent> ECSManager::GetComponent(EntityCS entity) const{
     auto entityId = entity.GetId();
     auto entitySignature = entitiesSignature[entityId];
 
-    if(entitySignature[componentId])
+    if(entitySignature.size() > componentId && entitySignature[componentId])
     {
         auto component = componentPools[componentId];
         if(component != nullptr)
@@ -161,16 +171,22 @@ bool ECSManager::HasComponent(EntityCS entity) const{
     auto entityId = entity.GetId();
     auto entitySignature = entitiesSignature[entityId];
 
+    if(entitySignature.size() <= componentId)
+    {
+        return false;
+    }
+
     return entitySignature[componentId];
 };
 
 template<typename TComponent>
 void ECSManager::RemoveComponent(EntityCS entity){
-    auto componentId = EComponentS<TComponent>::GetId();
     auto entityId = entity.GetId();
     auto entitySignature = entitiesSignature[entityId];
 
     if(!HasComponent<TComponent>(entity)) return;
+
+    auto componentId = EComponentS<TComponent>::GetId();
 
     SetToValidation(entityId);
     entitySignature[componentId] = false;
@@ -180,7 +196,7 @@ template<typename TSystem, typename ...TArgs>
 std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
     if(systems.find(std::type_index(typeid(TSystem))) != systems.end()) return nullptr;
 
-    auto newSystem = std::make_shared<TSystem>(forward(args)...);
+    auto newSystem = std::make_shared<TSystem>(std::forward<TArgs>(args)...);
     systems.insert(make_pair(std::type_index(typeid(TSystem)), static_cast<std::shared_ptr<ECSystem>>(newSystem)));
     return newSystem;
 };
@@ -205,7 +221,7 @@ void ECSManager::UpdateSystem(){
 
 template<typename TComponent, typename ...TArgs>
 void EntityCS::AddComponent(TArgs&& ...args) const{    
-    ecsManager->AddComponent<TComponent>(*this, forward(args)...);
+    ecsManager->AddComponent<TComponent>(*this, std::forward<TArgs>(args)...);
 };
 
 template<typename TComponent>

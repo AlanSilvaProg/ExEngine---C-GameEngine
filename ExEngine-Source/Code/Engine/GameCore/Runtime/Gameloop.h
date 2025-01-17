@@ -1,17 +1,24 @@
 #pragma once 
+#include <memory>
+#include "../../Core/ECS/ECSManager.h"
 
 class Gameloop{
-    private:
-        bool enableUpdate = false;
-        bool isRunning;
-        float lastUpdate;
+private:
+    std::shared_ptr<ECSManager> ecsManager;
 
-        void FixedUpdate();
-        void Stop();
+    bool enableUpdate = false;
+    bool isRunning;
+    float lastUpdate;
 
-        void ProcessInputPhase();
-        void ProcessCollisionPhase();
-    public:
-        void Initialize();
-        void ExecuteGameLoop();
+    void FixedUpdate();
+    void Stop();
+
+    void ProcessInputPhase();
+    void ProcessCollisionPhase();
+public:
+    Gameloop(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ecsManager){}; 
+
+    void Initialize();
+    void ExecuteGameLoop();
+    void ProcessRenderPhase();
 };

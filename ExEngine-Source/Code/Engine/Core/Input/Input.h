@@ -12,5 +12,5 @@ public:
     const static bool GetButtonDown(SDL_KeyCode key);
     const static bool GetButtonUp(SDL_KeyCode key);
 
-    void Process();
+    static void Process();
 };
