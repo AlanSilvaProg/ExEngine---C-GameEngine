@@ -77,7 +77,7 @@ Signature ECSManager::GetEntitySignature(const int id) const{
     return entitiesSignature[id];
 };
 
-void ECSManager::SetToValidation(int entityId){
+void ECSManager::SetToValidation(const int entityId){
     auto needValidation = true;
     for(auto validationId : entitiesToBeValidated){
         if(validationId == entityId)
@@ -95,7 +95,7 @@ void ECSManager::SetToValidation(int entityId){
 //Entity
 
 
-Signature EntityCS::GetComponentSignature(){
+Signature EntityCS::GetComponentSignature() const{
     return ecsManager->GetEntitySignature(GetId());
 };
 
@@ -107,7 +107,7 @@ void EntityCS::Kill(){
 //System
 
 
-bool ECSystem::CheckEntitySignatureMatch(Signature entitySignature){
+bool ECSystem::CheckEntitySignatureMatch(const Signature entitySignature) const{
     for(auto signatureId : systemSignatureIds)
     {
         if(entitySignature.size() <= signatureId || !entitySignature[signatureId])
@@ -116,7 +116,7 @@ bool ECSystem::CheckEntitySignatureMatch(Signature entitySignature){
     return true;
 };
 
-void ECSystem::AddEntity(EntityCS entity){
+void ECSystem::AddEntity(const EntityCS entity){
     systemEntities.push_back(entity);
 };
 
@@ -141,8 +141,20 @@ void ECSystem::ValidateEntity(EntityCS entity)
     }
 };
 
-void ECSystem::RemoveEntity(int id){
+void ECSystem::RemoveEntity(const int id){
     systemEntities.erase(std::remove_if(systemEntities.begin(), systemEntities.end(),
                         [id](EntityCS entity) { return entity.GetId() == id; }),
                         systemEntities.end());
+};
+
+bool ECSystem::CheckForRegisteredId(const int componentId, const bool optional) const{
+    for(auto id : systemOptionalSignatureIds)
+    {
+        if(id == componentId)
+        {
+            Logger::LogWarning("Same component has been added multiple times for system requirements at " + std::to_string(*typeid(*this).name()));
+            return true;
+        }
+    }
+    return false;
 };

@@ -2,14 +2,15 @@
 #include <vector>
 #include <deque>
 #include <memory>
-#include <typeindex>
 #include <unordered_map>
+#include <typeindex>
 #include "ECSSignature.h"
 #include "Component/EComponentS.h"
 #include "EntityCounter/EntityCSCounter.h"
 #include "Pool/IPool.h"
 #include "Pool/EComponentSPoolManager.h"
 #include "EntityCounter/EntityCSCounter.h"
+#include "../../Logger/Logger.h"
 
 //Entity
 
@@ -19,13 +20,13 @@ private:
     class ECSManager* ecsManager;
 
 public:
-    unsigned int GetId() { return id; };
+    unsigned int GetId() const { return id; };
 
     EntityCS() = default;
     EntityCS(const unsigned int id, ECSManager* ecsManager) : id(id), ecsManager(ecsManager){}
     
     void Kill();
-    Signature GetComponentSignature();
+    Signature GetComponentSignature() const;
 
     template<typename TComponent, typename ...TArgs>
     void AddComponent(TArgs&& ...args) const;
@@ -46,16 +47,19 @@ public:
 class ECSystem {
 protected:
     std::vector<int> systemSignatureIds;
+    std::vector<int> systemOptionalSignatureIds;
     std::vector<EntityCS> systemEntities; 
 
     template<typename TComponent>
-    void Require();
+    void Require(const bool optional);
+
+    bool CheckForRegisteredId(const int componentId, const bool optional) const;
 
 public:
-    bool CheckEntitySignatureMatch(Signature entitySignature);
-    void AddEntity(EntityCS entity);
+    bool CheckEntitySignatureMatch(const Signature entitySignature) const;
+    void AddEntity(const EntityCS entity);
     void ValidateEntity(EntityCS entity);
-    void RemoveEntity(int id);
+    void RemoveEntity(const int id);
     virtual void UpdateSystem(){};
 };
 
@@ -100,11 +104,11 @@ public:
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
     template<typename TSystem>
-    std::shared_ptr<TSystem> GetSystem();
+    std::shared_ptr<TSystem> GetSystem() const;
     template<typename TSystem>
     void UpdateSystem();
 
-    void SetToValidation(int entityId);
+    void SetToValidation(const int entityId);
 };
 
 template<typename TComponent, typename ...TArgs>
@@ -202,7 +206,7 @@ std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
 };
 
 template<typename TSystem>
-std::shared_ptr<TSystem> ECSManager::GetSystem(){
+std::shared_ptr<TSystem> ECSManager::GetSystem()const {
     return systems.find(std::type_index(typeid(TSystem)));
 };
 
@@ -244,7 +248,16 @@ void EntityCS::RemoveComponent() const{
 
 
 template<typename TComponent>
-void ECSystem::Require(){
+void ECSystem::Require(const bool optional){
     auto componentId = EComponentS<TComponent>::GetId();
+
+    if(CheckForRegisteredId(componentId, optional)) return;
+
+    if(optional)
+    {
+        systemOptionalSignatureIds.push_back(componentId);
+        return;
+    }
+
     systemSignatureIds.push_back(componentId);
 };

@@ -7,11 +7,10 @@
 #include <SDL2/SDL.h>
 
 RenderingSystem2D::RenderingSystem2D(){
-    Require<TransformComponent>();    
-    Require<SpriteComponent>();
+    Require<TransformComponent>(false);    
+    Require<SpriteComponent>(false);
 
     assetManager = AssetManager::GetInstance();
-    //Create Optional value and use for layer  component maybe ?
 };
 
 void RenderingSystem2D::UpdateSystem() {
