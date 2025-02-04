@@ -17,4 +17,5 @@ public:
     Engine();
     ~Engine();
     void InitializeEngine();
+    void RunLoop();
 };

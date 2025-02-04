@@ -1,7 +1,8 @@
 project(ThirdParty)
 
 #using GLOB to add core and essential files from thirdparties ( normally it's called include, but in this case, we don't have the include folder )
-file(GLOB ENGINE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/imgui/*.cpp) 
+file(GLOB ENGINE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/imgui/*.cpp 
+${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/cpp/imgui_stdlib.*) #needed to use input text using std::string
 
 # adding as library all te files mapped before and specific resources like renderer as sdl in this case
 add_library(ThirdParty STATIC ${ENGINE_SOURCE}
