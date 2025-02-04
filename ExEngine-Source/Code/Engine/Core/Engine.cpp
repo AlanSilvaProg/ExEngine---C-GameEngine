@@ -17,7 +17,9 @@ Engine::~Engine(){
 
 void Engine::InitializeEngine(){
     StartEngine();
+};
 
+void Engine::RunLoop(){
     while(running)
     {   
         gameLoop->ExecuteGameLoop();

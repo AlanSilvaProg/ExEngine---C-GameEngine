@@ -1,5 +1,6 @@
 #include "Input.h"
 #include "../../Logger/Logger.h"
+#include "InputEvents/InputEventHandler.h"
 
 std::unordered_map<SDL_Keycode, bool> Input::keyMap;
 std::unordered_map<SDL_Keycode, bool> Input::lastStateKeyMap;
@@ -17,6 +18,8 @@ const bool Input::GetButtonUp(SDL_KeyCode key){
 };
 
 void Input::Process(){
+    if(InputEventHandler::handler == nullptr)
+        InputEventHandler::Create();
     SDL_Event sdlEvent;
 
     for(auto keyPair : keyMap){
@@ -24,6 +27,9 @@ void Input::Process(){
     }
 
     while(SDL_PollEvent(&sdlEvent)){
+
+        InputEventHandler::handler->Invoke(sdlEvent);
+
         switch(sdlEvent.type)
         {
         case SDL_QUIT:

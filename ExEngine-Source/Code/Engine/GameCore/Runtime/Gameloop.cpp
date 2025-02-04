@@ -3,7 +3,6 @@
 #include "../../Core/Runtime/Settings/RuntimeSettings.h"
 #include "../../Core/Runtime/Time/Time.h"
 #include "../../Core/Rendering/Renderer/ExRenderer.h"
-#include "../../Logger/Logger.h"
 #include "../../Core/Input/Input.h"
 
 void Gameloop::ExecuteGameLoop(){
@@ -23,10 +22,14 @@ void Gameloop::Initialize(){
 };
 
 void Gameloop::FixedUpdate(){
+    GameEarlyUpdateEventHandler::handler->Invoke(0);
+
     ProcessInputPhase();
     ecsManager->Update();
     ProcessCollisionPhase();
     ProcessRenderPhase();   
+
+    GameLateUpdateEventHandler::handler->Invoke(0);
 };
 
 void Gameloop::Stop(){

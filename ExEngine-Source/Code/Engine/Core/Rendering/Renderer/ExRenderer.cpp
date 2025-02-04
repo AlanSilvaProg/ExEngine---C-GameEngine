@@ -3,6 +3,7 @@
 #include "../../Settings/EngineSettings.h"
 #include "../../Utils/Color.h"
 #include "ExRendererGetters.h"
+#include "RendererEvent/PreRenderEventHandler.h"
 
 bool ExRenderer::initialized = false;
 std::shared_ptr<ECSManager> ExRenderer::ecsManager = nullptr;
@@ -14,7 +15,7 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
         return;
     }
 
-    ExRendererGetters::window = ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_BORDERLESS);
+    ExRendererGetters::window = ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_FOREIGN);
 
     if(!ExRendererGetters::window)
     {
@@ -35,13 +36,13 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
     ecsManager = ecsManagerPtr;
     renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
     initialized = true;
+
+    PreRenderEventHandler::Create();
 };
 
 void ExRenderer::RenderSequence(){
     if(!initialized) return;
-    PreRender();
     Render();
-    PostRender();
 };
 
 void ExRenderer::PreRender(){
@@ -49,10 +50,14 @@ void ExRenderer::PreRender(){
     auto color = Color::BLUE;
     SDL_SetRenderDrawColor(ExRendererGetters::renderer, color->r, color->g, color->b, color->a);
     SDL_RenderClear(ExRendererGetters::renderer);
+    
+    PreRenderEventHandler::handler->Invoke(0);
 };
 
 void ExRenderer::Render(){
+    PreRender();
     renderingSystem2D->UpdateSystem();
+    PostRender();
 };
 
 void ExRenderer::PostRender(){

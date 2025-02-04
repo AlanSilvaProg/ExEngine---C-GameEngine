@@ -22,6 +22,7 @@ add_subdirectory(Code)
 add_executable(${PROJECT_NAME} main.cpp)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC Engine)
+target_link_libraries(${PROJECT_NAME} PUBLIC Editor)
 
 if(WIN32)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExEngineWin")
