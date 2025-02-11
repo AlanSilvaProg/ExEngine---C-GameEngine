@@ -5,10 +5,14 @@
 #include "Components/TransformComponent.h"
 #include "Rendering/Components/SpriteComponent.h"
 #include "Input/Input.h"
+#include "Input/InputEvents/InputEventHandler.h"
+#include "Runtime/App.h"
 
 Engine::Engine(){
     ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>(ecsManager);
+    if(InputEventHandler::handler == nullptr)
+        InputEventHandler::Create();
 };
 
 Engine::~Engine(){
@@ -22,7 +26,11 @@ void Engine::InitializeEngine(){
 void Engine::RunLoop(){
     while(running)
     {   
-        gameLoop->ExecuteGameLoop();
+        if(App::isPlaying)
+            gameLoop->ExecuteGameLoop();
+        else
+            gameLoop->Update();
+
         if(Input::GetButtonDown(SDLK_ESCAPE))
         {
             StopEngine();

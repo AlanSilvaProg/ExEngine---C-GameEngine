@@ -51,12 +51,13 @@ void ExRenderer::PreRender(){
     SDL_SetRenderDrawColor(ExRendererGetters::renderer, color->r, color->g, color->b, color->a);
     SDL_RenderClear(ExRendererGetters::renderer);
     
+    renderingSystem2D->UpdateSystem();
+    
     PreRenderEventHandler::handler->Invoke(0);
 };
 
 void ExRenderer::Render(){
     PreRender();
-    renderingSystem2D->UpdateSystem();
     PostRender();
 };
 

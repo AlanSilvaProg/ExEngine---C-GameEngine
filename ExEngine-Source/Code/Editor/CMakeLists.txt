@@ -1,6 +1,9 @@
 set (TARGET_NAME Editor)
 
-file(GLOB ENGINE_SOURCE */**.h */**.cpp)
+file(GLOB ENGINE_SOURCE */**.h */**.cpp
+                */**/**.h */**/**.cpp
+                */**/**/**.h */**/**/**.cpp
+                */**/**/**/**.h */**/**/**/**.cpp)
 
 set(ENGINE_LIBRARY_TYPE SHARED)
 

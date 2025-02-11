@@ -18,8 +18,6 @@ const bool Input::GetButtonUp(SDL_KeyCode key){
 };
 
 void Input::Process(){
-    if(InputEventHandler::handler == nullptr)
-        InputEventHandler::Create();
     SDL_Event sdlEvent;
 
     for(auto keyPair : keyMap){

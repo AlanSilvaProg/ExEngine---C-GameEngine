@@ -27,8 +27,6 @@ void RenderingSystem2D::UpdateSystem() {
 
         auto texture = spriteComponent->texture;
 
-        transformComponent->position.x += 0.1;
-
         //render texture
         SDL_Rect dstRect = {
             static_cast<int>(transformComponent->position.x),

@@ -8,10 +8,12 @@
 #include "../../Engine/GameCore/Runtime/RuntimeEvent/GameLateUpdateEventHandler.h"
 #include "../../Engine/Core/Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
 #include "../../Engine/Core/Input/InputEvents/InputEventHandler.h"
+#include "../EditorEvents/EditorEarlyUpdateEventHandler.h"
 #include "../../Engine/Logger/Logger.h"
 
 EditorInterface::EditorInterface(){
     InitializeEditor();
+    CreateEditorBase();
     *GameEarlyUpdateEventHandler::handler += [this](int value){ this->EarlyUpdate(); };
     *PreRenderEventHandler::handler += [this](int value){ this->PreRender(); };
     InputEventHandler::Create();
@@ -27,17 +29,23 @@ void EditorInterface::InitializeEditor(){
 
     ImGui_ImplSDL2_InitForSDLRenderer(ExRendererGetters::window, ExRendererGetters::renderer);
     ImGui_ImplSDLRenderer2_Init(ExRendererGetters::renderer);
+    
+    EditorEarlyUpdateEventHandler::Create();
 };
 
-void EditorInterface::EarlyUpdate(){
+void EditorInterface::CreateEditorBase(){
+    mainMenuBar = std::make_unique<ExEditor::MainMenuBar>();
+};
+
+void EditorInterface::EarlyUpdate() const{
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
-
 };
 
-void EditorInterface::PreRender(){ // need to call on late update
+void EditorInterface::PreRender() const{ //need to call on late update
+    EditorEarlyUpdateEventHandler::handler->Invoke();
+    ImGui::ShowDemoWindow();
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), ExRendererGetters::renderer);
 };

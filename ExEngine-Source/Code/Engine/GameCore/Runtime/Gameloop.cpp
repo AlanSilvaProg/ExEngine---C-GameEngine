@@ -1,9 +1,9 @@
-#include <SDL.h>
 #include "Gameloop.h"
 #include "../../Core/Runtime/Settings/RuntimeSettings.h"
 #include "../../Core/Runtime/Time/Time.h"
 #include "../../Core/Rendering/Renderer/ExRenderer.h"
 #include "../../Core/Input/Input.h"
+#include <SDL.h>
 
 void Gameloop::ExecuteGameLoop(){
     if(!isRunning) return;
@@ -12,7 +12,7 @@ void Gameloop::ExecuteGameLoop(){
 
     if(fixedUpdatePermission)
     {
-        FixedUpdate();
+        Update();
     }
 };
 
@@ -21,13 +21,13 @@ void Gameloop::Initialize(){
     lastUpdate = 0;
 };
 
-void Gameloop::FixedUpdate(){
+void Gameloop::Update(){
     GameEarlyUpdateEventHandler::handler->Invoke(0);
 
     ProcessInputPhase();
     ecsManager->Update();
     ProcessCollisionPhase();
-    ProcessRenderPhase();   
+    ProcessRenderPhase();  
 
     GameLateUpdateEventHandler::handler->Invoke(0);
 };

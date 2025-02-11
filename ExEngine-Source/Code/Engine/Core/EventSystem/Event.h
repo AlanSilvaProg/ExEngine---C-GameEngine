@@ -2,7 +2,6 @@
 #include <functional>
 #include <vector>
 #include "IEvent.h"
-#include "../../Logger/Logger.h"
 
 template<typename ...TArgs>
 class Event : public IEvent{
@@ -15,12 +14,11 @@ public:
         events.push_back(event);
     };
 
-    void operator()(TArgs&& ...args){
+    const void operator()(TArgs&& ...args){
         Invoke(std::forward<TArgs>(args)...);
-        Logger::Log("Chamou O event");
     };
 
-    void Invoke(TArgs&& ...args) { 
+    void Invoke(TArgs&& ...args) const { 
         for(auto event : events){
             event(std::forward<TArgs>(args)...);
         }
