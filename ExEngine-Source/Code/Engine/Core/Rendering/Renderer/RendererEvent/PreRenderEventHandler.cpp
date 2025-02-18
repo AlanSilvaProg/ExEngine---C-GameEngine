@@ -1,10 +1,22 @@
 #include "PreRenderEventHandler.h"
 
-std::unique_ptr<PreRenderEventHandler> PreRenderEventHandler::handler = nullptr;
+std::unique_ptr<PreRenderEventHandler> PreRenderEventHandler::preRenderHandler= nullptr;
+std::unique_ptr<PreRenderEventHandler> PreRenderEventHandler::postRenderHandler = nullptr;
+std::unique_ptr<PreRenderEventHandler> PreRenderEventHandler::postRenderPresentHandler = nullptr;
 
 void PreRenderEventHandler::Create(){
-    if(handler == nullptr)
+    if(preRenderHandler == nullptr)
     {
-        handler = std::make_unique<PreRenderEventHandler>();
+        preRenderHandler = std::make_unique<PreRenderEventHandler>();
+    }
+
+    if(postRenderHandler == nullptr)
+    {
+        postRenderHandler = std::make_unique<PreRenderEventHandler>();
+    }
+
+    if(postRenderPresentHandler == nullptr)
+    {
+        postRenderPresentHandler = std::make_unique<PreRenderEventHandler>();
     }
 };

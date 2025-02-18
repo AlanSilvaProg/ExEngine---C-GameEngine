@@ -1,8 +1,7 @@
 #pragma once 
 #include <memory>
 #include "../../Core/ECS/ECSManager.h"
-#include "RuntimeEvent/GameEarlyUpdateEventHandler.h"
-#include "RuntimeEvent/GameLateUpdateEventHandler.h"
+#include "RuntimeEvent/GameUpdateEventHandler.h"
 
 class Gameloop{
 private:
@@ -12,19 +11,17 @@ private:
     bool isRunning;
     float lastUpdate;
 
-    void FixedUpdate();
     void Stop();
-
     void ProcessInputPhase();
     void ProcessCollisionPhase();
 public:
     Gameloop(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ecsManager){
         //Creating event Handlers
-        GameEarlyUpdateEventHandler::Create();
-        GameLateUpdateEventHandler::Create();
+        GameUpdateEventHandler::Create();
     }; 
 
     void Initialize();
     void ExecuteGameLoop();
+    void Update();
     void ProcessRenderPhase();
 };

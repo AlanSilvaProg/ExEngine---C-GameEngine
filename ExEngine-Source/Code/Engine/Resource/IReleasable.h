@@ -2,5 +2,5 @@
 
 class IReleasable{
 protected:
-    virtual void Release(){};
+    virtual void Release() = 0;
 };

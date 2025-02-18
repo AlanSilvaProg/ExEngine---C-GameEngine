@@ -6,15 +6,19 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(APPLE)
-set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
+    add_compile_definitions(EXENGINE_MACOS)
+    set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
 elseif(WIN32)
-set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
+    add_compile_definitions(EXENGINE_WINDOWS)
+    set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
 endif()
 
 find_package(glm CONFIG REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
+
+add_compile_definitions("ExEngineEditor")
 
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
