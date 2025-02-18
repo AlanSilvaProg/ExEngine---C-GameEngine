@@ -1,14 +1,10 @@
 set (TARGET_NAME Engine)
 
-file (GLOB ENGINE_SOURCE Core/*.cpp Core/*.h
-Core/**/*.cpp Core/**/*.h
-Core/**/**/*.cpp Core/**/**/*.h
-Core/**/**/**/*.cpp Core/**/**/**/*.h
-GameCore/*.cpp GameCore/*.h
-GameCore/**/*.cpp GameCore/**/*.h
-GameCore/**/**/*.cpp GameCore/**/**/*.h
-Logger/*.cpp Logger/*.h 
-Resource/*.cpp Resource/*.h)
+file (GLOB ENGINE_SOURCE **/*.cpp **/*.h
+**/**/*.cpp **/**/*.h
+**/**/**/*.cpp **/**/**/*.h
+**/**/**/**/*.cpp **/**/**/**/*.h
+**/**/**/**/**/*.cpp **/**/**/**/**/*.h)
 
 set(ENGINE_LIBRARY_TYPE SHARED)
 add_library(${TARGET_NAME} ${ENGINE_LIBRARY_TYPE} ${ENGINE_SOURCE})

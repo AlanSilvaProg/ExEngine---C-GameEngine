@@ -22,14 +22,14 @@ void Gameloop::Initialize(){
 };
 
 void Gameloop::Update(){
-    GameEarlyUpdateEventHandler::handler->Invoke(0);
+    GameUpdateEventHandler::earlyhandler->Invoke(0);
 
     ProcessInputPhase();
     ecsManager->Update();
     ProcessCollisionPhase();
     ProcessRenderPhase();  
 
-    GameLateUpdateEventHandler::handler->Invoke(0);
+    GameUpdateEventHandler::latehandler->Invoke(0);
 };
 
 void Gameloop::Stop(){

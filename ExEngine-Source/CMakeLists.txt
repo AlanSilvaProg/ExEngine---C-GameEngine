@@ -18,6 +18,8 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
 
+add_compile_definitions("ExEngineEditor")
+
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
 

@@ -1,7 +1,6 @@
 #include "ProjectSection.h"
-#include <imgui.h>
-#include <SDL.h>
 #include "../../../../Engine/Core/Input/Input.h"
+#include <imgui.h>
 
 #include "../../../../Engine/Core/Runtime/App.h"
 
