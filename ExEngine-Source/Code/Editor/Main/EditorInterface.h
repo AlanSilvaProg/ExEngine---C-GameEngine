@@ -1,7 +1,8 @@
 #pragma once 
+#include <memory>
 #include "MainMenuBar/MainMenuBar.h"
 #include "Windows/EditorWindowDrawer.h"
-#include <memory>
+#include "../Engine/Core/Engine.h"
 
 class EditorInterface{
 private:
@@ -17,6 +18,6 @@ private:
 
     void CreateEditorBase();
 public:
-    EditorInterface();
+    EditorInterface(std::shared_ptr<Engine> engine);
     ~EditorInterface();
 };

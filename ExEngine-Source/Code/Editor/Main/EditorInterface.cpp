@@ -7,12 +7,15 @@
 #include "../EditorEvents/EditorUpdateEventHandler.h"
 #include "../../Engine/Core/Runtime/App.h" 
 #include "../../Engine/Logger/Logger.h"
+#include "EditorInterfaceGetters.h"
 #include <imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
 
-EditorInterface::EditorInterface(){
+EditorInterface::EditorInterface(std::shared_ptr<Engine> engine){
+    EditorInterfaceGetters::engine = engine;
+    
     InitializeEditor();
     CreateEditorBase();
     InputEventHandler::Create();
@@ -28,7 +31,6 @@ void EditorInterface::InitializeEditor(){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad | ImGuiConfigFlags_DockingEnable;
-
     ImGui_ImplSDL2_InitForSDLRenderer(ExRendererGetters::window, ExRendererGetters::renderer);
     ImGui_ImplSDLRenderer2_Init(ExRendererGetters::renderer);
     

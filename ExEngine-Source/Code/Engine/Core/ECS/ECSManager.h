@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <deque>
+#include <unordered_set>
 #include <memory>
 #include <unordered_map>
 #include <typeindex>
@@ -17,14 +18,18 @@
 class EntityCS{
 private:
     unsigned int id;
-    class ECSManager* ecsManager;
+    std::string name;
 
+    class ECSManager* ecsManager;
 public:
     unsigned int GetId() const { return id; };
 
     EntityCS() = default;
-    EntityCS(const unsigned int id, ECSManager* ecsManager) : id(id), ecsManager(ecsManager){}
-    
+    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager) : id(id), name(name), ecsManager(ecsManager){}
+
+    void ChangeName(const std::string name);
+    const std::string GetName() const;
+
     void Kill();
     Signature GetComponentSignature() const;
 
@@ -56,6 +61,7 @@ protected:
     bool CheckForRegisteredId(const int componentId, const bool optional) const;
 
 public:
+    std::vector<EntityCS>* GetSystemEntities();
     bool CheckEntitySignatureMatch(const Signature entitySignature) const;
     void AddEntity(const EntityCS entity);
     void ValidateEntity(EntityCS entity);
@@ -81,13 +87,16 @@ private:
     std::deque<int> entitiesToBeKilled; // removed from system and remove all components
     std::deque<int> freeEntities;
 
+    std::unordered_set<int> aliveEntities;
+
 public:
     ECSManager();
     ~ECSManager() = default;
 
     void Update();
 
-    EntityCS CreateEntity();
+    EntityCS& CreateEntity(const std::string entityName);
+    EntityCS* GetEntity(const int entityId); 
     void DestroyEntity(EntityCS entity);
 
     template<typename TComponent, typename ...TArgs>
@@ -100,6 +109,7 @@ public:
     void RemoveComponent(EntityCS entity);
     void RemoveAllComponents(EntityCS entity);
     Signature GetEntitySignature(const int id) const;
+    std::unordered_set<int>& GetAliveEntities();
 
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
@@ -207,7 +217,11 @@ std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
 
 template<typename TSystem>
 std::shared_ptr<TSystem> ECSManager::GetSystem()const {
-    return systems.find(std::type_index(typeid(TSystem)));
+    auto it = systems.find(std::type_index(typeid(TSystem)));
+    if (it != systems.end()) {
+        return std::dynamic_pointer_cast<TSystem>(it->second);
+    }
+    return nullptr; // ou lançar exceção, conforme seu caso
 };
 
 template<typename TSystem>

@@ -1,5 +1,6 @@
 #include "App.h"
 #include "AppEvents/AppEventsHandler.h"
+#include <fstream>
 
 #ifdef GAME_BUILD
 bool App::isPlaying = true;
@@ -11,6 +12,10 @@ bool App::isEditorMode = false;
 
 App::App(){
     AppEventsHandler::Create();
+};
+
+std::string App::GetCurrentProjectPath(){
+    return std::filesystem::current_path();
 };
 
 void App::Quit(){

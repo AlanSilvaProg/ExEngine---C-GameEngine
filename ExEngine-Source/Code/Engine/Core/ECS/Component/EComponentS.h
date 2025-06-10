@@ -8,4 +8,6 @@ public:
         static auto id = previousId++;
         return id;
     };
+
+    //virtual std::vector<EComponentSPropertyData> GetPropertyData() override = 0;
 };

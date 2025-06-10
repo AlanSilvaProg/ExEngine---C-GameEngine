@@ -35,8 +35,8 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
     SDL_PumpEvents();
 
     ecsManager = ecsManagerPtr;
-    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
     cameraSystem = ecsManager->CreateSystem<CameraSystem>();
+    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>(cameraSystem);
     initialized = true;
 
     UpdateDisplayTexture(0);
@@ -80,7 +80,7 @@ void ExRenderer::PostRender(){
 };
 
 void ExRenderer::UpdateDisplayTexture(int displayIndex){
-#ifdef ExEngineEditor
+#ifdef EXENGINE_EDITOR
 
     if(ExRendererGetters::sceneDisplay.find(displayIndex) == ExRendererGetters::sceneDisplay.end())
     {
@@ -97,7 +97,7 @@ void ExRenderer::UpdateDisplayTexture(int displayIndex){
 };
 
 void ExRenderer::DisableDisplayTextures(int displayIndex){
-#ifdef ExEngineEditor
+#ifdef EXENGINE_EDITOR
 
     if(ExRendererGetters::sceneDisplay.find(displayIndex) == ExRendererGetters::sceneDisplay.end()) return;
 

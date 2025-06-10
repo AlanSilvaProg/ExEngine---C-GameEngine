@@ -9,7 +9,6 @@ int ExMath::GetGCD(int a, int b){
         temp = a;
         a = b;
         b = temp;
-        temp = 0;
     }
 
     while(b != 0){

@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 class App {
 public:
@@ -8,4 +9,5 @@ public:
 
     App();
     static void Quit();
+    static std::string GetCurrentProjectPath();
 };
