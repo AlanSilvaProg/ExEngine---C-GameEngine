@@ -1,6 +1,6 @@
-#include <SDL.h>
 #include "Time.h"
 #include "../Settings/RuntimeSettings.h"
+#include <SDL.h>
 
 float Time::lastUpdate = 0;
 float Time::deltaTime = 0;

@@ -1,5 +1,4 @@
 project(ThirdParty)
-
 #using GLOB to add core and essential files from thirdparties ( normally it's called include, but in this case, we don't have the include folder )
 file(GLOB ENGINE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/imgui/*.cpp 
 ${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/cpp/imgui_stdlib.*) #needed to use input text using std::string
@@ -13,9 +12,3 @@ ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_sdlrenderer2.cpp)
 target_include_directories(ThirdParty PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} imgui)
 #linking the sdl external resources to work correctly with the backends added previously
 target_link_libraries(ThirdParty PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
-
-if(APPLE)
-    target_compile_definitions(ThirdParty PRIVATE EXENGINE_MACOS)
-elseif(WIN32)
-    target_compile_definitions(ThirdParty PRIVATE EXENGINE_WINDOWS)
-endif()

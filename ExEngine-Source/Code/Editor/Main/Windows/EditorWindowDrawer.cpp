@@ -1,11 +1,15 @@
 #include "EditorWindowDrawer.h"
 #include "../../EditorEvents/EditorUpdateEventHandler.h"
 #include "EditorWindows/SceneWindow.h"
+#include "EditorWindows/EntityBrowserWindow.h"
 
 std::vector<std::shared_ptr<EditorWindow>> ExEditor::EditorWindowDrawer::windows;
 
 ExEditor::EditorWindowDrawer::EditorWindowDrawer(){
+    //ToDo initialize windows accordly to a file scheme ( previous layout or something like saved in memory )
     AddWindow(std::make_shared<SceneWindow>());
+    AddWindow(std::make_shared<EntityBrowserWindow>());
+
     *EditorUpdateEventHandler::earlyHandler += [this](){ this->Draw(0); };
     *EditorUpdateEventHandler::lateHandler += [this](){ this->Draw(1); };
     *EditorUpdateEventHandler::postRenderPresentHandler  += [this](){ this->Draw(2); };

@@ -13,9 +13,13 @@ private:
 
     void StartEngine();
     void StopEngine();
+
+    void CreateBaseCamera();
 public:
     Engine();
     ~Engine();
     void InitializeEngine();
     void RunLoop();
+
+    std::shared_ptr<ECSManager> GetECSManagerPtr();
 };

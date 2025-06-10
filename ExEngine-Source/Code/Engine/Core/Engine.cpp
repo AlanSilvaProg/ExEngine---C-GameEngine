@@ -1,5 +1,6 @@
 #include "Engine.h" 
 #include "Rendering/Renderer/ExRenderer.h"
+#include "Rendering/Renderer/ExRendererGetters.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
 #include "Rendering/Components/SpriteComponent.h"
@@ -18,8 +19,7 @@ Engine::Engine(){
         StopEngine();
     };
 
-    if(InputEventHandler::handler == nullptr)
-        InputEventHandler::Create();
+    InputEventHandler::Create();
 };
 
 Engine::~Engine(){
@@ -46,16 +46,25 @@ void Engine::StartEngine(){
     gameLoop->Initialize();
     ExRenderer::Initialize(ecsManager);
 
-    auto entity = ecsManager->CreateEntity();
+    auto entity = ecsManager->CreateEntity("Tank");
     entity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(55,0,0), glm::vec3(1,1,1));
-    entity.AddComponent<SpriteComponent>("tank-image", "/tank.png", 0, 0, false, false);
+    std::string tankImageAddress = ENGINE_ASSETS_PATH + std::string("/tank.png");
+    entity.AddComponent<SpriteComponent>("tank-image", tankImageAddress, 0, 0, false, false);
 
-    auto cameraEntity = ecsManager->CreateEntity();
-    cameraEntity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(55,0,0), glm::vec3(1,1,1));
-    cameraEntity.AddComponent<CameraComponent>(glm::vec2(1,1), 0, glm::vec2(800,800));
+    CreateBaseCamera();
+};
+
+void Engine::CreateBaseCamera(){
+    auto cameraEntity = ecsManager->CreateEntity("Camera");
+    cameraEntity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
+    cameraEntity.AddComponent<CameraComponent>(0);
 };
 
 void Engine::StopEngine(){
     running = false;
     ExRenderer::Quit();
+};
+
+std::shared_ptr<ECSManager> Engine::GetECSManagerPtr(){
+    return ecsManager;
 };

@@ -6,27 +6,42 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(APPLE)
-    add_compile_definitions(EXENGINE_MACOS)
+    add_compile_definitions("EXENGINE_MACOS")
     set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
 elseif(WIN32)
-    add_compile_definitions(EXENGINE_WINDOWS)
+    add_compile_definitions("EXENGINE_WINDOWS")
     set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
+else()
+    add_compile_definitions("EXENGINE_LINUX")
 endif()
+
+include(FetchContent)
+
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
 
 find_package(glm CONFIG REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
 
-add_compile_definitions("ExEngineEditor")
+add_compile_definitions("EXENGINE_EDITOR")
 
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PUBLIC Engine)
 target_link_libraries(${PROJECT_NAME} PUBLIC Editor)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+target_compile_definitions(Engine PUBLIC ENGINE_ASSETS_PATH="${CMAKE_BINARY_DIR}/Assets")
+target_compile_definitions(Editor PUBLIC ENGINE_ASSETS_PATH="${CMAKE_BINARY_DIR}/Assets")
+target_compile_definitions(Engine PUBLIC ENGINE_PATH="${CMAKE_BINARY_DIR}")
+target_compile_definitions(Editor PUBLIC ENGINE_PATH="${CMAKE_BINARY_DIR}")
 
 if(WIN32)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExEngineWin")
@@ -36,7 +51,5 @@ else()
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExEngineLinux")
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-
 add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_BINARY_DIR}/Assets)
+add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/Projects)

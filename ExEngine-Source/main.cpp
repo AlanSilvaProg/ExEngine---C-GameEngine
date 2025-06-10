@@ -1,23 +1,23 @@
+#include <new>
+#include <memory>
 #include "Code/Engine/Core/Engine.h"
 #include "Code/Engine/Core/Runtime/App.h"
 #include "Code/Editor/Main/EditorInterface.h"
-#include <new>
 
 int main(){
     App *app = new App();
-    Engine *engine = new Engine();
+    std::shared_ptr<Engine> engine = std::make_shared<Engine>();
     engine->InitializeEngine();
 
-#ifdef ExEngineEditor
-    EditorInterface *editor = new EditorInterface();
+#ifdef EXENGINE_EDITOR
+    EditorInterface *editor = new EditorInterface(engine);
 #endif
 
     engine->RunLoop();
 
     delete(app);
-    delete(engine);
 
-#ifdef ExEngineEditor
+#ifdef EXENGINE_EDITOR
     delete(editor);
 #endif
 

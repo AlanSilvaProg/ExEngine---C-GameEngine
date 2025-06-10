@@ -68,6 +68,16 @@
         "__tree": "cpp",
         "map": "cpp",
         "filesystem": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "any": "cpp",
+        "set": "cpp",
+        "bit": "cpp",
+        "forward_list": "cpp",
+        "fstream": "cpp",
+        "numeric": "cpp",
+        "ranges": "cpp",
+        "span": "cpp",
+        "valarray": "cpp",
+        "__memory": "cpp"
     }
 }

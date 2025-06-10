@@ -6,10 +6,11 @@
 #include <algorithm>
 #include <SDL2/SDL.h>
 
-RenderingSystem2D::RenderingSystem2D(){
+RenderingSystem2D::RenderingSystem2D(std::shared_ptr<CameraSystem> camSystem){
     Require<TransformComponent>(false);    
     Require<SpriteComponent>(false);
 
+    cameraSystem = camSystem;
     assetManager = AssetManager::GetInstance();
 };
 
@@ -21,16 +22,28 @@ void RenderingSystem2D::UpdateSystem() {
               return this->RenderOrderCheck(a, b); 
           });
 
+    auto allCamera = cameraSystem->GetSystemEntities();
+
+    if(allCamera->size() == 0)
+    {
+        Logger::LogWarning("No camera available to render!");
+    }
+
+    //ToDo implement multiple cameras
+    auto cameraEntity = (*cameraSystem->GetSystemEntities())[0];
+
     for(auto entity : systemEntities){
         auto spriteComponent = entity.GetComponent<SpriteComponent>();
         auto transformComponent = entity.GetComponent<TransformComponent>();
+
+        auto cameraTransformComponent = cameraEntity.GetComponent<TransformComponent>();
 
         auto texture = spriteComponent->texture;
 
         //render texture
         SDL_Rect dstRect = {
-            static_cast<int>(transformComponent->position.x),
-            static_cast<int>(transformComponent->position.y),
+            static_cast<int>(transformComponent->position.x - cameraTransformComponent->position.x),
+            static_cast<int>(transformComponent->position.y - cameraTransformComponent->position.y),
             static_cast<int>(spriteComponent->srcRect->w * transformComponent->scale.x),
             static_cast<int>(spriteComponent->srcRect->h * transformComponent->scale.y)
         };

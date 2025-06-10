@@ -10,9 +10,8 @@ AssetReference::~AssetReference(){
 };
 
 SDL_Texture* AssetReference::GetNewReference(){
-    if(texture == nullptr){
-        std::string fullPath = ASSETS_PATH + path; 
-        auto surface = IMG_Load(fullPath.c_str());
+    if(texture == nullptr){ 
+        auto surface = IMG_Load(path.c_str());
 
         if(surface == nullptr){
             Logger::LogError("Fail to load Image at path : " + path + " \n With the follow message: " + IMG_GetError());
