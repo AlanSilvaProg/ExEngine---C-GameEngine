@@ -14,7 +14,6 @@ private:
     void LateUpdate() const;
     void PreRender() const;
     void PostRender() const;
-    void PostRenderPresent() const;
 
     void CreateEditorBase();
 public:

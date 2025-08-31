@@ -24,7 +24,6 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine){
     *GameUpdateEventHandler::latehandler += [this](int value){ this->LateUpdate(); };
     *PreRenderEventHandler::preRenderHandler += [this](){ this->PreRender(); };
     *PreRenderEventHandler::postRenderHandler += [this](){ this->PostRender(); };
-    *PreRenderEventHandler::postRenderPresentHandler += [this](){ this->PostRenderPresent(); };
 }; 
 
 void EditorInterface::InitializeEditor(){
@@ -64,10 +63,7 @@ void EditorInterface::PreRender() const{ //need to call on late update
 
 void EditorInterface::PostRender() const{ //need to call on late update
     EditorUpdateEventHandler::lateHandler->Invoke();
-};
 
-void EditorInterface::PostRenderPresent() const{
-    EditorUpdateEventHandler::postRenderPresentHandler->Invoke();
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), ExRendererGetters::renderer);
 };

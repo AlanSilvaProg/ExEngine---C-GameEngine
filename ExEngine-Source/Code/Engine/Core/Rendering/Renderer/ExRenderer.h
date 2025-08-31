@@ -12,16 +12,12 @@ private:
 
     static bool initialized;
 
-    static void PreRender();
     static void Render();
-    static void PostRender();
-
-    static void UpdateDisplayTexture(int displayIndex);
-    static void DisableDisplayTextures(int displayIndex);
 public:
     static void Initialize(std::shared_ptr<ECSManager> ecsManagerPtr);
-
     static void RenderSequence();
+
+    static std::shared_ptr<RenderingSystem2D> GetRenderingSystem2D();
 
     static void Quit();
 };

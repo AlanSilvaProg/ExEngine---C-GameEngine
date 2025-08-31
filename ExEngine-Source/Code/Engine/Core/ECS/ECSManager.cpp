@@ -7,6 +7,25 @@ ECSManager::ECSManager(){
 };
 
 void ECSManager::Update(){
+    if(componentsToBeRemoved.size() > 0)
+    {
+        for(auto pair : componentsToBeRemoved)
+        {
+            const int entityId = pair.first;
+            const int componentId = pair.second;
+
+            auto& entitySignature = GetEntitySignature(entityId);
+            auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentPools[componentId]);
+
+            entitySignature[componentId] = false;
+            castedPoolManager->ComponentRemovedFromEntity(pair.first); // ToDo undo command
+
+            SetToValidation(entityId);
+            Logger::LogError("Component : " + std::to_string(componentId) + " removed from entity: " + std::to_string(entityId));
+        }
+        componentsToBeRemoved.clear();
+    }
+
     if(entitiesToBeKilled.size() > 0)
     {
         for(auto entityId : entitiesToBeKilled){
@@ -31,9 +50,9 @@ void ECSManager::Update(){
     }
 };
 
-EntityCS& ECSManager::CreateEntity(const std::string entityName){
+EntityCS& ECSManager::CreateEntity(const std::string entityName, const bool internal){
     if(freeEntities.empty()){
-        EntityCS entity(EntityCSCounter::GetEntitiesCreated(), entityName, this);
+        EntityCS entity(EntityCSCounter::GetEntitiesCreated(), entityName, this, internal);
         auto entityId = entity.GetId();
 
         auto entitiesCreated = EntityCSCounter::IncreaseEntitiesCreated();
@@ -90,9 +109,20 @@ void ECSManager::RemoveAllComponents(EntityCS entity){
     SetToValidation(entityId);
 };
 
+void ECSManager::RemoveComponent(const int entityId, const int componentId){
+    componentsToBeRemoved.emplace(entityId, componentId);
+};
 
-Signature ECSManager::GetEntitySignature(const int id) const{
+bool ECSManager::HasComponent(const int entityId, const int componentId){
+    return GetEntitySignature(entityId)[componentId];
+};
+
+Signature& ECSManager::GetEntitySignature(const int id){
     return entitiesSignature[id];
+};
+
+const std::vector<std::shared_ptr<IPool>>& ECSManager::GetEntityComponentPools() const{
+    return componentPools;
 };
 
 std::unordered_set<int>& ECSManager::GetAliveEntities(){
@@ -120,8 +150,12 @@ void EntityCS::ChangeName(const std::string name){
     this->name = name;
 };
 
-Signature EntityCS::GetComponentSignature() const{
+Signature& EntityCS::GetComponentSignature() const{
     return ecsManager->GetEntitySignature(GetId());
+};
+
+void EntityCS::RemoveComponent(const int componentId) const{
+    ecsManager->RemoveComponent(GetId(), componentId);
 };
 
 void EntityCS::Kill(){
@@ -139,7 +173,7 @@ std::vector<EntityCS>* ECSystem::GetSystemEntities(){
     return &systemEntities;
 };
 
-bool ECSystem::CheckEntitySignatureMatch(const Signature entitySignature) const{
+bool ECSystem::CheckEntitySignatureMatch(const Signature& entitySignature) const{
     for(auto signatureId : systemSignatureIds)
     {
         if(entitySignature.size() <= signatureId || !entitySignature[signatureId])

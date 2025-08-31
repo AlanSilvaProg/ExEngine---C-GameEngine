@@ -17,6 +17,7 @@
 
 class EntityCS{
 private:
+    bool internal;
     unsigned int id;
     std::string name;
 
@@ -25,13 +26,13 @@ public:
     unsigned int GetId() const { return id; };
 
     EntityCS() = default;
-    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager) : id(id), name(name), ecsManager(ecsManager){}
+    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager, const bool internal = false) : id(id), name(name), ecsManager(ecsManager), internal(internal){}
 
     void ChangeName(const std::string name);
     const std::string GetName() const;
 
     void Kill();
-    Signature GetComponentSignature() const;
+    Signature& GetComponentSignature() const;
 
     template<typename TComponent, typename ...TArgs>
     void AddComponent(TArgs&& ...args) const;
@@ -44,6 +45,12 @@ public:
 
     template<typename TComponent>
     void RemoveComponent() const;
+    void RemoveComponent(const int componentId) const;
+
+#ifdef EXENGINE_EDITOR
+    inline bool IsInternal() { return internal; }
+#endif
+
 };
 
 
@@ -62,7 +69,7 @@ protected:
 
 public:
     std::vector<EntityCS>* GetSystemEntities();
-    bool CheckEntitySignatureMatch(const Signature entitySignature) const;
+    bool CheckEntitySignatureMatch(const Signature& entitySignature) const;
     void AddEntity(const EntityCS entity);
     void ValidateEntity(EntityCS entity);
     void RemoveEntity(const int id);
@@ -85,6 +92,7 @@ private:
 
     std::deque<int> entitiesToBeValidated; // validated to a system
     std::deque<int> entitiesToBeKilled; // removed from system and remove all components
+    std::unordered_map<int,int> componentsToBeRemoved; // entityId, componentId
     std::deque<int> freeEntities;
 
     std::unordered_set<int> aliveEntities;
@@ -95,9 +103,10 @@ public:
 
     void Update();
 
-    EntityCS& CreateEntity(const std::string entityName);
+    EntityCS& CreateEntity(const std::string entityName, const bool internal = false);
     EntityCS* GetEntity(const int entityId); 
     void DestroyEntity(EntityCS entity);
+    std::unordered_set<int>& GetAliveEntities();
 
     template<typename TComponent, typename ...TArgs>
     void AddComponent(EntityCS entity, TArgs&& ...args);
@@ -105,11 +114,13 @@ public:
     std::shared_ptr<TComponent> GetComponent(EntityCS entity) const;
     template<typename TComponent>
     bool HasComponent(EntityCS entity) const;
+    bool HasComponent(const int entityId, const int componentId);
     template<typename TComponent>
     void RemoveComponent(EntityCS entity);
+    void RemoveComponent(const int entityId, const int componentId);
     void RemoveAllComponents(EntityCS entity);
-    Signature GetEntitySignature(const int id) const;
-    std::unordered_set<int>& GetAliveEntities();
+    Signature& GetEntitySignature(const int id);
+    const std::vector<std::shared_ptr<IPool>>& GetEntityComponentPools() const;
 
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
@@ -148,9 +159,9 @@ void ECSManager::AddComponent(EntityCS entity, TArgs&& ...args){
         componentPools.resize(componentCreationIndex * 2, nullptr);
 
     if(componentPools[componentId] == nullptr)
-        componentPools[componentId] = std::make_shared<EComponentSPoolManager<TComponent>>();
+        componentPools[componentId] = std::make_shared<EComponentSPoolManager>();
 
-    auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager<TComponent>>(componentPools[componentId]);
+    auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentPools[componentId]);
 
     castedPoolManager->ComponentAddedToEntity(entityId, std::make_shared<TComponent>(std::forward<TArgs>(args)...));
 
@@ -169,10 +180,10 @@ std::shared_ptr<TComponent> ECSManager::GetComponent(EntityCS entity) const{
         auto component = componentPools[componentId];
         if(component != nullptr)
         {
-            auto convertedPool = std::dynamic_pointer_cast<EComponentSPoolManager<TComponent>>(component);
+            auto convertedPool = std::dynamic_pointer_cast<EComponentSPoolManager>(component);
             auto component = convertedPool->GetComponent(entityId);
             
-            if(component != nullptr) return component;
+            if(component != nullptr) return std::dynamic_pointer_cast<TComponent>(component);
         }
     }
 

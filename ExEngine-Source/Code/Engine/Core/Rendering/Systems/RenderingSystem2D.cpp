@@ -6,11 +6,10 @@
 #include <algorithm>
 #include <SDL2/SDL.h>
 
-RenderingSystem2D::RenderingSystem2D(std::shared_ptr<CameraSystem> camSystem){
+RenderingSystem2D::RenderingSystem2D(){
     Require<TransformComponent>(false);    
     Require<SpriteComponent>(false);
 
-    cameraSystem = camSystem;
     assetManager = AssetManager::GetInstance();
 };
 
@@ -22,21 +21,18 @@ void RenderingSystem2D::UpdateSystem() {
               return this->RenderOrderCheck(a, b); 
           });
 
-    auto allCamera = cameraSystem->GetSystemEntities();
+    auto currentCamera = ExRendererGetters::currentRenderCamera;
 
-    if(allCamera->size() == 0)
+    if(currentCamera == nullptr)
     {
         Logger::LogWarning("No camera available to render!");
     }
-
-    //ToDo implement multiple cameras
-    auto cameraEntity = (*cameraSystem->GetSystemEntities())[0];
 
     for(auto entity : systemEntities){
         auto spriteComponent = entity.GetComponent<SpriteComponent>();
         auto transformComponent = entity.GetComponent<TransformComponent>();
 
-        auto cameraTransformComponent = cameraEntity.GetComponent<TransformComponent>();
+        auto cameraTransformComponent = currentCamera->GetComponent<TransformComponent>();
 
         auto texture = spriteComponent->texture;
 

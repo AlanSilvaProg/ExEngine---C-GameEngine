@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "../ECS/ECSManager.h"
+#include "../Serializer/ISerializable.h"
 
 struct TransformComponent : public EComponentS<TransformComponent>{
 public:
@@ -12,5 +13,16 @@ public:
 
     void Move(const glm::vec3 movement){
         position += movement;
+    };
+
+    virtual ExSerializedClass Serialize() override{
+        return ExSerializedClass{
+            Demangle(typeid(*this).name()),
+            {
+                EX_SERIALIZER((*this), position, true),
+                EX_SERIALIZER((*this), rotation, true),
+                EX_SERIALIZER((*this), scale, true)
+            }
+        };
     };
 };

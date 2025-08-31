@@ -1,7 +1,6 @@
 #include "ExRenderer.h"
 #include "../../../Logger/Logger.h"
 #include "../../Settings/EngineSettings.h"
-#include "../../Utils/Color.h"
 #include "ExRendererGetters.h"
 #include "RendererEvent/PreRenderEventHandler.h"
 
@@ -35,75 +34,25 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
     SDL_PumpEvents();
 
     ecsManager = ecsManagerPtr;
-    cameraSystem = ecsManager->CreateSystem<CameraSystem>();
-    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>(cameraSystem);
+    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
+    cameraSystem = ecsManager->CreateSystem<CameraSystem>(renderingSystem2D);
     initialized = true;
 
-    UpdateDisplayTexture(0);
     PreRenderEventHandler::Create();
 };
 
 void ExRenderer::RenderSequence(){
     if(!initialized) return;
-    Render();
-};
-
-void ExRenderer::PreRender(){
-    UpdateDisplayTexture(0);
+    
+    PreRenderEventHandler::preRenderHandler->Invoke();
 
     cameraSystem->UpdateSystem();
 
-    //cleaning window with a base color 
-    auto color = Color::BLUE;
-    SDL_SetRenderDrawColor(ExRendererGetters::renderer, color->r, color->g, color->b, color->a);
-    SDL_RenderClear(ExRendererGetters::renderer);
-    
-    renderingSystem2D->UpdateSystem();
-    
-    PreRenderEventHandler::preRenderHandler->Invoke();
-};
-
-void ExRenderer::Render(){
-    PreRender();
-    PostRender();
-};
-
-void ExRenderer::PostRender(){
-    //Post effects + window render
-
     PreRenderEventHandler::postRenderHandler->Invoke();
-    
-    DisableDisplayTextures(0);
-    SDL_RenderPresent(ExRendererGetters::renderer);
-
-    PreRenderEventHandler::postRenderPresentHandler->Invoke();
 };
 
-void ExRenderer::UpdateDisplayTexture(int displayIndex){
-#ifdef EXENGINE_EDITOR
-
-    if(ExRendererGetters::sceneDisplay.find(displayIndex) == ExRendererGetters::sceneDisplay.end())
-    {
-        auto sdlTexture = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, 800, 800);
-        ExRendererGetters::sceneDisplay.emplace(displayIndex, sdlTexture);
-        
-        SDL_SetRenderTarget(ExRendererGetters::renderer, sdlTexture);
-        return;
-    }
-    
-    SDL_SetRenderTarget(ExRendererGetters::renderer, ExRendererGetters::sceneDisplay[displayIndex]);
-
-#endif
-};
-
-void ExRenderer::DisableDisplayTextures(int displayIndex){
-#ifdef EXENGINE_EDITOR
-
-    if(ExRendererGetters::sceneDisplay.find(displayIndex) == ExRendererGetters::sceneDisplay.end()) return;
-
-    SDL_SetRenderTarget(ExRendererGetters::renderer, NULL);
-
-#endif
+std::shared_ptr<RenderingSystem2D> ExRenderer::GetRenderingSystem2D(){
+    return renderingSystem2D;
 };
 
 void ExRenderer::Quit(){
