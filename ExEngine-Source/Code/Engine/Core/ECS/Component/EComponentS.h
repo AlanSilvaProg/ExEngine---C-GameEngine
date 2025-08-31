@@ -9,5 +9,6 @@ public:
         return id;
     };
 
-    //virtual std::vector<EComponentSPropertyData> GetPropertyData() override = 0;
+    virtual int GetComponentId() override { return GetId(); };
+    virtual ExSerializedClass Serialize() override { return ExSerializedClass{}; };
 };

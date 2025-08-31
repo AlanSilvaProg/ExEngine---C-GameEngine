@@ -34,4 +34,16 @@ public:
     ~SpriteComponent() {
         assetManager->FreeAsset(id);
     };
+
+
+    virtual ExSerializedClass Serialize() override{
+        return ExSerializedClass{
+            Demangle(typeid(*this).name()),
+            {
+                EX_SERIALIZER((*this), id, false),
+                EX_SERIALIZER((*this), path, false),
+                EX_SERIALIZER((*this), layerAttributes, true)
+            }
+        };
+    };
 };

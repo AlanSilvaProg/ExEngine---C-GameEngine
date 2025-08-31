@@ -58,6 +58,11 @@ void Engine::CreateBaseCamera(){
     auto cameraEntity = ecsManager->CreateEntity("Camera");
     cameraEntity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
     cameraEntity.AddComponent<CameraComponent>(0);
+
+
+    auto cameraEntitySecond = ecsManager->CreateEntity("CameraSecond");
+    cameraEntitySecond.AddComponent<TransformComponent>(glm::vec3(-500,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
+    cameraEntitySecond.AddComponent<CameraComponent>(1);
 };
 
 void Engine::StopEngine(){
