@@ -3,10 +3,15 @@
 #include "../../EditorWindow.h"
 #include <imgui.h>
 #include <memory>
+#include <string>
 
 class EntityBrowserWindow : public EditorWindow{
 private:
+    std::string const defaultEntityName = "New Entity";
     std::unique_ptr<EntityBrowserSelection> entityBrowserSelection;
+    bool selectionDetected;
+
+    void CheckContextWindowWithoutSelection();
 public:
     EntityBrowserWindow();
 

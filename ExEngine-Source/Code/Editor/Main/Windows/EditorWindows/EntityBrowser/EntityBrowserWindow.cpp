@@ -33,6 +33,21 @@ void EntityBrowserWindow::Draw(int phase){
         {
             DrawEntity(entityId);
         }
+         
+        if (selectionDetected && ImGui::IsWindowHovered() && ImGui::IsAnyMouseDown())
+        {
+            if (!ImGui::IsAnyItemHovered())
+            {
+                selectionDetected = false;
+                ElementSelectionController::SetSelected(nullptr);//null selection
+            }
+        }
+
+        if(!selectionDetected)
+        {
+            CheckContextWindowWithoutSelection();
+        }
+
         ImGui::EndTable();
     }
 
@@ -53,14 +68,35 @@ void EntityBrowserWindow::DrawEntity(int entityId){
     tree_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;    
     tree_flags |= ImGuiTreeNodeFlags_NavLeftJumpsBackHere;   
 
+    bool rightClick = ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+    (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::GetIO().KeyCtrl);
+
+    if (entityId == entityBrowserSelection->GetSelectedEntityId() && ElementSelectionController::GetCurrentSelection() != nullptr)
+        tree_flags |= ImGuiTreeNodeFlags_Selected;
+
     auto entityName = entity->GetName();
     bool entityElement = ImGui::TreeNodeEx("", tree_flags, "%s",  entityName.c_str());
 
-    if (ImGui::IsItemFocused())
+    if (ImGui::IsItemClicked() ||
+    ImGui::IsItemHovered() && rightClick)
+    {
         entityBrowserSelection->SetEntitySelected(entity->GetId());
+        selectionDetected = true;
+    }
 
     if(entityId == entityBrowserSelection->GetSelectedEntityId())
-        tree_flags |= ImGuiTreeNodeFlags_Selected;
+    {
+        if(ImGui::BeginPopupContextItem())
+        {
+            if(ImGui::MenuItem("Delete"))
+            {
+                entity->Kill();
+                selectionDetected = false;
+                ElementSelectionController::SetSelected(nullptr);//null selection
+            }
+            ImGui::EndPopup();
+        }
+    }
 
     //if (node->Childs.Size == 0)
         tree_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
@@ -73,4 +109,15 @@ void EntityBrowserWindow::DrawEntity(int entityId){
     }
 
     ImGui::PopID();
+};
+
+void EntityBrowserWindow::CheckContextWindowWithoutSelection(){
+    if(ImGui::BeginPopupContextWindow())
+    {
+        if(ImGui::MenuItem("Create new Entity"))
+        {
+            EditorInterfaceGetters::engine->GetECSManagerPtr()->CreateEntity(defaultEntityName);
+        }
+        ImGui::EndPopup();
+    }
 };

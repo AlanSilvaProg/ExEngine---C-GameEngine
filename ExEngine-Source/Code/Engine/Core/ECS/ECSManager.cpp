@@ -100,10 +100,16 @@ void ECSManager::DestroyEntity(EntityCS entity){
 
 void ECSManager::RemoveAllComponents(EntityCS entity){
     auto entityId = entity.GetId();
-    auto entitySignature = entitiesSignature[entityId];
+    auto& entitySignature = entitiesSignature[entityId];
 
-    for(int i = 0; i < entitySignature.size(); i ++){
-        entitySignature[i] = false;
+    for(int i = 0; i < entitySignature.size(); i ++)
+    {
+        if(HasComponent(entityId, i))
+        {
+            entitySignature[i] = false; 
+            auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentPools[i]);
+            castedPoolManager->ComponentRemovedFromEntity(entityId); // ToDo undo command
+        }
     }
 
     SetToValidation(entityId);
@@ -165,7 +171,6 @@ void EntityCS::Kill(){
 const std::string EntityCS::GetName() const{
     return name;
 };
-
 
 //System
 

@@ -30,9 +30,9 @@ void ExInspectorWindow::Draw(int phase){
                 //DrawAsset();
             }
         }
-
-        ImGui::End();
     }
+
+    ImGui::End();
 };
 
 void ExInspectorWindow::DrawEntity(EntityBrowserSelection* entityBrowserSelection){
@@ -45,7 +45,22 @@ void ExInspectorWindow::DrawEntity(EntityBrowserSelection* entityBrowserSelectio
     ImGui::Text("%s", "Entity");
     ImGui::Text("%s", "Name: ");
     ImGui::SameLine();
-    ImGui::Text("%s", entity->GetName().c_str());
+
+    //generating uniqueId per field
+    std::string uniqueId = "entityName###" 
+    + std::to_string(entity->GetId()) + "_" 
+    + std::to_string(reinterpret_cast<uintptr_t>(std::to_string(entity->GetId()).c_str()));
+    ImGui::PushID(uniqueId.c_str());
+
+    static const char* entityNameLabel = "";
+    char buf[256]{};
+    std::snprintf(buf, sizeof(buf), "%s", entity->GetName().c_str());
+    if (ImGui::InputText(entityNameLabel, buf, sizeof(buf))) {
+        entity->ChangeName(buf);
+    }
+
+    ImGui::PopID();
+
     ImGui::SameLine();
     ImGui::Text("%s", "Entity Id: ");
     ImGui::SameLine();
