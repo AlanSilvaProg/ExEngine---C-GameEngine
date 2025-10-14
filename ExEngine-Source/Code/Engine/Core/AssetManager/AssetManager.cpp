@@ -35,7 +35,8 @@ SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path, TTF
 };
 
 void AssetManager::FreeAsset(std::string id){
-    textureMap[id]->ReleaseReference();
+    if(textureMap[id])
+        textureMap[id]->ReleaseReference();
 };
 
 void AssetManager::Release(){

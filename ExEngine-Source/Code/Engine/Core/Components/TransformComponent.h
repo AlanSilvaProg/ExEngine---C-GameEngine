@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "../ECS/ECSManager.h"
 #include "../Serializer/ISerializable.h"
+#include "../ECS/InternalRegistry/ComponentRegistry.h"
 
 struct TransformComponent : public EComponentS<TransformComponent>{
 public:
@@ -9,6 +10,7 @@ public:
     glm::vec3 rotation;
     glm::vec3 scale;
 
+    TransformComponent() = default;
     TransformComponent(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale) : position(position), rotation(rotation), scale(scale){};
 
     void Move(const glm::vec3 movement){
@@ -26,3 +28,5 @@ public:
         };
     };
 };
+
+REGISTER_COMPONENT(TransformComponent)

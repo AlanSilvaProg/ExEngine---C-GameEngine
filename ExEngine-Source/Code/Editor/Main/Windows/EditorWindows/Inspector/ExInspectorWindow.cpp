@@ -6,6 +6,9 @@
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Serializer/ISerializable.h"
 #include "../../../../../Engine/Core/Rendering/Layer/LayerAttributes.h"
+#include "../../../../../Engine/Core/ECS/Component/EComponentS.h"
+#include "../../../../../Engine/Core/Components/TransformComponent.h"
+#include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 
 ExInspectorWindow::ExInspectorWindow(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
@@ -71,6 +74,8 @@ void ExInspectorWindow::DrawEntity(EntityBrowserSelection* entityBrowserSelectio
     {
         DrawEntityComponent(pool, entityId);
     }
+
+    DrawAddComponentButton(entityId);
 };
 
 void ExInspectorWindow::DrawEntityComponent(const std::shared_ptr<IPool> componentPool, const int entityId){
@@ -169,6 +174,26 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
     }
 
     ImGui::PopID();
+};
+
+void ExInspectorWindow::DrawAddComponentButton(const int entityId){
+    if(ImGui::Button("Add Component"))
+    {
+        ImGui::OpenPopup("AddComponentContext");
+    }
+
+    if(ImGui::BeginPopup("AddComponentContext"))
+    {   
+        for(auto componentRegistryPair : ComponentRegistry::components)
+        {
+            auto componentName = ComponentRegistry::componentsNameById[componentRegistryPair.first];
+            auto popupLabel = componentName + "###id_" + componentName;
+            if(ImGui::MenuItem(popupLabel.c_str())){
+                componentRegistryPair.second(*ecsManager->GetEntity(entityId));
+            }
+        }
+        ImGui::EndPopup();
+    }
 };
 
 //void ExInspectorWindow::DrawAsset(){

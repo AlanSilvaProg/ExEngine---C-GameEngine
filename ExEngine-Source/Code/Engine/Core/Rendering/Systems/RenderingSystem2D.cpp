@@ -36,6 +36,9 @@ void RenderingSystem2D::UpdateSystem() {
 
         auto texture = spriteComponent->texture;
 
+        //ToDo draw a white rect or similiar by default
+        if(texture == nullptr) return;
+
         //render texture
         SDL_Rect dstRect = {
             static_cast<int>(transformComponent->position.x - cameraTransformComponent->position.x),

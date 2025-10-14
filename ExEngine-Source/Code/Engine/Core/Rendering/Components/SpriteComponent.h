@@ -5,6 +5,7 @@
 #include "../../AssetManager/AssetManager.h"
 #include "../../ECS/ECSManager.h"
 #include "../Layer/LayerAttributes.h"
+#include "../../ECS/InternalRegistry/ComponentRegistry.h"
 
 struct SpriteComponent : public EComponentS<SpriteComponent>{
 private: 
@@ -17,6 +18,12 @@ public:
     SDL_Rect* srcRect;
     bool flipX;
     bool flipY;
+
+    SpriteComponent(){
+        texture = nullptr;
+        srcRect = nullptr;
+        assetManager = AssetManager::GetInstance();
+    };
 
     SpriteComponent(std::string id, std::string path, int layerIndex, int layerOrderIndex, bool flipX, bool flipY) : id(id), path(path), flipX(flipX), flipY(flipY)
     {
@@ -47,3 +54,6 @@ public:
         };
     };
 };
+
+//ToDo update sprite by editor options
+REGISTER_COMPONENT(SpriteComponent)

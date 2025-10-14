@@ -1,10 +1,12 @@
 #pragma once
 #include "../ECS/ECSManager.h"
+#include "../ECS/InternalRegistry/ComponentRegistry.h"
 
 struct CameraComponent : public EComponentS<CameraComponent>{
 public:
     int display;
 
+    CameraComponent() = default;
     CameraComponent(int display) : display(display) {};
 
     virtual ExSerializedClass Serialize() override{
@@ -16,3 +18,5 @@ public:
         };
     };
 };
+
+REGISTER_COMPONENT(CameraComponent)
