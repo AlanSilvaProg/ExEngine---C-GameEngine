@@ -2,6 +2,7 @@
 #include "../../../../Engine/Core/Input/Input.h"
 #include "../../../../Engine/Core/Runtime/App.h"
 #include "../../../../Engine/Logger/Logger.h"
+#include "../../EditorInterfaceGetters.h"
 #include <imgui.h>
 
 void ProjectSection::Draw(){
@@ -34,6 +35,11 @@ void ProjectSection::Draw(){
             }
 
             ImGui::EndMenu();
+        }
+
+        if(ImGui::MenuItem("Project Settings"))
+        {
+            EditorInterfaceGetters::projectSettingsEnabled = !EditorInterfaceGetters::projectSettingsEnabled;
         }
 
         if((Input::GetButtonDown(SDLK_LCTRL) || Input::GetButtonDown(SDLK_RCTRL)) && Input::GetButtonDown(SDLK_s))

@@ -47,9 +47,7 @@ public:
     void RemoveComponent() const;
     void RemoveComponent(const int componentId) const;
 
-#ifdef EXENGINE_EDITOR
     inline bool IsInternal() { return internal; }
-#endif
 
 };
 

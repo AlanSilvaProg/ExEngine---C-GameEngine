@@ -1,0 +1,41 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "engine-dev",
+      "generator": "Ninja",
+      "binaryDir": "build/engine-dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "EDITOR": "ON"
+      }
+    },
+    {
+      "name": "engine-release",
+      "generator": "Ninja",
+      "binaryDir": "build/engine-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "EDITOR": "ON"
+      }
+    },
+    {
+      "name": "game-dev",
+      "generator": "Ninja",
+      "binaryDir": "build/game-dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "EDITOR": "OFF"
+      }
+    },
+    {
+      "name": "game-release",
+      "generator": "Ninja",
+      "binaryDir": "build/game-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "EDITOR": "OFF"
+      }
+    }
+  ]
+}

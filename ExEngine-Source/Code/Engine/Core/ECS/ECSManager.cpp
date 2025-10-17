@@ -21,7 +21,7 @@ void ECSManager::Update(){
             castedPoolManager->ComponentRemovedFromEntity(pair.first); // ToDo undo command
 
             SetToValidation(entityId);
-            Logger::LogError("Component : " + std::to_string(componentId) + " removed from entity: " + std::to_string(entityId));
+            Logger::Log("Component : " + std::to_string(componentId) + " removed from entity: " + std::to_string(entityId));
         }
         componentsToBeRemoved.clear();
     }

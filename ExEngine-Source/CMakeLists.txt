@@ -25,10 +25,28 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
 
-add_compile_definitions("EXENGINE_EDITOR")
+option(EDITOR "Build with editor features" ON)
+
+if(NOT DEFINED CACHE{EDITOR})
+    message(STATUS "EDITOR option not provided")
+    set(EDITOR ON CACHE BOOL "Build with editor features" FORCE)
+else()
+    message(STATUS "EDITOR explicitly set by user: ${EDITOR}")
+endif()
+
+if(EDITOR)
+    add_compile_definitions("EXENGINE_EDITOR")
+endif()
 
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
+
+if(DEFINED GAME_PATH AND EXISTS "${GAME_PATH}/CMakeLists.txt")
+    message(STATUS "Building with game project at: ${GAME_PATH}")
+    add_subdirectory(${GAME_PATH} ${CMAKE_BINARY_DIR}/GameBuild)
+else()
+    message(STATUS "No external game path provided — building engine/editor only")
+endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
 
