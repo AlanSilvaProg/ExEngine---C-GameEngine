@@ -8,10 +8,13 @@
 #include "Input/InputEvents/InputEventHandler.h"
 #include "Runtime/App.h"
 #include "Runtime/AppEvents/AppEventsHandler.h"
+#include "Configuration/ConfigurationFileManager.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 
 Engine::Engine(){
+    if(!ConfigurationFileManager::Load())
+        ConfigurationFileManager::SaveCurrentState();
     ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>(ecsManager);
 

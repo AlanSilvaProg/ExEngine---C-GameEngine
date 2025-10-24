@@ -19,6 +19,7 @@ bool ProjectManager::CreateNewProject(const std::string& projectName){
     if(std::filesystem::exists(path) && std::filesystem::is_directory(path))
         return false;
 
+    //ToDo Need a base project
     std::string value = std::string("Aqui jás uma cena");
     FileManagement::SaveFile(path, value);
     return true;
@@ -26,8 +27,7 @@ bool ProjectManager::CreateNewProject(const std::string& projectName){
 
 //ToDo Open system dialog to open a folder
 bool ProjectManager::TryOpenProject(const ProjectInformation& projectName){
-    Logger::Log("Vai abrir");
-
+    Logger::Log("Will open the project at folder: " + projectName.path.string() + " with the name: " + projectName.name.c_str());
     return false;
 };
 
