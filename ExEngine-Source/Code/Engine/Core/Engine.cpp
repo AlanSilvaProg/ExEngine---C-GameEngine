@@ -51,7 +51,7 @@ void Engine::StartEngine(){
 
     auto entity = ecsManager->CreateEntity("Tank");
     entity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(55,0,0), glm::vec3(1,1,1));
-    std::string tankImageAddress = ENGINE_ASSETS_PATH + std::string("/tank.png");
+    std::string tankImageAddress = GetAssetsPath() / std::string("tank.png");
     entity.AddComponent<SpriteComponent>("tank-image", tankImageAddress, 0, 0, false, false);
 
     CreateBaseCamera();

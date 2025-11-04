@@ -54,16 +54,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PUBLIC Engine)
 target_link_libraries(${PROJECT_NAME} PUBLIC Editor)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-
-target_compile_definitions(Engine PUBLIC ENGINE_ASSETS_PATH="${CMAKE_BINARY_DIR}/Assets")
-target_compile_definitions(Engine PUBLIC ENGINE_PATH="${CMAKE_BINARY_DIR}")
-target_compile_definitions(Engine PUBLIC ENGINE_CONFIG_PATH="${CMAKE_BINARY_DIR}/Configurations")
-
-target_compile_definitions(Editor PUBLIC ENGINE_ASSETS_PATH="${CMAKE_BINARY_DIR}/Assets")
-target_compile_definitions(Editor PUBLIC ENGINE_PATH="${CMAKE_BINARY_DIR}")
-target_compile_definitions(Editor PUBLIC ENGINE_CONFIG_PATH="${CMAKE_BINARY_DIR}/Configurations")
 
 if(WIN32)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExEngineWin")

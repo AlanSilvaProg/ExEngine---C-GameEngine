@@ -1,6 +1,7 @@
 #include "ProjectManager.h"
 #include "../../../Engine/File/FileManagement.h"
 #include "../../../Engine/Logger/Logger.h"
+#include "../../../Engine/Core/Engine.h"
 #include <string>
 #include <filesystem>
 #include <imgui.h>
@@ -13,7 +14,7 @@ bool ProjectManager::CreateNewProject(const std::string& projectName){
     std::filesystem::path path = "";
     auto projName = projectName.size() == 0 ? std::string("NewProject") : projectName;
 
-    std::string p = ENGINE_PATH + std::string("/Projects/" + projName + "/Assets/Scenes/StandardScene");
+    std::string p = Engine::GetEnginePath() / std::string("Projects/" + projName + "/Assets/Scenes/StandardScene");
     path.append(p);
 
     if(std::filesystem::exists(path) && std::filesystem::is_directory(path))
@@ -33,7 +34,7 @@ bool ProjectManager::TryOpenProject(const ProjectInformation& projectName){
 
 std::vector<ProjectInformation>& ProjectManager::GetProjectList(){
     std::filesystem::path path = "";
-    std::string p = ENGINE_PATH + std::string("/Projects/");
+    std::string p = Engine::GetEnginePath() / std::string("Projects/");
     path.append(p);
 
     if(!std::filesystem::exists(path))

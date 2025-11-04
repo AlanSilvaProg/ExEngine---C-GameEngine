@@ -1,4 +1,5 @@
 #include "FileManagement.h"
+#include "../Core/Engine.h"
 #include "../Logger/Logger.h"
 #include <sstream>
 
@@ -36,7 +37,7 @@ bool FileManagement::LoadFileAsJson(std::filesystem::path path, nlohmann::json& 
     
 bool FileManagement::LoadFile(std::string key, std::string& result){
     std::filesystem::path path = "";
-    std::string p = ENGINE_PATH + key;
+    std::string p = Engine::GetEnginePath() / key;
     path.append(p);
 
     ValidateExtension(path);
@@ -94,7 +95,7 @@ bool FileManagement::SaveFile(std::filesystem::path path, std::string value){
 
 bool FileManagement::SaveFile(std::string key, std::string value){
     std::filesystem::path path = "";
-    std::string p = ENGINE_PATH + key;
+    std::string p = Engine::GetEnginePath() / key;
     path.append(p);
 
     return SaveFileAtPath(path, value);

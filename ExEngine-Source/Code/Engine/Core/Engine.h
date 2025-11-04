@@ -1,8 +1,11 @@
 #pragma once
-#include <memory>
 #include "../GameCore/Runtime/Gameloop.h"
 #include "Runtime/Settings/RuntimeSettings.h"
 #include "ECS/ECSManager.h"
+#include <memory>
+#include <string>
+#include <filesystem>
+#include <SDL.h>
 
 class Engine{
 private:
@@ -20,6 +23,17 @@ public:
     ~Engine();
     void InitializeEngine();
     void RunLoop();
+
+    inline static std::filesystem::path GetEnginePath(){
+        auto basePath = SDL_GetBasePath();
+        if (!basePath) return std::filesystem::current_path();
+
+        std::filesystem::path path = basePath;
+        SDL_free(basePath);
+        return path;
+    };
+    
+    inline static std::filesystem::path GetAssetsPath() { return Engine::GetEnginePath() / std::string("Assets"); };
 
     std::shared_ptr<ECSManager> GetECSManagerPtr();
 };

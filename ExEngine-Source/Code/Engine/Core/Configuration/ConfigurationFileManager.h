@@ -10,7 +10,6 @@
 class ConfigurationFileManager{
 private:
     static std::unique_ptr<ConfigurationFileProperties> configurationFileProperties;
-    static std::filesystem::path fullFilePath;
     
 public:
     static bool Load();
