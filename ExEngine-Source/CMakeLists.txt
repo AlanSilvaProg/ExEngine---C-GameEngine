@@ -41,9 +41,9 @@ endif()
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
 
-if(DEFINED GAME_PATH AND EXISTS "${GAME_PATH}/CMakeLists.txt")
+if(DEFINED GAME_PATH)
     message(STATUS "Building with game project at: ${GAME_PATH}")
-    add_subdirectory(${GAME_PATH} ${CMAKE_BINARY_DIR}/GameBuild)
+    target_compile_definitions(Engine PUBLIC GAME_PATH="${GAME_PATH}")
 else()
     message(STATUS "No external game path provided — building engine/editor only")
 endif()
@@ -52,7 +52,10 @@ add_executable(${PROJECT_NAME} main.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PUBLIC Engine)
+
+if(EDITOR)
 target_link_libraries(${PROJECT_NAME} PUBLIC Editor)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 

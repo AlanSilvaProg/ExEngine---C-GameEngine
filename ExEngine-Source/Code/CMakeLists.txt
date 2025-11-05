@@ -1,4 +1,7 @@
 set (TARGET_NAME Code)
 
 add_subdirectory(Engine)
-add_subdirectory(Editor)
+
+if(EDITOR)
+    add_subdirectory(Editor)
+endif()

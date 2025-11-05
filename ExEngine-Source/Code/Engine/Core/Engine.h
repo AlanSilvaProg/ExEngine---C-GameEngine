@@ -11,6 +11,7 @@ class Engine{
 private:
     std::shared_ptr<ECSManager> ecsManager;
     std::unique_ptr<Gameloop> gameLoop;
+    std::string& gamePath;
 
     bool running;
 
@@ -19,10 +20,14 @@ private:
 
     void CreateBaseCamera();
 public:
-    Engine();
+    Engine(std::string& gameProjectPath);
     ~Engine();
     void InitializeEngine();
     void RunLoop();
+
+    std::shared_ptr<ECSManager> GetECSManagerPtr();
+
+    inline std::string& GetProjectPath() const { return gamePath; };
 
     inline static std::filesystem::path GetEnginePath(){
         auto basePath = SDL_GetBasePath();
@@ -33,7 +38,5 @@ public:
         return path;
     };
     
-    inline static std::filesystem::path GetAssetsPath() { return Engine::GetEnginePath() / std::string("Assets"); };
-
-    std::shared_ptr<ECSManager> GetECSManagerPtr();
+    inline static std::filesystem::path GetEngineAssetsPath() { return Engine::GetEnginePath() / std::string("Assets"); };
 };

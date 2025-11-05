@@ -9,14 +9,18 @@
 #include "Runtime/App.h"
 #include "Runtime/AppEvents/AppEventsHandler.h"
 #include "Configuration/ConfigurationFileManager.h"
+#include "../Logger/Logger.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-Engine::Engine(){
+Engine::Engine(std::string& gameProjectPath) : gamePath(gameProjectPath){
     if(!ConfigurationFileManager::Load())
         ConfigurationFileManager::SaveCurrentState();
+
     ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>(ecsManager);
+
+    Logger::Log("External project defined: " + gamePath);
 
     *AppEventsHandler::onApplicationQuitHandler += [this](){
         StopEngine();
@@ -51,7 +55,7 @@ void Engine::StartEngine(){
 
     auto entity = ecsManager->CreateEntity("Tank");
     entity.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(55,0,0), glm::vec3(1,1,1));
-    std::string tankImageAddress = GetAssetsPath() / std::string("tank.png");
+    std::string tankImageAddress = GetEngineAssetsPath() / std::string("tank.png");
     entity.AddComponent<SpriteComponent>("tank-image", tankImageAddress, 0, 0, false, false);
 
     CreateBaseCamera();
