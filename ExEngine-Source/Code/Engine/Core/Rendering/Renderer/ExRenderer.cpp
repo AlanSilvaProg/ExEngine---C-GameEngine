@@ -59,4 +59,6 @@ void ExRenderer::Quit(){
     if(!initialized) return;
 
     SDL_Quit();
+    SDL_DestroyRenderer(ExRendererGetters::renderer);
+    SDL_DestroyWindow(ExRendererGetters::window);
 };

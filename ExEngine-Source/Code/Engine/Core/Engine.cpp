@@ -13,14 +13,12 @@
 #include <SDL.h>
 #include <glm/glm.hpp>
 
-Engine::Engine(std::string& gameProjectPath) : gamePath(gameProjectPath){
+Engine::Engine(){
     if(!ConfigurationFileManager::Load())
         ConfigurationFileManager::SaveCurrentState();
 
     ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>(ecsManager);
-
-    Logger::Log("External project defined: " + gamePath);
 
     *AppEventsHandler::onApplicationQuitHandler += [this](){
         StopEngine();

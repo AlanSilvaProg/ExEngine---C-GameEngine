@@ -1,12 +1,13 @@
 project(ThirdParty)
 #using GLOB to add core and essential files from thirdparties ( normally it's called include, but in this case, we don't have the include folder )
 file(GLOB ENGINE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/imgui/*.cpp 
-${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/cpp/imgui_stdlib.*) #needed to use input text using std::string
+${CMAKE_CURRENT_SOURCE_DIR}/imgui/misc/cpp/imgui_stdlib.*
+${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_sdl2.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_sdlrenderer2.cpp
+${CMAKE_CURRENT_SOURCE_DIR}/tinyfiledialogs/tinyfiledialogs.c) #needed to use input text using std::string
 
 # adding as library all te files mapped before and specific resources like renderer as sdl in this case
-add_library(ThirdParty STATIC ${ENGINE_SOURCE}
-${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_sdl2.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_sdlrenderer2.cpp)
+add_library(ThirdParty STATIC ${ENGINE_SOURCE})
 
 #including de imgui folder to work correctly
 target_include_directories(ThirdParty PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} imgui)

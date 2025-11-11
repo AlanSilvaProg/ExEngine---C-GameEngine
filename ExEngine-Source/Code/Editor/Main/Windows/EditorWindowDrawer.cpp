@@ -5,16 +5,17 @@
 #include "EditorWindows/EntityBrowser/EntityBrowserWindow.h"
 #include "EditorWindows/Inspector/ExInspectorWindow.h"
 #include "EditorWindows/ProjectSettings/ExProjectSettingsWindow.h"
+#include "EditorWindows/AssetBrowser/AssetBrowserWindow.h"
 
 std::vector<std::shared_ptr<EditorWindow>> ExEditor::EditorWindowDrawer::windows;
 
 ExEditor::EditorWindowDrawer::EditorWindowDrawer(){
-    //ToDo initialize windows accordly to a file scheme ( previous layout or something like saved in memory )
     AddWindow(std::make_shared<SceneWindow>());
     AddWindow(std::make_shared<GameWindow>());
     AddWindow(std::make_shared<EntityBrowserWindow>());
     AddWindow(std::make_shared<ExInspectorWindow>());
     AddWindow(std::make_shared<ExProjectSettingsWindow>());
+    AddWindow(std::make_shared<AssetBrowserWindow>());
 
     *EditorUpdateEventHandler::earlyHandler += [this](){ this->Draw(0); };
     *EditorUpdateEventHandler::lateHandler += [this](){ this->Draw(1); };

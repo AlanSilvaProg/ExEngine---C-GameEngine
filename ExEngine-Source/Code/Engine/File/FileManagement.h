@@ -9,11 +9,14 @@ private:
     static bool LoadFileAsJson(std::string key, nlohmann::json& result);
     static bool LoadFileAsJson(std::filesystem::path path, nlohmann::json& result);
     static bool SaveFileAtPath(std::filesystem::path path, std::string& value);
+    static bool SaveFileAtPath(std::filesystem::path path, const char* value);
 
     static void ValidateExtension(std::filesystem::path& path);
 public:
     static bool SaveFile(std::filesystem::path path, std::string value);
     static bool SaveFile(std::string key, std::string value);
+    static bool SaveFile(std::filesystem::path path, const char* value);
+    static bool SaveFile(std::string key, const char* value);
     static bool LoadFile(std::string key, std::string& result);
     static bool LoadFile(std::filesystem::path key, std::string& result);
 

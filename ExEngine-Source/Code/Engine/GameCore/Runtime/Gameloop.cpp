@@ -3,6 +3,7 @@
 #include "../../Core/Runtime/Time/Time.h"
 #include "../../Core/Rendering/Renderer/ExRenderer.h"
 #include "../../Core/Input/Input.h"
+#include "../../Core/Runtime/App.h"
 #include <SDL.h>
 
 void Gameloop::ExecuteGameLoop(){

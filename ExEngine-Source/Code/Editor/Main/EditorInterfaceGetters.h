@@ -1,6 +1,7 @@
 #pragma once
-#include <memory>
 #include "../Engine/Core/Engine.h"
+#include <memory>
+#include <filesystem>
 
 class EditorInterfaceGetters
 {
@@ -9,4 +10,6 @@ public:
     static bool sceneViewEnabled;
     static bool gameViewEnabled;
     static bool projectSettingsEnabled;
+    static bool assetBrowserIsOpened;
+    static std::filesystem::path currentProjectPath;
 };

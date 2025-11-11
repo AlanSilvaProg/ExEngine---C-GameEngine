@@ -17,6 +17,6 @@ private:
 
     void CreateEditorBase();
 public:
-    EditorInterface(std::shared_ptr<Engine> engine);
+    EditorInterface(std::shared_ptr<Engine> engine, std::string& gamePath);
     ~EditorInterface();
 };

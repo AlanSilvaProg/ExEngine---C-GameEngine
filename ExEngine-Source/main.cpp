@@ -6,6 +6,7 @@
 
 #ifdef EXENGINE_EDITOR
 #include "Code/Editor/Main/EditorInterface.h"
+#include "Code/Editor/ProjectSelector/ProjectSelector.h"
 #endif
 
 int main(int argc, char** argv){
@@ -16,24 +17,28 @@ int main(int argc, char** argv){
     gamePath = GAME_PATH;
 #endif
 
+#ifdef EXENGINE_EDITOR
     if(gamePath.empty())
     {
-        //gamePath = engineProjectSelector.Initialize();
+        auto engineProjectSelector = new ProjectSelector();
+        gamePath = engineProjectSelector->Run();
+
+        delete(engineProjectSelector);
+    }    
+#endif
+
+    if(gamePath.empty())
+    {
+        delete(app);
+        return 0;
     }
 
-    // uncomment when project selector be ready!
-    // if(gamePath.empty())
-    // {
-    //     delete(app);
-    //     return 0;
-    // }
-
-    std::shared_ptr<Engine> engine = std::make_shared<Engine>(gamePath);
+    std::shared_ptr<Engine> engine = std::make_shared<Engine>();
 
     engine->InitializeEngine();
 
 #ifdef EXENGINE_EDITOR
-    EditorInterface *editor = new EditorInterface(engine);
+    EditorInterface *editor = new EditorInterface(engine , gamePath);
 #endif
 
     engine->RunLoop();

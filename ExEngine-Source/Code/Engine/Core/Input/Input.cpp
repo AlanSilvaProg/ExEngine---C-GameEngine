@@ -30,17 +30,17 @@ void Input::Process(){
 
         switch(sdlEvent.type)
         {
-        case SDL_QUIT:
-            keyMap[SDLK_ESCAPE] = true;
-            break;
-        case SDL_KEYUP:
-            lastStateKeyMap[sdlEvent.key.keysym.sym] = keyMap[sdlEvent.key.keysym.sym];
-            keyMap[sdlEvent.key.keysym.sym] = false;
-            break;
-        case SDL_KEYDOWN:
-            lastStateKeyMap[sdlEvent.key.keysym.sym] = keyMap[sdlEvent.key.keysym.sym];
-            keyMap[sdlEvent.key.keysym.sym] = true;
-            break;
+            case SDL_QUIT:
+                keyMap[SDL_KeyCode::SDLK_ESCAPE] = true;
+                break;
+            case SDL_KEYUP:
+                lastStateKeyMap[sdlEvent.key.keysym.sym] = keyMap[sdlEvent.key.keysym.sym];
+                keyMap[sdlEvent.key.keysym.sym] = false;
+                break;
+            case SDL_KEYDOWN:
+                lastStateKeyMap[sdlEvent.key.keysym.sym] = keyMap[sdlEvent.key.keysym.sym];
+                keyMap[sdlEvent.key.keysym.sym] = true;
+                break;
         }
     }
 };

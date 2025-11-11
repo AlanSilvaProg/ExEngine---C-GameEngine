@@ -1,4 +1,5 @@
 #include "EditorInterface.h"
+#include "EditorPresetInfo.h"
 #include "../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../Engine/GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
 #include "../../Engine/Core/Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
@@ -7,14 +8,18 @@
 #include "../EditorEvents/EditorUpdateEventHandler.h"
 #include "../../Engine/Core/Runtime/App.h" 
 #include "../../Engine/Logger/Logger.h"
+#include "../../Engine/File/FileManagement.h"
 #include "EditorInterfaceGetters.h"
 #include <imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
 
-EditorInterface::EditorInterface(std::shared_ptr<Engine> engine){
+EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& gamePath){
     EditorInterfaceGetters::engine = engine;
+    EditorInterfaceGetters::currentProjectPath = gamePath;
+
+    Logger::Log("Editor initialized with the game located at: " + gamePath);
     
     InitializeEditor();
     CreateEditorBase();
@@ -28,10 +33,23 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine){
 
 void EditorInterface::InitializeEditor(){
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    ImGuiContext* gameContext = ImGui::CreateContext();
+    ImGui::SetCurrentContext(gameContext);
+    ImGui::GetIO().IniFilename = "imgui_game.ini";
     ImGui::GetIO().ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad | ImGuiConfigFlags_DockingEnable;
     ImGui_ImplSDL2_InitForSDLRenderer(ExRendererGetters::window, ExRendererGetters::renderer);
     ImGui_ImplSDLRenderer2_Init(ExRendererGetters::renderer);
+
+    //Editor loading presets
+    EditorPresetInfo result;
+    if(FileManagement::LoadFromJson(std::string("engine_editor_layout"), result))
+    {
+        EditorInterfaceGetters::assetBrowserIsOpened = result.assetBrowserIsOpened;
+        EditorInterfaceGetters::gameViewEnabled = result.gameViewEnabled;
+        EditorInterfaceGetters::projectSettingsEnabled = result.projectSettingsEnabled;
+        EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
+        ImGui::LoadIniSettingsFromMemory(result.editorLayout.c_str());
+    }
     
     EditorUpdateEventHandler::Create();
 };
@@ -50,7 +68,6 @@ void EditorInterface::EarlyUpdate() const{
 };
 
 void EditorInterface::LateUpdate() const{
-    //ToDo: Implement a X button to close the editor
     if(Input::GetButtonDown(SDLK_ESCAPE))
     {
         App::Quit();
@@ -69,6 +86,17 @@ void EditorInterface::PostRender() const{ //need to call on late update
 };
 
 EditorInterface::~EditorInterface(){
+    //Saving Editor presets
+    EditorPresetInfo result;
+    result.assetBrowserIsOpened = EditorInterfaceGetters::assetBrowserIsOpened;
+    result.gameViewEnabled = EditorInterfaceGetters::gameViewEnabled;
+    result.projectSettingsEnabled = EditorInterfaceGetters::projectSettingsEnabled;
+    result.sceneViewEnabled = EditorInterfaceGetters::sceneViewEnabled;
+    //layout persistence
+    size_t size;
+    result.editorLayout = ImGui::SaveIniSettingsToMemory(&size);
+
+    FileManagement::SaveFile(std::string("engine_editor_layout"), result.ToJson().dump());
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();

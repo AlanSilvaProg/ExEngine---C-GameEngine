@@ -90,10 +90,18 @@ bool FileManagement::LoadFile(std::filesystem::path path, std::string& result){
 };
 
 bool FileManagement::SaveFile(std::filesystem::path path, std::string value){
-    return SaveFileAtPath(path, value);
+    return SaveFileAtPath(path, value.c_str());
 };
 
 bool FileManagement::SaveFile(std::string key, std::string value){
+    SaveFile(key, value.c_str());
+};
+
+bool FileManagement::SaveFile(std::filesystem::path path, const char* value){
+    return SaveFileAtPath(path, value);
+};
+
+bool FileManagement::SaveFile(std::string key, const char* value){
     std::filesystem::path path = "";
     std::string p = Engine::GetEnginePath() / key;
     path.append(p);
@@ -102,6 +110,11 @@ bool FileManagement::SaveFile(std::string key, std::string value){
 };
 
 bool FileManagement::SaveFileAtPath(std::filesystem::path path, std::string& value){
+    SaveFileAtPath(path, value.c_str());
+};
+
+bool FileManagement::SaveFileAtPath(std::filesystem::path path, const char* value)
+{
     ValidateExtension(path);
 
     if(!std::filesystem::exists(path.parent_path()))
@@ -130,10 +143,10 @@ bool FileManagement::SaveFileAtPath(std::filesystem::path path, std::string& val
     }
 
     return false;
-};
+}
 
- void FileManagement::ValidateExtension(std::filesystem::path& path){
+void FileManagement::ValidateExtension(std::filesystem::path& path){
     if(!path.has_extension()){
         path.replace_extension(".exfile");
     }
- };
+};
