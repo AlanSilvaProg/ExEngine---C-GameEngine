@@ -6,8 +6,7 @@
 #include <filesystem>
 #include <imgui.h>
 
-ProjectInformation* ProjectManager::currentProject = nullptr;
-std::vector<ProjectInformation> ProjectManager::projectInformation;
+ProjectInfo ProjectManager::currentProject;
 
 //ToDo create new project setting a name for it
 bool ProjectManager::CreateNewProject(const std::string& projectName){
@@ -27,55 +26,22 @@ bool ProjectManager::CreateNewProject(const std::string& projectName){
 };
 
 //ToDo Open system dialog to open a folder
-bool ProjectManager::TryOpenProject(const ProjectInformation& projectName){
-    Logger::Log("Will open the project at folder: " + projectName.path.string() + " with the name: " + projectName.name.c_str());
+bool ProjectManager::TryOpenProject(const ProjectInfo& projectName){
+    Logger::Log("Will open the project at folder: " + projectName.projectPath + " with the name: " + projectName.projectName.c_str());
     return false;
 };
 
-std::vector<ProjectInformation>& ProjectManager::GetProjectList(){
-    std::filesystem::path path = "";
-    std::string p = Engine::GetEnginePath() / std::string("Projects/");
-    path.append(p);
+bool ProjectManager::CreateBaseProjectAt(const std::filesystem::path path, std::string name, ProjectInfo& projectInfo){
+    std::filesystem::path finalPath = path / name / "ExProject";
+    finalPath.replace_extension(".exproj");
 
-    if(!std::filesystem::exists(path))
-    {
-        projectInformation.clear();
-    }
-    else
-    {
-        for (const auto & entry : std::filesystem::directory_iterator(path))
-        {
-            std::filesystem::path entryPath = entry.path();
-            auto directoryExist = std::filesystem::is_directory(entryPath);
+    //ToDo create a base shape with setup informations and validate whenever it get opened
 
-            if(directoryExist)
-            {
-                auto last_folder = entryPath.filename().empty() ? entryPath.parent_path().filename().string() : entryPath.filename().string();
-                
-                auto permissionToStore = true;
-                for(const auto& information : projectInformation)
-                {
-                    if(information.name == last_folder)
-                    {
-                        permissionToStore = false;
-                        
-                        if(!directoryExist) 
-                        {
-                            if(currentProject->path.compare(information.path)) currentProject = nullptr;
+    projectInfo = ProjectInfo(name, path);
+    auto result = FileManagement::SaveFile(finalPath, projectInfo.ToJson().dump());
 
-                            projectInformation.erase(std::remove_if(projectInformation.begin(), projectInformation.end(), [information](ProjectInformation& pInformation){
-                                return information.path.compare(pInformation.path);
-                            }));
-                        }
-                    }
-                }
-                if(!permissionToStore) continue;
+    if(result) 
+        Logger::Log("New project created at: " + (path / name).string());
 
-                ProjectInformation projInformation(last_folder, entryPath);
-                projectInformation.push_back(projInformation);
-            }
-        }
-    }
-
-    return projectInformation;
+    return result;
 };

@@ -1,0 +1,101 @@
+[Window][Debug##Default]
+Pos=0,0
+Size=800,800
+Collapsed=0
+
+[Window][Dear ImGui Demo]
+Pos=169,13
+Size=550,680
+Collapsed=0
+
+[Window][ProjectSelectorScreen]
+Pos=0,0
+Size=800,400
+Collapsed=0
+
+[Window][Dear ImGui Style Editor]
+Pos=60,60
+Size=353,394
+Collapsed=0
+
+[Window][Example: Property editor]
+Pos=60,60
+Size=560,450
+Collapsed=0
+
+[Window][Example: Property editor/##tree_37EC733C]
+IsChild=1
+Size=300,423
+
+[Window][Example: Simple layout]
+Pos=60,60
+Size=500,440
+Collapsed=0
+
+[Window][Example: Simple layout/left pane_244A9CDE]
+IsChild=1
+Size=184,386
+
+[Window][Example: Auto-resizing window]
+Pos=60,60
+Size=451,182
+Collapsed=0
+
+[Window][Example: Constrained Resize]
+Pos=22,30
+Size=689,387
+Collapsed=0
+
+[Window][Same title as another window##2]
+Pos=100,200
+Size=451,74
+Collapsed=0
+
+[Window][###AnimatedTitle]
+Pos=100,300
+Size=375,61
+Collapsed=0
+
+[Window][Same title as another window##1]
+Pos=80,99
+Size=451,61
+Collapsed=0
+
+[Window][Projects]
+Pos=0,0
+Size=600,400
+Collapsed=0
+
+[Window][Empty Element]
+Pos=60,60
+Size=233,32
+Collapsed=0
+
+[Window][Project_ab]
+Pos=0,9152
+Size=600,120
+Collapsed=0
+
+[Window][Project_bc]
+Pos=0,9272
+Size=600,120
+Collapsed=0
+
+[Window][ProjectSelectorScreen/Projects_F4F37F1E]
+IsChild=1
+Size=600,400
+
+[Window][Project Tool Kit]
+Pos=600,0
+Size=200,400
+Collapsed=0
+
+[Window][Project_dasdsad/Users/a.silva/Desktop/Projects/ExEngine---C-GameEngine/ExEngine-Source/build/engine-dev/Projects]
+Size=600,120
+Collapsed=0
+
+[Table][0x2048C668,2]
+RefScale=13
+Column 0  Width=76
+Column 1  Weight=2.0000
+

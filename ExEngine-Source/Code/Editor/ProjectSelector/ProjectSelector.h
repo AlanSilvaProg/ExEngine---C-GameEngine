@@ -17,10 +17,6 @@ private:
     void CreateProjectSelectorWindow();
     void CreateProjectSelectorEditor();
 
-    //Project helpers
-    inline bool IsValidProject(const std::filesystem::path path) const { return std::filesystem::exists(path / "ExProject.exproj"); };
-    std::string GetProjectName(const std::filesystem::path path) const { return path.stem(); };
-    bool CreateBaseProjectAt(const std::filesystem::path path, std::string name);
     void SaveProjectInfo();
 
     //Lifecycle

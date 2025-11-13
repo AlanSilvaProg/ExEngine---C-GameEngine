@@ -2,9 +2,7 @@
 #include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../../../Engine/Core/Runtime/Time/Time.h"
 #include "../../../../../Engine/Core/Input/Input.h"
-#include "../../../../../Engine/Logger/Logger.h"
 #include "../../../EditorInterfaceGetters.h"
-
 #include <imgui.h>
 #include <SDL.h>
 
@@ -54,6 +52,23 @@ void AssetBrowserWindow::Draw(int phase){
         UpdatePositionTarget(targetPosition, currentPosition, h);
 
     ImGui::SetWindowPos({0, currentPosition});
+
+    auto availableSize = ImGui::GetContentRegionAvail();
+
+    float projectWindowSize = 0;
+    ImGui::SetNextWindowSize({static_cast<float>(availableSize.x * 0.3), static_cast<float>(availableSize.y)}, ImGuiCond_Always);
+    ImGui::BeginChild("ProjectFolderList", {0, 0}, ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
+    ImGui::Text("a");
+    projectWindowSize = ImGui::GetWindowSize().x;
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    availableSize = ImGui::GetContentRegionAvail();
+    
+    ImGui::SetNextWindowSize({0, static_cast<float>(availableSize.y)}, ImGuiCond_Always);
+    ImGui::BeginChild("ProjectExplorer", {0, 0}, ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
+    ImGui::Text("b");
+    ImGui::EndChild();
 
     ImGui::End();
 };

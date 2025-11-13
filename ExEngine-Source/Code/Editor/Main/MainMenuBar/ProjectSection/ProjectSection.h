@@ -1,13 +1,12 @@
 #pragma once
 #include "../Section.h"
 #include "../../../../Engine/File/FileManagement.h"
-#include "../../ProjectManager/ProjectInformation.h"
-#include "../../ProjectManager/ProjectManager.h"
+#include "../../ProjectManager/ProjectInfo.h"
 
 class ProjectSection : public Section {
 private:
     bool creatingProject;
-    void OpenProject(const ProjectInformation& projectInformation) const;
+    void OpenProject(const ProjectInfo& projectInformation) const;
     void Save();
     void Load();
 public:

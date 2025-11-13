@@ -2,8 +2,12 @@
 #include "../../../../Engine/Core/Input/Input.h"
 #include "../../../../Engine/Core/Runtime/App.h"
 #include "../../../../Engine/Logger/Logger.h"
+#include "../../../../Engine/Core/Engine.h"
 #include "../../EditorInterfaceGetters.h"
+#include "../../ProjectManager/ProjectManager.h"
+#include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
+#include <filesystem>
 
 void ProjectSection::Draw(){
     if (ImGui::BeginMenu("Project"))
@@ -19,22 +23,22 @@ void ProjectSection::Draw(){
             creatingProject = true;
         }
 
-        if(ImGui::BeginMenu("Open..."))
+        if(ImGui::MenuItem("Open..."))
         {
-            auto projectId = 0;
-            auto& projectList = ProjectManager::GetProjectList();
-            for(auto& project : projectList)
-            {
-                ImGui::PushID(projectId);
-                if(ImGui::SmallButton(project.name.c_str()))
-                {
-                    ProjectManager::TryOpenProject(project);
-                }
-                ImGui::PopID();
-                projectId++;
-            }
+            std::filesystem::path enginePath = Engine::GetEnginePath();
+            const char* folder = tinyfd_selectFolderDialog(
+                "Select project folder",
+                enginePath.c_str()
+            );
 
-            ImGui::EndMenu();
+            if(folder != nullptr)
+            {
+                auto targetPath = std::filesystem::path(folder);
+                if(ProjectManager::IsValidProject(targetPath))
+                {
+                    ProjectManager::TryOpenProject({ProjectManager::GetProjectName(targetPath), targetPath.string()});
+                }
+            }
         }
 
         if(ImGui::MenuItem("Project Settings"))
@@ -74,14 +78,15 @@ void ProjectSection::Draw(){
             };
 
             if(!ImGui::IsWindowFocused()) creatingProject = false;
-
-            ImGui::End();
         }
+        
+        ImGui::End();
+        
         if(!projectCreatingVisibility) creatingProject = false;
     }
 };
 
-void ProjectSection::OpenProject(const ProjectInformation& projectInformation) const{
+void ProjectSection::OpenProject(const ProjectInfo& projectInformation) const{
 
 };
 

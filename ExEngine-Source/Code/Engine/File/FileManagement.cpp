@@ -94,7 +94,7 @@ bool FileManagement::SaveFile(std::filesystem::path path, std::string value){
 };
 
 bool FileManagement::SaveFile(std::string key, std::string value){
-    SaveFile(key, value.c_str());
+    return SaveFile(key, value.c_str());
 };
 
 bool FileManagement::SaveFile(std::filesystem::path path, const char* value){
@@ -110,7 +110,7 @@ bool FileManagement::SaveFile(std::string key, const char* value){
 };
 
 bool FileManagement::SaveFileAtPath(std::filesystem::path path, std::string& value){
-    SaveFileAtPath(path, value.c_str());
+    return SaveFileAtPath(path, value.c_str());
 };
 
 bool FileManagement::SaveFileAtPath(std::filesystem::path path, const char* value)

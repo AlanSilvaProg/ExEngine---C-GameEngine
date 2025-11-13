@@ -1,11 +1,12 @@
 #include "ProjectSelector.h"
-#include "../Main/EditorInterfaceGetters.h"
 #include "../../Engine/Logger/Logger.h"
 #include "../../Engine/Core/Utils/Color.h"
 #include "../../Engine/File/FileManagement.h"
 #include "../../Engine/Core/Engine.h"
 #include "../../Engine/Logger/Logger.h"
-#include "ProjectInfo.h"
+#include "../Main/EditorInterfaceGetters.h"
+#include "../Main/ProjectManager/ProjectInfo.h"
+#include "../Main/ProjectManager/ProjectManager.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <string>
 #include <filesystem>
@@ -165,9 +166,9 @@ void ProjectSelector::RenderEditor(){
 
             if(folder != nullptr)
             {
-                if(IsValidProject(folder))
+                if(ProjectManager::IsValidProject(folder))
                 {
-                    projectSelectorInfo.projectInfo.push_back(ProjectInfo(GetProjectName(folder), folder));
+                    projectSelectorInfo.projectInfo.push_back(ProjectInfo(ProjectManager::GetProjectName(folder), folder));
                     SaveProjectInfo();
                 }
                 else
@@ -235,10 +236,11 @@ void ProjectSelector::RenderEditor(){
             }
             else
             {
-                if(CreateBaseProjectAt(basePathToCreate, projectName))
+                if(ProjectInfo projectInfo; ProjectManager::CreateBaseProjectAt(basePathToCreate, projectName, projectInfo))
                 {
+                    projectSelectorInfo.projectInfo.push_back(projectInfo);
+                    SaveProjectInfo();
                     creating = false;
-                    Logger::Log("New project created at: " + (basePathToCreate / projectName).string());
                 }
                 else
                 {
@@ -256,24 +258,6 @@ void ProjectSelector::RenderEditor(){
 
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
-};
-
-bool ProjectSelector::CreateBaseProjectAt(const std::filesystem::path path, std::string name){
-    std::filesystem::path finalPath = path / name / "ExProject";
-    finalPath.replace_extension(".exproj");
-
-    //ToDo create a base shape with setup informations and validate whenever it get opened
-
-    auto projectInfo = ProjectInfo(name, path);
-    auto result = FileManagement::SaveFile(finalPath, projectInfo.ToJson().dump());
-
-    if(result)
-    {
-        projectSelectorInfo.projectInfo.push_back(projectInfo);
-        SaveProjectInfo();
-    }
-
-    return result;
 };
 
 void ProjectSelector::SaveProjectInfo(){
