@@ -14,6 +14,7 @@
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
+#include <glm/glm.hpp>
 
 EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& gamePath){
     EditorInterfaceGetters::engine = engine;
@@ -50,6 +51,8 @@ void EditorInterface::InitializeEditor(){
         EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
         ImGui::LoadIniSettingsFromMemory(result.editorLayout.c_str());
     }
+
+    EditorInterfaceGetters::defaultIconsInformation["DefaultIcons"] = std::make_unique<SpriteInformation>("Engine-Image-Icon", ICONS_PATH / "AssetIcons.png", glm::vec2(4,2));
     
     EditorUpdateEventHandler::Create();
 };

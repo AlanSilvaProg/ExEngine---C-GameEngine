@@ -1,8 +1,13 @@
 #pragma once 
-#include <memory>
 #include "MainMenuBar/MainMenuBar.h"
 #include "Windows/EditorWindowDrawer.h"
 #include "../Engine/Core/Engine.h"
+#include <memory>
+#include <filesystem>
+
+#ifndef ICONS_PATH
+#define ICONS_PATH EditorInterfaceGetters::engine->GetEngineAssetsPath() / "Editor"
+#endif
 
 class EditorInterface{
 private:

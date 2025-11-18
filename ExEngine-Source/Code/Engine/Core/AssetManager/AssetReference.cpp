@@ -1,9 +1,9 @@
 #include "AssetReference.h"
+#include "../Rendering/Renderer/ExRendererGetters.h"
+#include "../../Logger/Logger.h"
 #include <SDL2/SDL_image.h>
 #include <string>
 #include <filesystem> 
-#include "../Rendering/Renderer/ExRendererGetters.h"
-#include "../../Logger/Logger.h"
 
 AssetReference::~AssetReference(){
     FreeAllResources();
@@ -38,6 +38,8 @@ void AssetReference::ReleaseReference(){
 };
 
 void AssetReference::FreeAllResources(){
+    if(texture == nullptr) return;
+    
     SDL_DestroyTexture(texture);
     texture = nullptr;
 }

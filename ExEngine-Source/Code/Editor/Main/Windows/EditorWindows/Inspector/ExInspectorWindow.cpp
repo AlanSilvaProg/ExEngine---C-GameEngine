@@ -1,6 +1,4 @@
 #include "ExInspectorWindow.h"
-#include <imgui.h>
-#include <glm/glm.hpp>
 #include "../ElementSelectionController.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Logger/Logger.h"
@@ -9,6 +7,13 @@
 #include "../../../../../Engine/Core/ECS/Component/EComponentS.h"
 #include "../../../../../Engine/Core/Components/TransformComponent.h"
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
+#include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
+#include <imgui.h>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <glm/glm.hpp>
+#include <SDL.h>
 
 ExInspectorWindow::ExInspectorWindow(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
@@ -16,6 +21,8 @@ ExInspectorWindow::ExInspectorWindow(){
 
 void ExInspectorWindow::Draw(int phase){
     if(phase != 1) return;
+
+    spriteInformations.clear();
 
     if(ImGui::Begin("ExInspector", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
     {
@@ -29,8 +36,7 @@ void ExInspectorWindow::Draw(int phase){
             }
             else if(selectedElement->GetType() == EditorSelectableType::Asset)
             {
-                //ToDo
-                //DrawAsset();
+                DrawAsset(dynamic_cast<AssetBrowserSelection*>(selectedElement));
             }
         }
     }
@@ -38,7 +44,7 @@ void ExInspectorWindow::Draw(int phase){
     ImGui::End();
 };
 
-void ExInspectorWindow::DrawEntity(EntityBrowserSelection* entityBrowserSelection){
+void ExInspectorWindow::DrawEntity(const EntityBrowserSelection* entityBrowserSelection){
     if(entityBrowserSelection == nullptr) return;
 
     const auto entityId = entityBrowserSelection->GetSelectedEntityId();
@@ -196,6 +202,78 @@ void ExInspectorWindow::DrawAddComponentButton(const int entityId){
     }
 };
 
-//void ExInspectorWindow::DrawAsset(){
-//
-//};
+void ExInspectorWindow::DrawAsset(const AssetBrowserSelection* assetBrowserSelection){
+    auto assetPath = assetBrowserSelection->GetPath();
+
+    if(assetPath.has_extension())
+    {
+        auto assetExtension = assetPath.extension().string();
+        if(assetExtension == ".png" || assetExtension == ".jpg" || assetExtension == ".jpeg")
+        {
+            spriteInformations.push_back(std::make_shared<SpriteInformation>(assetPath.filename(), assetPath.string(), glm::vec2(1,1)));
+            auto spriteInformation = spriteInformations.back();
+
+            auto textContent = "Image - " + assetPath.filename().string();
+            auto textSize = ImGui::CalcTextSize(textContent.c_str());
+            auto availableSize = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((availableSize / 2) - (textSize.x / 2));
+            ImGui::Text("%s", textContent.c_str());
+
+            auto size = spriteInformation->GetSpriteSize();
+            auto difference = size.x - availableSize;
+
+            if(difference > 0)
+            {
+                auto viewportGCD = ExMath::GetGCD(size.x, size.y);
+                
+                auto sizeW = ImGui::GetContentRegionAvail().x;
+                auto sizeH = ImGui::GetContentRegionAvail().y;
+                auto aspectW = size.x / viewportGCD;
+                auto aspectH = size.y / viewportGCD;
+
+                auto limitFactor = sizeW / sizeH;
+
+                if(sizeW < size.x || sizeH < size.y)
+                {
+                    if(limitFactor >= 1){
+                        size.x = sizeH;
+                        size.x = (size.y / aspectH) * aspectW;
+                    }
+                    else{
+                        size.x = sizeW;
+                        size.y = (size.x / aspectW) * aspectH;
+                    }
+                }
+            }
+
+            ImGui::Image((ImTextureID)(spriteInformation->GetTexture()), {size.x, size.y}, {0,0}, {1,1}, {1,1,1,1}, {1,1,1,1});
+            return;
+        }
+
+        if(assetExtension == ".exfile" || assetExtension == ".lua")
+        {
+            auto textContent = "File - " + assetPath.filename().string();
+            auto textSize = ImGui::CalcTextSize(textContent.c_str());
+            auto availableSize = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((availableSize / 2) - (textSize.x / 2));
+            ImGui::Text("%s", textContent.c_str());
+
+            ImGui::BeginChild((std::string("##") + assetPath.string()).c_str(), ImGui::GetContentRegionAvail(), ImGuiChildFlags_Borders);
+            std::ifstream content(assetPath);
+            std::stringstream contentBuffer;
+            contentBuffer << content.rdbuf();
+
+            ImGui::TextWrapped("%s", contentBuffer.str().c_str());
+
+            ImGui::EndChild();
+
+            return;
+        }
+
+        ImGui::TextWrapped("%s", (assetExtension + " is not supported").c_str());
+
+        return;
+    }
+
+    ImGui::Text("%s", assetPath.stem().c_str());
+};

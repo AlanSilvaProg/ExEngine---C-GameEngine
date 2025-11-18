@@ -168,7 +168,7 @@ void ProjectSelector::RenderEditor(){
             {
                 if(ProjectManager::IsValidProject(folder))
                 {
-                    projectSelectorInfo.projectInfo.push_back(ProjectInfo(ProjectManager::GetProjectName(folder), folder));
+                    projectSelectorInfo.projectInfo.push_back(ProjectInfo(ProjectManager::GetProjectName(folder), (std::filesystem::path(folder).parent_path().parent_path())));
                     SaveProjectInfo();
                 }
                 else

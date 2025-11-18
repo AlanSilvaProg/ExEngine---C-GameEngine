@@ -5,6 +5,7 @@
 class AssetReference{
 public:
     SDL_Texture* texture;
+    
     std::string path;
     int refCount;
 

@@ -19,6 +19,7 @@ AssetManager::~AssetManager(){
 SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path)
 {
     auto textureFinded = textureMap.find(id);
+    
     if(textureFinded != textureMap.end()){
         return textureFinded->second->GetNewReference();
     }
