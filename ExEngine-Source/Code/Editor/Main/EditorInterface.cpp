@@ -9,6 +9,7 @@
 #include "../../Engine/Core/Runtime/App.h" 
 #include "../../Engine/Logger/Logger.h"
 #include "../../Engine/File/FileManagement.h"
+#include "../../Engine/Core/Runtime/Time/Time.h"
 #include "EditorInterfaceGetters.h"
 #include <imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
@@ -68,6 +69,8 @@ void EditorInterface::EarlyUpdate() const{
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
     ImGui::ShowDemoWindow();
+    if(!App::isPlaying)
+        Time::PermissionForUpdate();
 };
 
 void EditorInterface::LateUpdate() const{

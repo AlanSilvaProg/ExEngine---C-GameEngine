@@ -16,6 +16,11 @@ void WindowSection::Draw(){
             {
                 EditorInterfaceGetters::gameViewEnabled = true;
             }
+
+            if(ImGui::MenuItem("Asset Browser"))
+            {
+                EditorInterfaceGetters::assetBrowserIsOpened = true;
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenu();

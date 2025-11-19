@@ -1,4 +1,5 @@
 #include "Code/Engine/Core/Engine.h"
+#include "Code/Engine/Core/EngineGetters.h"
 #include "Code/Engine/Core/Runtime/App.h"
 #include <new>
 #include <memory>
@@ -34,6 +35,7 @@ int main(int argc, char** argv){
     }
 
     std::shared_ptr<Engine> engine = std::make_shared<Engine>();
+    EngineGetters engineGetters(engine);
 
     engine->InitializeEngine();
 

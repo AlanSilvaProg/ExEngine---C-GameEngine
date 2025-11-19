@@ -19,7 +19,6 @@ void Gameloop::ExecuteGameLoop(){
 
 void Gameloop::Initialize(){
     isRunning = true;
-    lastUpdate = 0;
 };
 
 void Gameloop::Update(){

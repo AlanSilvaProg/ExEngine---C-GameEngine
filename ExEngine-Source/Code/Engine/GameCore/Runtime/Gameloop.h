@@ -9,7 +9,6 @@ private:
 
     bool enableUpdate = false;
     bool isRunning;
-    float lastUpdate;
 
     void Stop();
     void ProcessInputPhase();
