@@ -1,9 +1,8 @@
 #include "ProjectSection.h"
-#include "../../../../Engine/Core/Input/Input.h"
 #include "../../../../Engine/Core/Runtime/App.h"
 #include "../../../../Engine/Logger/Logger.h"
 #include "../../../../Engine/Core/Engine.h"
-#include "../../EditorInterfaceGetters.h"
+#include "../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../ProjectManager/ProjectManager.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
@@ -13,9 +12,9 @@ void ProjectSection::Draw(){
     if (ImGui::BeginMenu("Project"))
     {
 #ifdef EXENGINE_MACOS
-        if (ImGui::MenuItem("Save...", "CMD+S")) { Save(); }
+        if (ImGui::MenuItem("Save...", "CMD+S")) { EditorInterfaceGetters::Save(); }
 #else
-        if (ImGui::MenuItem("Save...", "CTRL+S")) { Save(); }
+        if (ImGui::MenuItem("Save...", "CTRL+S")) { EditorInterfaceGetters::Save(); }
 #endif
 
         if(ImGui::MenuItem("Create..."))
@@ -41,14 +40,14 @@ void ProjectSection::Draw(){
             }
         }
 
+        if(ImGui::MenuItem("Build"))
+        {
+            EditorInterfaceGetters::buildWindowEnabled = true;
+        }
+
         if(ImGui::MenuItem("Project Settings"))
         {
             EditorInterfaceGetters::projectSettingsEnabled = !EditorInterfaceGetters::projectSettingsEnabled;
-        }
-
-        if((Input::GetButtonDown(SDLK_LCTRL) || Input::GetButtonDown(SDLK_RCTRL)) && Input::GetButtonDown(SDLK_s))
-        {
-            Save();
         }
 
         if(ImGui::SmallButton(App::isPlaying ? "Stop" : "Play"))
@@ -57,7 +56,7 @@ void ProjectSection::Draw(){
 
             if(!App::isPlaying) 
             {
-                Load();
+                EditorInterfaceGetters::Reload();
             }
         }
 
@@ -87,13 +86,5 @@ void ProjectSection::Draw(){
 };
 
 void ProjectSection::OpenProject(const ProjectInfo& projectInformation) const{
-
-};
-
-void ProjectSection::Save(){
-
-};
-    
-void ProjectSection::Load(){
 
 };

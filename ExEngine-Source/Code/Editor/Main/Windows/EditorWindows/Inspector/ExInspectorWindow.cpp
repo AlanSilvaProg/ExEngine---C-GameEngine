@@ -8,6 +8,7 @@
 #include "../../../../../Engine/Core/Components/TransformComponent.h"
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
+#include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include <imgui.h>
 #include <filesystem>
 #include <fstream>
@@ -267,6 +268,35 @@ void ExInspectorWindow::DrawAsset(const AssetBrowserSelection* assetBrowserSelec
 
             ImGui::EndChild();
 
+            return;
+        }
+
+        if(assetExtension == ".exworld")
+        {
+            auto textContent = "World - " + assetPath.filename().stem().string();
+            auto textSize = ImGui::CalcTextSize(textContent.c_str());
+            auto availableSize = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((availableSize / 2) - (textSize.x / 2));
+            ImGui::Text("%s", textContent.c_str());
+
+            float windowWidth = ImGui::GetWindowSize().x;
+            float buttonWidth = ImGui::CalcTextSize("Open").x + ImGui::GetStyle().FramePadding.x * 2;
+            float centerPos = (windowWidth - buttonWidth) * 0.5f;
+
+            ImGui::SetCursorPosX(centerPos);
+            if (ImGui::Button("Open"))
+            {
+                ECSWorldManager::LoadWorld(assetPath);
+            }
+
+            buttonWidth = ImGui::CalcTextSize("Open as Incremental").x + ImGui::GetStyle().FramePadding.x * 2;
+            centerPos = (windowWidth - buttonWidth) * 0.5f;
+
+            ImGui::SetCursorPosX(centerPos);
+            if (ImGui::Button("Open as Incremental"))
+            {
+                ECSWorldManager::LoadIncrementalWorld(assetPath);
+            }
             return;
         }
 

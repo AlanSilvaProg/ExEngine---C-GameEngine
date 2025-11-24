@@ -19,8 +19,9 @@ bool ProjectManager::CreateNewProject(const std::string& projectName){
     if(std::filesystem::exists(path) && std::filesystem::is_directory(path))
         return false;
 
-    //ToDo Need a base project
-    std::string value = std::string("Aqui jás uma cena");
+    //ToDo Need a base project with camera
+    std::string value = std::string("");
+    path = path.replace_extension(".exworld");
     FileManagement::SaveFile(path, value);
     return true;
 };

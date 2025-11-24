@@ -3,10 +3,12 @@
 #include "DataContainer/EntityContainer.h"
 #include <string>
 #include <vector>
+#include <cstdint>
 
 struct ECSWorldInfo: public IJsonConvertable{
 public:
     std::string name;
+    uint32_t worldHash;
     std::vector<EntityContainer> entityContainer;
 
     ECSWorldInfo() = default;

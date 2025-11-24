@@ -1,15 +1,11 @@
 #include "Engine.h" 
 #include "Rendering/Renderer/ExRenderer.h"
 #include "Rendering/Renderer/ExRendererGetters.h"
-#include "Components/TransformComponent.h"
-#include "Components/CameraComponent.h"
-#include "Rendering/Components/SpriteComponent.h"
 #include "Input/Input.h"
 #include "Input/InputEvents/InputEventHandler.h"
 #include "Runtime/App.h"
 #include "Runtime/AppEvents/AppEventsHandler.h"
 #include "Configuration/ConfigurationFileManager.h"
-#include "../Logger/Logger.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 

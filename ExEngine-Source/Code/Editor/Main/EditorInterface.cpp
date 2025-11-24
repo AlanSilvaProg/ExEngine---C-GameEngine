@@ -50,6 +50,8 @@ void EditorInterface::InitializeEditor(){
         EditorInterfaceGetters::gameViewEnabled = result.gameViewEnabled;
         EditorInterfaceGetters::projectSettingsEnabled = result.projectSettingsEnabled;
         EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
+        EditorInterfaceGetters::buildTarget = result.buildTarget;
+
         ImGui::LoadIniSettingsFromMemory(result.editorLayout.c_str());
     }
 
@@ -78,6 +80,13 @@ void EditorInterface::LateUpdate() const{
     {
         App::Quit();
     }
+
+    SDL_Keymod mod = SDL_GetModState();
+
+    if (((mod & KMOD_CTRL) || (mod & KMOD_GUI)) && Input::GetButtonDown(SDLK_s))
+    {
+        EditorInterfaceGetters::Save();
+    }
 };
 
 void EditorInterface::PreRender() const{ //need to call on late update
@@ -98,6 +107,7 @@ EditorInterface::~EditorInterface(){
     result.gameViewEnabled = EditorInterfaceGetters::gameViewEnabled;
     result.projectSettingsEnabled = EditorInterfaceGetters::projectSettingsEnabled;
     result.sceneViewEnabled = EditorInterfaceGetters::sceneViewEnabled;
+    result.buildTarget = EditorInterfaceGetters::buildTarget;
     //layout persistence
     size_t size;
     result.editorLayout = ImGui::SaveIniSettingsToMemory(&size);

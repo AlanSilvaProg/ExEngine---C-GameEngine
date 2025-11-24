@@ -149,6 +149,12 @@ void ECSManager::SetToValidation(const int entityId){
         entitiesToBeValidated.push_back(entityId);
 };
 
+void ECSManager::DestroyAllEntities(){
+    for(auto entityId : aliveEntities)
+    {
+        DestroyEntity(*GetEntity(entityId));
+    }
+};
 
 //Entity
 

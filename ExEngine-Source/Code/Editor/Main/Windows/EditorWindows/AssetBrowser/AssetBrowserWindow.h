@@ -25,6 +25,8 @@ private:
     void UpdateSelection(const std::string& id, const std::filesystem::path& path, const bool isDirectory = false);
     bool IsSelected(const std::string& id, const std::filesystem::path& path) const;
 
+    void InteractCurrentSelection() const;
+
     inline bool IsHidden(const std::filesystem::path& p)
     {
         bool isHidden = false;

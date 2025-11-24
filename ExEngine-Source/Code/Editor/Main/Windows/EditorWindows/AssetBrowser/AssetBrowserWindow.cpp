@@ -3,6 +3,7 @@
 #include "../../../../../Engine/Core/Runtime/Time/Time.h"
 #include "../../../../../Engine/Core/Input/Input.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include <imgui.h>
 #include <SDL.h>
 
@@ -121,8 +122,19 @@ void AssetBrowserWindow::DrawFolderContent(const std::filesystem::path& entry)
     auto id = "###" + entry.string();
     auto selected = IsSelected(id, entry);
       
+    static double lastClickTime = 0.0;
+
     if(ImGui::Selectable(std::string(entry.stem().string() + id).c_str(), selected))
     {
+        double currentTime = ImGui::GetTime();
+        double delta = currentTime - lastClickTime;
+        lastClickTime = currentTime;
+
+        if (assetBrowserSelection->GetID() == id && delta < 0.30)
+        {
+            InteractCurrentSelection();
+        }
+
         if(!selected)
         {
             UpdateSelection(id, entry);
@@ -174,11 +186,29 @@ void AssetBrowserWindow::UpdateSelection(const std::string& id, const std::files
 {
     assetBrowserSelection->Setup(id, path, isDirectory);
     ElementSelectionController::SetSelected(assetBrowserSelection.get());
-}
+};
 
 bool AssetBrowserWindow::IsSelected(const std::string& id, const std::filesystem::path& path) const
 {
     auto currentSelection = ElementSelectionController::GetCurrentSelection();
     auto selected = currentSelection != nullptr && currentSelection->GetType() == Asset && dynamic_cast<AssetBrowserSelection*>(currentSelection)->GetID() == id;
     return selected;
-}
+};
+
+void AssetBrowserWindow::InteractCurrentSelection() const{
+    auto currentSelection = ElementSelectionController::GetCurrentSelection();
+
+    if(currentSelection == nullptr || currentSelection->GetType() != Asset) return;
+
+    auto assetBrowserSelection = dynamic_cast<AssetBrowserSelection*>(currentSelection);
+
+    auto path = assetBrowserSelection->GetPath();
+
+    if(!path.has_extension()) return;
+
+    if(path.extension().string() == ".exworld")
+    {
+        ECSWorldManager::LoadWorld(path);
+        EditorInterfaceGetters::worldWithoutPath = false;
+    }
+};

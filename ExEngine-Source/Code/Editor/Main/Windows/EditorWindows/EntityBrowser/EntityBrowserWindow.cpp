@@ -1,6 +1,7 @@
 #include "EntityBrowserWindow.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Logger/Logger.h"
+#include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 
 EntityBrowserWindow::EntityBrowserWindow(){
     entityBrowserSelection = std::make_unique<EntityBrowserSelection>();
@@ -9,20 +10,27 @@ EntityBrowserWindow::EntityBrowserWindow(){
 void EntityBrowserWindow::Draw(int phase){
     if(phase != 1) return;
 
+    if(!ECSWorldManager::HasCurrentWorld())
+    {
+        ECSWorldManager::GenerateWorld();
+        EditorInterfaceGetters::worldWithoutPath = true;
+    }
+
     //ToDo include the currently scene name
-    if(!ImGui::Begin("Scene Inspection", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
+    if(!ImGui::Begin("World Inspection", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::EndChild();
-        Logger::LogError("unexpected error occurred when opened Scene Inspection Window");
+        ImGui::PopID();
+        Logger::LogError("unexpected error occurred when opened World Inspection Window");
         return;
     }
 
     auto aliveEntities = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetAliveEntities();
 
-    if(!ImGui::BeginChild("Scene Entities", ImVec2(300, 0), ImGuiChildFlags_ResizeX))
+    if(!ImGui::BeginChild("World Entities", ImVec2(300, 0), ImGuiChildFlags_ResizeX))
     {
         ImGui::End();
-        Logger::LogError("unexpected error occurred when opened Scene Entity Inspection");
+        Logger::LogError("unexpected error occurred when opened World Entity Inspection");
         return;
     }
 

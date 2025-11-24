@@ -105,6 +105,7 @@ public:
     EntityCS* GetEntity(const int entityId); 
     void DestroyEntity(EntityCS entity);
     std::unordered_set<int>& GetAliveEntities();
+    void DestroyAllEntities();
 
     template<typename TComponent, typename ...TArgs>
     void AddComponent(EntityCS entity, TArgs&& ...args);

@@ -17,7 +17,7 @@ void WindowSection::Draw(){
                 EditorInterfaceGetters::gameViewEnabled = true;
             }
 
-            if(ImGui::MenuItem("Asset Browser"))
+            if(ImGui::MenuItem("Asset Browser  [ Space ]"))
             {
                 EditorInterfaceGetters::assetBrowserIsOpened = true;
             }

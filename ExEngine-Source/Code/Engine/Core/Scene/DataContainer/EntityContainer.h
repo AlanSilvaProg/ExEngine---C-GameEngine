@@ -25,7 +25,7 @@ public:
     }
 
     virtual void FromJson(const nlohmann::json& json) override {
-        if (json.contains("internal")) internal = json["internal"];
+        if (json.contains("internal")) internal = json["internal"].get<bool>();
         if (json.contains("name")) name = json["name"];
     }
 };
