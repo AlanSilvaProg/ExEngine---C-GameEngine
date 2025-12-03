@@ -13,6 +13,9 @@ public:
     static bool sceneViewEnabled;
     static bool gameViewEnabled;
     static bool projectSettingsEnabled;
+    static bool consoleEnabled;
+    static bool ecsMonitoringEnabled;
+    static bool ecsAdministratorEnabled;
     static bool assetBrowserIsOpened;
     static std::filesystem::path currentProjectPath;
     static BuildType buildTarget;

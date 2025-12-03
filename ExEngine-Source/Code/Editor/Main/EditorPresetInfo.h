@@ -8,6 +8,9 @@ public:
     bool sceneViewEnabled;
     bool gameViewEnabled;
     bool projectSettingsEnabled;
+    bool consoleEnabled;
+    bool ecsMonitoringEnabled;
+    bool ecsAdministratorEnabled;
     bool assetBrowserIsOpened;
     BuildType buildTarget;
     std::string editorLayout;
@@ -20,6 +23,9 @@ public:
             {"sceneViewEnabled", sceneViewEnabled},
             {"gameViewEnabled", gameViewEnabled},
             {"projectSettingsEnabled", projectSettingsEnabled},
+            {"consoleEnabled", consoleEnabled},
+            {"ecsMonitoringEnabled", ecsMonitoringEnabled},
+            {"ecsAdministratorEnabled", ecsAdministratorEnabled},
             {"assetBrowserIsOpened", assetBrowserIsOpened},
             {"buildTarget", buildTarget},
             {"editorLayout", editorLayout}
@@ -30,6 +36,9 @@ public:
         if (json.contains("sceneViewEnabled")) sceneViewEnabled = json["sceneViewEnabled"];
         if (json.contains("gameViewEnabled")) gameViewEnabled = json["gameViewEnabled"];
         if (json.contains("projectSettingsEnabled")) projectSettingsEnabled = json["projectSettingsEnabled"];
+        if (json.contains("consoleEnabled")) consoleEnabled = json["consoleEnabled"];
+        if (json.contains("ecsMonitoringEnabled")) ecsMonitoringEnabled = json["ecsMonitoringEnabled"];
+        if (json.contains("ecsAdministratorEnabled")) ecsAdministratorEnabled = json["ecsAdministratorEnabled"];
         if (json.contains("assetBrowserIsOpened")) assetBrowserIsOpened = json["assetBrowserIsOpened"];
         if (json.contains("buildTarget")) buildTarget = json["buildTarget"];
         if (json.contains("editorLayout")) editorLayout = json["editorLayout"];

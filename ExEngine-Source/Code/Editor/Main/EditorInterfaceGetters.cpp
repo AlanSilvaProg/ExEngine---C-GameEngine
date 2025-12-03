@@ -7,7 +7,10 @@
 std::shared_ptr<Engine> EditorInterfaceGetters::engine = nullptr;
 bool EditorInterfaceGetters::sceneViewEnabled = false;
 bool EditorInterfaceGetters::gameViewEnabled = false;
+bool EditorInterfaceGetters::consoleEnabled = false;
 bool EditorInterfaceGetters::projectSettingsEnabled = false;
+bool EditorInterfaceGetters::ecsMonitoringEnabled = false;
+bool EditorInterfaceGetters::ecsAdministratorEnabled = false;
 bool EditorInterfaceGetters::assetBrowserIsOpened = false;
 std::filesystem::path EditorInterfaceGetters::currentProjectPath;
 BuildType EditorInterfaceGetters::buildTarget;

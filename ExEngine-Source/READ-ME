@@ -1,0 +1,12 @@
+###
+
+Requirements:
+
+--DEFINE HERE ALL REQUIREMENTS--
+
+EX_CLI
+
+Automated CLI build proccesses
+
+command to build CLI cmakes:
+cmake -S . -B ./build && cmake --build ./build  

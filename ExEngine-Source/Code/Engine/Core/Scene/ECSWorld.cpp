@@ -57,7 +57,7 @@ bool ECSWorld::CreateOrSave(){
 
 void ECSWorld::Destroy(){
     if(!isIncremental){
-        ecsManager->DestroyAllEntities();
+        ecsManager->DestroyAllEntitiesImmediately();
         return;
     }
     //ToDo unload specific world entities

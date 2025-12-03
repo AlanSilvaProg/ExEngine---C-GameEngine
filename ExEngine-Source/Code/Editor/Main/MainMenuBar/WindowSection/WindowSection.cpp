@@ -21,6 +21,21 @@ void WindowSection::Draw(){
             {
                 EditorInterfaceGetters::assetBrowserIsOpened = true;
             }
+
+            if(ImGui::MenuItem("Console"))
+            {
+                EditorInterfaceGetters::consoleEnabled = true;
+            }
+
+            if(ImGui::MenuItem("ECS Monitoring Panel"))
+            {
+                EditorInterfaceGetters::ecsMonitoringEnabled = true;
+            }
+
+            if(ImGui::MenuItem("ECS Administrator"))
+            {
+                EditorInterfaceGetters::ecsAdministratorEnabled = true;
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenu();

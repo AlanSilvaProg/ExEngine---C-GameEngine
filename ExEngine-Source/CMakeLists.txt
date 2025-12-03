@@ -25,6 +25,7 @@ find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
 
+#Editor option
 option(EDITOR "Build with editor features" ON)
 
 if(NOT DEFINED CACHE{EDITOR})
@@ -37,6 +38,22 @@ endif()
 if(EDITOR)
     add_compile_definitions("EXENGINE_EDITOR")
 endif()
+#
+
+#Debug mode Option
+option(DEBUG_MODE "Build with DEBUG_MODE features" OFF)
+
+if(NOT DEFINED CACHE{DEBUG_MODE})
+    message(STATUS "Debug mode option not provided")
+    set(DEBUG_MODE OFF CACHE BOOL "Build with Debug mode features" FORCE)
+else()
+    message(STATUS "Debug mode explicitly set by user: ${DEBUG_MODE}")
+endif()
+
+if(DEBUG_MODE)
+    add_compile_definitions("EXENGINE_DEBUG_MODE")
+endif()
+#
 
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
@@ -48,7 +65,12 @@ else()
     message(STATUS "No external game path provided — building engine/editor only")
 endif()
 
-add_executable(${PROJECT_NAME} MACOSX_BUNDLE main.cpp)
+
+if(APPLE AND NOT DEBUG_MODE)
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE main.cpp)
+else()
+    add_executable(${PROJECT_NAME} main.cpp)
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(${PROJECT_NAME} PUBLIC Engine)
@@ -69,33 +91,40 @@ endif()
 
 if(EDITOR)
     if(APPLE)
-        set_target_properties(${PROJECT_NAME} PROPERTIES
-            MACOSX_BUNDLE TRUE
-            MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
-            MACOSX_BUNDLE_ICON_FILE ExGameEngineIcon256.icns
-        )
+        if(DEBUG_MODE)
+            add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_BINARY_DIR}/Assets)
+            add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/Projects)
+            add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Defaults ${CMAKE_CURRENT_BINARY_DIR})
+        else()
+            set_target_properties(${PROJECT_NAME} PROPERTIES
+                MACOSX_BUNDLE TRUE
+                MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+                MACOSX_BUNDLE_ICON_FILE ExGameEngineIcon256.icns
+            )
 
-        set_source_files_properties(
-            ${CMAKE_CURRENT_SOURCE_DIR}/ExGameEngineIcon256.icns
-            PROPERTIES MACOSX_PACKAGE_LOCATION "Resources"
-        )
+            set_source_files_properties(
+                ${CMAKE_CURRENT_SOURCE_DIR}/ExGameEngineIcon256.icns
+                PROPERTIES MACOSX_PACKAGE_LOCATION "Resources"
+            )
 
-        target_sources(${PROJECT_NAME} PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}/ExGameEngineIcon256.icns
-        )
-        get_target_property(APP_TARGET_NAME ${PROJECT_NAME} OUTPUT_NAME)
+            target_sources(${PROJECT_NAME} PRIVATE
+                ${CMAKE_CURRENT_SOURCE_DIR}/ExGameEngineIcon256.icns
+            )
+            get_target_property(APP_TARGET_NAME ${PROJECT_NAME} OUTPUT_NAME)
 
-        add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_BINARY_DIR}/${APP_TARGET_NAME}.app/Contents/Resources/Assets)
-        add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${APP_TARGET_NAME}.app/Contents/Resources/Projects)
-        add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Defaults ${CMAKE_CURRENT_BINARY_DIR}/${APP_TARGET_NAME}.app/Contents/Resources)
-    elseif(WIN32)
-        ##Icon Windows
+            add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_BINARY_DIR}/${APP_TARGET_NAME}.app/Contents/Resources/Assets)
+            add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/${APP_TARGET_NAME}.app/Contents/Resources/Projects)
+            add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Defaults ${CMAKE_CURRENT_BINARY_DIR}/${APP_TARGET_NAME}.app/Contents/Resources)
+        endif()
     else()
-        ##Icon Linux
+        if(WIN32)
+            ##Icon Windows
+        else()
+            ##Icon Linux
+        endif()
+
+        add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_BINARY_DIR}/Assets)
+        add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/Projects)
+        add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Defaults ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 endif()
-
-# For Debug mode
-# add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Assets ${CMAKE_CURRENT_BINARY_DIR}/Assets)
-# add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/Projects)
-# add_custom_command(TARGET ExEngine-Source PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/Defaults ${CMAKE_CURRENT_BINARY_DIR})

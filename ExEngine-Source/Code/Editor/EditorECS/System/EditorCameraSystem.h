@@ -13,4 +13,5 @@ public:
     EditorCameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem);
 
     void UpdateSystem() override;
+    inline const char* SystemName() override { return TYPE_NAME(EditorCameraSystem); }; 
 };

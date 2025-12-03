@@ -46,10 +46,13 @@ void EditorInterface::InitializeEditor(){
     EditorPresetInfo result;
     if(FileManagement::LoadFromJson(std::string("engine_editor_layout"), result))
     {
-        EditorInterfaceGetters::assetBrowserIsOpened = result.assetBrowserIsOpened;
+        EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
         EditorInterfaceGetters::gameViewEnabled = result.gameViewEnabled;
         EditorInterfaceGetters::projectSettingsEnabled = result.projectSettingsEnabled;
-        EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
+        EditorInterfaceGetters::consoleEnabled = result.consoleEnabled;
+        EditorInterfaceGetters::ecsMonitoringEnabled = result.ecsMonitoringEnabled;
+        EditorInterfaceGetters::ecsAdministratorEnabled = result.ecsAdministratorEnabled;
+        EditorInterfaceGetters::assetBrowserIsOpened = result.assetBrowserIsOpened;
         EditorInterfaceGetters::buildTarget = result.buildTarget;
 
         ImGui::LoadIniSettingsFromMemory(result.editorLayout.c_str());
@@ -103,10 +106,13 @@ void EditorInterface::PostRender() const{ //need to call on late update
 EditorInterface::~EditorInterface(){
     //Saving Editor presets
     EditorPresetInfo result;
-    result.assetBrowserIsOpened = EditorInterfaceGetters::assetBrowserIsOpened;
     result.gameViewEnabled = EditorInterfaceGetters::gameViewEnabled;
-    result.projectSettingsEnabled = EditorInterfaceGetters::projectSettingsEnabled;
     result.sceneViewEnabled = EditorInterfaceGetters::sceneViewEnabled;
+    result.projectSettingsEnabled = EditorInterfaceGetters::projectSettingsEnabled;
+    result.consoleEnabled = EditorInterfaceGetters::consoleEnabled;
+    result.ecsMonitoringEnabled = EditorInterfaceGetters::ecsMonitoringEnabled;
+    result.ecsAdministratorEnabled = EditorInterfaceGetters::ecsAdministratorEnabled;
+    result.assetBrowserIsOpened = EditorInterfaceGetters::assetBrowserIsOpened;
     result.buildTarget = EditorInterfaceGetters::buildTarget;
     //layout persistence
     size_t size;

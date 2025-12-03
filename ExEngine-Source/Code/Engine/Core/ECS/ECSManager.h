@@ -13,6 +13,10 @@
 #include "EntityCounter/EntityCSCounter.h"
 #include "../../Logger/Logger.h"
 
+#ifndef TYPE_NAME
+#define TYPE_NAME(T) #T
+#endif
+
 //Entity
 
 class EntityCS{
@@ -72,6 +76,8 @@ public:
     void ValidateEntity(EntityCS entity);
     void RemoveEntity(const int id);
     virtual void UpdateSystem(){};
+
+    virtual const char* SystemName() = 0; //adicionar nome para os sistemas
 };
 
 
@@ -95,6 +101,7 @@ private:
 
     std::unordered_set<int> aliveEntities;
 
+    void LifeCycleCheck();
 public:
     ECSManager();
     ~ECSManager() = default;
@@ -106,6 +113,7 @@ public:
     void DestroyEntity(EntityCS entity);
     std::unordered_set<int>& GetAliveEntities();
     void DestroyAllEntities();
+    void DestroyAllEntitiesImmediately();
 
     template<typename TComponent, typename ...TArgs>
     void AddComponent(EntityCS entity, TArgs&& ...args);
@@ -121,6 +129,7 @@ public:
     Signature& GetEntitySignature(const int id);
     const std::vector<std::shared_ptr<IPool>>& GetEntityComponentPools() const;
 
+    const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& GetAllSystems();
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
     template<typename TSystem>
@@ -221,7 +230,11 @@ std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
     if(systems.find(std::type_index(typeid(TSystem))) != systems.end()) return nullptr;
 
     auto newSystem = std::make_shared<TSystem>(std::forward<TArgs>(args)...);
-    systems.insert(make_pair(std::type_index(typeid(TSystem)), static_cast<std::shared_ptr<ECSystem>>(newSystem)));
+    auto castedNewSystem = static_cast<std::shared_ptr<ECSystem>>(newSystem);
+    systems.insert(make_pair(std::type_index(typeid(TSystem)), castedNewSystem));
+
+    Logger::Log("ECS System Created: " + std::string(castedNewSystem->SystemName()));
+
     return newSystem;
 };
 

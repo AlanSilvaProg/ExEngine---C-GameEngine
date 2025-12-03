@@ -1,6 +1,7 @@
 #include "Code/Engine/Core/Engine.h"
 #include "Code/Engine/Core/EngineGetters.h"
 #include "Code/Engine/Core/Runtime/App.h"
+#include "Code/Engine/Logger/StackTrace/StackTrace.h"
 #include <new>
 #include <memory>
 #include <string>
@@ -11,6 +12,8 @@
 #endif
 
 int main(int argc, char** argv){
+    StackTrace::InstallCrashHandler();
+
     App *app = new App();
     std::string gamePath;
 
@@ -43,7 +46,11 @@ int main(int argc, char** argv){
     EditorInterface *editor = new EditorInterface(engine , gamePath);
 #endif
 
+    StackTrace::InstallCrashHandler();
+
     engine->RunLoop();
+    
+    StackTrace::UninstallCrashHandler();
 
     delete(app);
 

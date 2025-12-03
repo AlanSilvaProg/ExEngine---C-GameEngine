@@ -6,7 +6,7 @@ ECSManager::ECSManager(){
     
 };
 
-void ECSManager::Update(){
+void ECSManager::LifeCycleCheck(){
     if(componentsToBeRemoved.size() > 0)
     {
         for(auto pair : componentsToBeRemoved)
@@ -31,6 +31,9 @@ void ECSManager::Update(){
         for(auto entityId : entitiesToBeKilled){
             RemoveAllComponents(entities[entityId]);
             aliveEntities.erase(entityId);
+            freeEntities.push_back(entityId);
+            
+            Logger::Log("Entity with ID: " + std::to_string(entityId) + " has been killed.");
         }
 
         entitiesToBeKilled.clear();
@@ -48,6 +51,10 @@ void ECSManager::Update(){
 
         entitiesToBeValidated.clear();
     }
+};
+
+void ECSManager::Update(){
+    LifeCycleCheck();
 };
 
 EntityCS& ECSManager::CreateEntity(const std::string entityName, const bool internal){
@@ -149,11 +156,20 @@ void ECSManager::SetToValidation(const int entityId){
         entitiesToBeValidated.push_back(entityId);
 };
 
+const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& ECSManager::GetAllSystems(){
+    return systems;
+};
+
 void ECSManager::DestroyAllEntities(){
     for(auto entityId : aliveEntities)
     {
         DestroyEntity(*GetEntity(entityId));
     }
+};
+
+void ECSManager::DestroyAllEntitiesImmediately(){
+    DestroyAllEntities();
+    LifeCycleCheck();
 };
 
 //Entity

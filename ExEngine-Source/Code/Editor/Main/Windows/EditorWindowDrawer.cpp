@@ -7,6 +7,9 @@
 #include "EditorWindows/ProjectSettings/ExProjectSettingsWindow.h"
 #include "EditorWindows/AssetBrowser/AssetBrowserWindow.h"
 #include "EditorWindows/BuildSettings/BuildSettingsWindow.h"
+#include "EditorWindows/Console/ConsoleWindow.h"
+#include "EditorWindows/ECSMonitoring/ECSMonitoring.h"
+#include "EditorWindows/ECSAdmin/ECSAdmin.h"
 
 std::vector<std::shared_ptr<EditorWindow>> ExEditor::EditorWindowDrawer::windows;
 
@@ -18,6 +21,9 @@ ExEditor::EditorWindowDrawer::EditorWindowDrawer(){
     AddWindow(std::make_shared<ExProjectSettingsWindow>());
     AddWindow(std::make_shared<AssetBrowserWindow>());
     AddWindow(std::make_shared<BuildSettingsWindow>());
+    AddWindow(std::make_shared<ConsoleWindow>());
+    AddWindow(std::make_shared<ECSMonitoring>());
+    AddWindow(std::make_shared<ECSAdmin>());
 
     *EditorUpdateEventHandler::earlyHandler += [this](){ this->Draw(0); };
     *EditorUpdateEventHandler::lateHandler += [this](){ this->Draw(1); };

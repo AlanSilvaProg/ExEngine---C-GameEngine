@@ -1,8 +1,5 @@
 #include "ProjectSection.h"
-#include "../../../../Engine/Core/Runtime/App.h"
-#include "../../../../Engine/Logger/Logger.h"
 #include "../../../../Engine/Core/Engine.h"
-#include "../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../ProjectManager/ProjectManager.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
@@ -48,16 +45,6 @@ void ProjectSection::Draw(){
         if(ImGui::MenuItem("Project Settings"))
         {
             EditorInterfaceGetters::projectSettingsEnabled = !EditorInterfaceGetters::projectSettingsEnabled;
-        }
-
-        if(ImGui::SmallButton(App::isPlaying ? "Stop" : "Play"))
-        {
-            App::isPlaying = !App::isPlaying;
-
-            if(!App::isPlaying) 
-            {
-                EditorInterfaceGetters::Reload();
-            }
         }
 
         ImGui::EndMenu();

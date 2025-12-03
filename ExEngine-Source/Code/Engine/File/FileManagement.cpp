@@ -50,7 +50,7 @@ bool FileManagement::LoadFile(std::string key, std::string& result){
             result = buffer.str();
 
             in.close();
-            Logger::Log("File" + key + " loaded from: " + path.string());
+            Logger::Log("File " + key + " loaded from: " + path.string());
 
             return true;
         } else {

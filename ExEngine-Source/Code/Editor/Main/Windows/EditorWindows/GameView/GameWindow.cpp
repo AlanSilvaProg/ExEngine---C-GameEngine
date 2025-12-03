@@ -1,5 +1,6 @@
 #include "GameWindow.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../../../../../Engine/Core/Runtime/App.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
 #include "../../../../../Engine/Core/CameraSystem/CameraSystem.h"
@@ -75,6 +76,17 @@ void GameWindow::Draw(int phase) {
         ImGui::InputInt("##display", &targetDisplay);
         if(targetDisplay < 0) targetDisplay = 0;
         ImGui::PopItemWidth();
+
+        if(ImGui::SmallButton(App::isPlaying ? "Stop" : "Play"))
+        {
+            App::isPlaying = !App::isPlaying;
+
+            if(!App::isPlaying) 
+            {
+                EditorInterfaceGetters::Reload();
+            }
+        }
+
         ImGui::EndMenuBar();
     }
 

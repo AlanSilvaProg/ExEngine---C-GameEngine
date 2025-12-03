@@ -11,6 +11,8 @@ public:
     static std::shared_ptr<ColorChannel> GREEN;
     static std::shared_ptr<ColorChannel> BLUE;
     static std::shared_ptr<ColorChannel> BLACK;
+    static std::shared_ptr<ColorChannel> GREY;
+    static std::shared_ptr<ColorChannel> YELLOW;
 
     Color(const unsigned int r, const unsigned int g, const unsigned int b, const unsigned int a);
     Color(std::shared_ptr<ColorChannel> channel);

@@ -11,4 +11,6 @@ public:
     RenderingSystem2D();
 
     void UpdateSystem() override;
+    
+    inline const char* SystemName() override { return TYPE_NAME(EditorCameraSystem); }; 
 };
