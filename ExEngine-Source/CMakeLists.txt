@@ -5,6 +5,23 @@ project(ExEngine-Source)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Configure debug symbols for stack traces
+# Debug builds: Full debug information with frame pointers
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    if(APPLE OR UNIX)
+        add_compile_options(-g -fno-omit-frame-pointer)
+    elseif(WIN32)
+        add_compile_options(/Zi)
+    endif()
+endif()
+
+# Release builds: Minimal debug info for function names in stack traces
+if(CMAKE_BUILD_TYPE MATCHES Release)
+    if(APPLE OR UNIX)
+        add_compile_options(-g1)
+    endif()
+endif()
+
 if(APPLE)
     add_compile_definitions("EXENGINE_MACOS")
     set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
