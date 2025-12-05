@@ -1,11 +1,13 @@
 #pragma once
 #include <memory>
-#include "../../../Core/EventSystem/Event.h"
+#include "../../../Core/EventSystem/EventNotifier.h"
 
-class GameUpdateEventHandler : public Event<int>{
+class GameUpdateEventHandler : public EventNotifier{
 public:
-    static std::unique_ptr<GameUpdateEventHandler> earlyhandler;
-    static std::unique_ptr<GameUpdateEventHandler> latehandler;
+    static std::unique_ptr<GameUpdateEventHandler> earlyHandler;
+    static std::unique_ptr<GameUpdateEventHandler> updateHandler;
+    static std::unique_ptr<GameUpdateEventHandler> fixedUpdateHandler;
+    static std::unique_ptr<GameUpdateEventHandler> lateHandler;
 
     static void Create();
 };

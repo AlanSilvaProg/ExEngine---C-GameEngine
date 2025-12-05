@@ -11,10 +11,16 @@ void Gameloop::ExecuteGameLoop(){
 
     auto fixedUpdatePermission = Time::PermissionForUpdate();
 
+    GameUpdateEventHandler::earlyHandler->Invoke();
+
     if(fixedUpdatePermission)
+        FixedUpdate();
+    else
     {
         Update();
-    }
+    }  
+
+    GameUpdateEventHandler::lateHandler->Invoke();
 };
 
 void Gameloop::Initialize(){
@@ -22,14 +28,25 @@ void Gameloop::Initialize(){
 };
 
 void Gameloop::Update(){
-    GameUpdateEventHandler::earlyhandler->Invoke(0);
-
     ProcessInputPhase();
     ecsManager->Update();
     ProcessCollisionPhase();
-    ProcessRenderPhase();  
 
-    GameUpdateEventHandler::latehandler->Invoke(0);
+    GameUpdateEventHandler::updateHandler->Invoke();
+
+#ifdef EXENGINE_EDITOR
+    ProcessRenderPhase();
+#endif
+};
+
+void Gameloop::FixedUpdate(){
+    Update();
+
+    GameUpdateEventHandler::fixedUpdateHandler->Invoke();
+
+#ifndef EXENGINE_EDITOR
+    ProcessRenderPhase();
+#endif
 };
 
 void Gameloop::Stop(){
@@ -45,5 +62,5 @@ void Gameloop::ProcessInputPhase(){
 };
 
 void Gameloop::ProcessCollisionPhase(){
-
+    if(!App::isPlaying) return;
 };

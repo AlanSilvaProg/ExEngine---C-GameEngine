@@ -34,14 +34,7 @@ void Engine::InitializeEngine(){
 void Engine::RunLoop(){
     while(running)
     {   
-        if(App::isPlaying)
-        {
-            gameLoop->ExecuteGameLoop();
-        }
-        else
-        {
-            gameLoop->Update();
-        }
+        gameLoop->ExecuteGameLoop();
     }
 };
 

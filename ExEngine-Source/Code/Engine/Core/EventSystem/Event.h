@@ -6,12 +6,24 @@
 template<typename ...TArgs>
 class Event : public IEvent{
 private:
-    std::vector<std::function<void(TArgs...)>> events;
+    std::vector<std::pair<int, std::function<void(TArgs...)>>> events;
+    int nextId = 0;
 public:
 
-    void operator +=(std::function<void(TArgs...)>  event) 
+    int operator +=(std::function<void(TArgs...)>  event) 
     {
-        events.push_back(event);
+        int id = nextId++;
+        events.emplace_back(id, std::move(event));
+        return id;
+    };
+
+    void operator -=(int id) 
+    {
+        events.erase(
+            std::remove_if(events.begin(), events.end(),
+                [id](auto& pair){ return pair.first == id; }),
+            events.end()
+        );
     };
 
     const void operator()(TArgs&& ...args){
@@ -20,7 +32,7 @@ public:
 
     void Invoke(TArgs&& ...args) const { 
         for(auto event : events){
-            event(std::forward<TArgs>(args)...);
+            event.second(std::forward<TArgs>(args)...);
         }
     };
 };

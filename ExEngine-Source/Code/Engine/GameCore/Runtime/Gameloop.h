@@ -22,5 +22,6 @@ public:
     void Initialize();
     void ExecuteGameLoop();
     void Update();
+    void FixedUpdate();
     void ProcessRenderPhase();
 };

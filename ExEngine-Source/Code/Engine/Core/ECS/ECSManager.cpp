@@ -1,5 +1,8 @@
 #include "ECSManager.h"
 #include "../../Logger/Logger.h"
+#include "../Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
+#include "../../GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
+#include "../Serializer/Demangle.h"
 #include <new>
 
 ECSManager::ECSManager(){
@@ -240,14 +243,101 @@ void ECSystem::RemoveEntity(const int id){
                         systemEntities.end());
 };
 
-bool ECSystem::CheckForRegisteredId(const int componentId, const bool optional) const{
+bool ECSystem::CheckForRegisteredId(const int componentId) const{
     for(auto id : systemOptionalSignatureIds)
     {
         if(id == componentId)
         {
-            Logger::LogWarning("Same component has been added multiple times for system requirements at " + std::to_string(*typeid(*this).name()));
+            Logger::LogWarning("Same component has been added multiple times for system requirements at " + Demangle(typeid(*this).name()));
+            return true;
+        }
+    }
+
+    for(auto id : systemSignatureIds)
+    {
+        if(id == componentId)
+        {
+            Logger::LogWarning("Same component has been added multiple times for system requirements at " + Demangle(typeid(*this).name()));
             return true;
         }
     }
     return false;
+};
+
+// System Context
+
+void ECSystemContext::UpdateContext(){
+    for(auto& systemEntry : systemEntries)
+    {
+        systemEntry.system->UpdateSystem();
+    }
+};
+
+void ECSystemContext::ValidateEntity(EntityCS entity){
+    for(auto& systemEntry : systemEntries)
+    {
+        systemEntry.system->ValidateEntity(entity);
+    }
+};
+
+void ECSystemContext::Register(std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem){
+    systemEntries.push_back({typeIndex, ecsSystem});
+};
+
+void ECSystemContext::Unregister(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem){
+    for (size_t i = 0; i < systemEntries.size(); i++) {
+        auto& systemEntry = systemEntries[i];
+        if (systemEntry.type == typeIndex && systemEntry.system == ecsSystem) {
+            systemEntries.erase(systemEntries.begin() + i);
+            return;
+        }
+    }
+};
+
+const void ECSystemContext::SetSystemContext(SystemContext context) {
+    if(systemContext == context) return;
+    RefreshContext(context);
+};
+
+void ECSystemContext::RefreshContext(SystemContext newContext){
+    if(removeEventHandlerCallback)
+    {
+        removeEventHandlerCallback();
+        removeEventHandlerCallback = nullptr;
+    }
+
+    systemContext = newContext;
+    int id;
+    switch (systemContext)
+    {
+    case SystemContext::EARLY_UPDATE:
+        id = *GameUpdateEventHandler::earlyHandler += [this](){ this->UpdateContext(); };
+        removeEventHandlerCallback = [id](){ *GameUpdateEventHandler::earlyHandler -= id; };
+        break;
+
+    case SystemContext::UPDATE:
+        id = *GameUpdateEventHandler::updateHandler += [this](){ this->UpdateContext(); };
+        removeEventHandlerCallback = [id](){ *GameUpdateEventHandler::updateHandler -= id; };
+        break;
+
+    case SystemContext::FIXED_UPDATE:
+        id = *GameUpdateEventHandler::fixedUpdateHandler += [this](){ this->UpdateContext(); };
+        removeEventHandlerCallback = [id](){ *GameUpdateEventHandler::fixedUpdateHandler -= id; };
+        break;
+
+    case SystemContext::LATE_UPDATE:
+        id = *GameUpdateEventHandler::lateHandler += [this](){ this->UpdateContext(); };
+        removeEventHandlerCallback = [id](){ *GameUpdateEventHandler::lateHandler -= id; };
+        break;
+
+    case SystemContext::PRE_RENDER:
+        id = *PreRenderEventHandler::preRenderHandler += [this](){ this->UpdateContext(); };
+        removeEventHandlerCallback = [id](){ *PreRenderEventHandler::preRenderHandler -= id; };
+        break;
+
+    case SystemContext::POST_RENDER:
+        id = *PreRenderEventHandler::postRenderHandler += [this](){ this->UpdateContext(); };
+        removeEventHandlerCallback = [id](){ *PreRenderEventHandler::postRenderHandler -= id; };
+        break;
+    }
 };

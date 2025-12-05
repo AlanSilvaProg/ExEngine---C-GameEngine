@@ -1,10 +1,4 @@
 #pragma once
-#include <vector>
-#include <deque>
-#include <unordered_set>
-#include <memory>
-#include <unordered_map>
-#include <typeindex>
 #include "ECSSignature.h"
 #include "Component/EComponentS.h"
 #include "EntityCounter/EntityCSCounter.h"
@@ -12,6 +6,13 @@
 #include "Pool/EComponentSPoolManager.h"
 #include "EntityCounter/EntityCSCounter.h"
 #include "../../Logger/Logger.h"
+#include <vector>
+#include <deque>
+#include <unordered_set>
+#include <memory>
+#include <unordered_map>
+#include <typeindex>
+#include <functional>
 
 #ifndef TYPE_NAME
 #define TYPE_NAME(T) #T
@@ -58,6 +59,7 @@ public:
 
 // System
 
+
 class ECSystem {
 protected:
     std::vector<int> systemSignatureIds;
@@ -67,7 +69,7 @@ protected:
     template<typename TComponent>
     void Require(const bool optional);
 
-    bool CheckForRegisteredId(const int componentId, const bool optional) const;
+    bool CheckForRegisteredId(const int componentId) const;
 
 public:
     std::vector<EntityCS>* GetSystemEntities();
@@ -78,6 +80,68 @@ public:
     virtual void UpdateSystem(){};
 
     virtual const char* SystemName() = 0; //adicionar nome para os sistemas
+};
+
+
+// Custom System
+
+
+class CustomECSystem: public ECSystem{
+private:
+    std::string systemName;
+public:
+    CustomECSystem() = default;
+    ~CustomECSystem() = default;
+
+    inline void SetSystemName(std::string name) { systemName = name; };
+    inline std::string GetSystemName() const { return systemName; };
+
+    template<typename TComponent>
+    void IsRequired(const bool optional);
+    template<typename TComponent>
+    void IsNotRequired();
+};
+
+
+// System Context
+
+
+enum SystemContext{
+    EARLY_UPDATE,
+    UPDATE,
+    FIXED_UPDATE,
+    LATE_UPDATE,
+    PRE_RENDER,
+    POST_RENDER
+};
+
+struct SystemEntry {
+    std::type_index type;
+    std::shared_ptr<ECSystem> system;
+};
+
+class ECSystemContext{
+private:
+    SystemContext systemContext;
+    std::vector<SystemEntry> systemEntries;
+
+    bool internal;
+    std::function<void()> removeEventHandlerCallback;
+
+    void RefreshContext(SystemContext newContext);
+public:
+    inline ECSystemContext(SystemContext systemContext) : systemContext(systemContext) { RefreshContext(systemContext); };
+    ~ECSystemContext() = default;
+
+    void UpdateContext();
+    void ValidateEntity(EntityCS entity);
+    void Register(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
+    void Unregister(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
+
+    const void SetSystemContext(SystemContext context);
+    inline const std::vector<SystemEntry>& GetContextSystems() const { return systemEntries; };
+    inline const SystemContext GetSystemContext() { return systemContext; };
+    inline const bool IsInternal() const { return internal; };
 };
 
 
@@ -281,6 +345,51 @@ void EntityCS::RemoveComponent() const{
 };
 
 
+//
+
+
+template<typename TComponent>
+void CustomECSystem::IsRequired(const bool optional){ 
+    Require<TComponent>(optional);
+};
+
+template<typename TComponent>
+void CustomECSystem::IsNotRequired(){
+    auto componentId = EComponentS<TComponent>::GetId();
+
+    if(!CheckForRegisteredId(componentId)) return;
+
+    bool erased = false;
+    systemOptionalSignatureIds.erase(
+        std::remove_if(
+            systemOptionalSignatureIds.begin(),
+            systemOptionalSignatureIds.end(),
+            [componentId, &erased](int value) 
+            {
+                auto condition = value == componentId;
+                if(condition) erased = true;
+                return condition; 
+            }
+        ),
+        systemOptionalSignatureIds.end()
+    );
+
+    if(erased) return;
+
+    systemSignatureIds.erase(
+        std::remove_if(
+            systemSignatureIds.begin(),
+            systemSignatureIds.end(),
+            [componentId](int value) 
+            {
+                return value == componentId; 
+            }
+        ),
+        systemSignatureIds.end()
+    );
+};
+
+
 //System
 
 
@@ -288,7 +397,7 @@ template<typename TComponent>
 void ECSystem::Require(const bool optional){
     auto componentId = EComponentS<TComponent>::GetId();
 
-    if(CheckForRegisteredId(componentId, optional)) return;
+    if(CheckForRegisteredId(componentId)) return;
 
     if(optional)
     {

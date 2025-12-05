@@ -27,8 +27,8 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& ga
     CreateEditorBase();
     InputEventHandler::Create();
     *InputEventHandler::handler += [this](SDL_Event& sdlEvent){ ImGui_ImplSDL2_ProcessEvent(&sdlEvent); };
-    *GameUpdateEventHandler::earlyhandler += [this](int value){ this->EarlyUpdate(); };
-    *GameUpdateEventHandler::latehandler += [this](int value){ this->LateUpdate(); };
+    *GameUpdateEventHandler::earlyHandler += [this](){ this->EarlyUpdate(); };
+    *GameUpdateEventHandler::lateHandler += [this](){ this->LateUpdate(); };
     *PreRenderEventHandler::preRenderHandler += [this](){ this->PreRender(); };
     *PreRenderEventHandler::postRenderHandler += [this](){ this->PostRender(); };
 }; 
