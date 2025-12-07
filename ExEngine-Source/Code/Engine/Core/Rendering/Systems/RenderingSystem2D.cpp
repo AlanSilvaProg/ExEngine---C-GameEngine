@@ -17,7 +17,7 @@ void RenderingSystem2D::UpdateSystem() {
     if(systemEntities.size() == 0)
         return;
 
-    std::sort(systemEntities.begin(), systemEntities.end(), [this](const EntityCS& a, const EntityCS& b) { 
+    std::sort(systemEntities.begin(), systemEntities.end(), [this](const std::shared_ptr<EntityCS> a, const std::shared_ptr<EntityCS> b) { 
               return this->RenderOrderCheck(a, b); 
           });
 
@@ -29,8 +29,8 @@ void RenderingSystem2D::UpdateSystem() {
     }
 
     for(auto entity : systemEntities){
-        auto spriteComponent = entity.GetComponent<SpriteComponent>();
-        auto transformComponent = entity.GetComponent<TransformComponent>();
+        auto spriteComponent = entity->GetComponent<SpriteComponent>();
+        auto transformComponent = entity->GetComponent<TransformComponent>();
 
         auto cameraTransformComponent = currentCamera->GetComponent<TransformComponent>();
 
@@ -64,9 +64,9 @@ void RenderingSystem2D::UpdateSystem() {
     }
 };
 
-bool RenderingSystem2D::RenderOrderCheck(const EntityCS& a, const EntityCS& b){
-    auto aSpriteComponent = a.GetComponent<SpriteComponent>();
-    auto bSpriteComponent = b.GetComponent<SpriteComponent>();
+bool RenderingSystem2D::RenderOrderCheck(const std::shared_ptr<EntityCS> a, const std::shared_ptr<EntityCS> b){
+    auto aSpriteComponent = a->GetComponent<SpriteComponent>();
+    auto bSpriteComponent = b->GetComponent<SpriteComponent>();
     
     auto aLayer = aSpriteComponent->layerAttributes;
     auto bLayer = bSpriteComponent->layerAttributes;

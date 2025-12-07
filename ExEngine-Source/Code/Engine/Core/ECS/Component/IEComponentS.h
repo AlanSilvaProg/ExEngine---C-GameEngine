@@ -2,9 +2,10 @@
 #include "IEComponentSBase.h"
 #include "EComponentSPropertyData.h"
 #include "../../Serializer/ExSerializedClass.h"
+#include "../../../JsonUtility/IJsonConvertable.h"
 #include <vector>
 
-struct IEComponentS : public IEComponentSBase{
+struct IEComponentS : public IEComponentSBase, public IJsonConvertable{
 protected:
     static unsigned int previousId;
 public:

@@ -11,4 +11,11 @@ public:
             }
         };
     };
+    
+    virtual nlohmann::json ToJson() override {
+        return {};
+    }
+
+    virtual void FromJson(const nlohmann::json& json) override {
+    }
 };

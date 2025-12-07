@@ -6,6 +6,11 @@ std::map<std::filesystem::path, std::shared_ptr<ECSWorld>> ECSWorldManager::load
 
 //Main world
 void ECSWorldManager::LoadWorld(std::filesystem::path worldFilePath){
+    if(currentWorld != nullptr)
+    {
+        currentWorld->Unload();
+    }
+
     if(auto loadedWorld = loadedECSWorlds.find(worldFilePath); loadedWorld != loadedECSWorlds.end()) 
         currentWorld = loadedWorld->second;
     else 

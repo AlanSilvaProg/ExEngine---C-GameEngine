@@ -1,10 +1,7 @@
 #pragma once
+#include <string>
 
 class UID{
-private: 
-    static int lastUID;
 public:
-    static int GenerateUId();
+    static std::string GenerateGUID();
 };
-
-//Needs to preserve session information

@@ -18,7 +18,7 @@ void EditorCameraSystem::UpdateSystem(){
     auto exRenderer = ExRendererGetters::renderer;
     
     for(auto camera : allEntities){
-        ExRendererGetters::currentRenderCamera = &camera;
+        ExRendererGetters::currentRenderCamera = camera;
 
         UpdateDisplayTexture();
 

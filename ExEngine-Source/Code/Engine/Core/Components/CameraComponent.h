@@ -17,6 +17,16 @@ public:
             }
         };
     };
+
+    virtual nlohmann::json ToJson() override {
+        return {
+            {"display", display}
+        };
+    }
+
+    virtual void FromJson(const nlohmann::json& json) override {
+        if (json.contains("display")) display = json["display"].get<int>();
+    }
 };
 
 REGISTER_COMPONENT(CameraComponent)

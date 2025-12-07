@@ -18,8 +18,8 @@ SceneWindow::SceneWindow(){
 
     editorCameraSystem = ecsManager->CreateSystem<EditorCameraSystem>(ExRenderer::GetRenderingSystem2D());
     auto editorCamera = ecsManager->CreateEntity("EditorCamera", true);
-    editorCamera.AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
-    editorCamera.AddComponent<EditorCameraComponent>();
+    editorCamera->AddComponent<TransformComponent>(glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
+    editorCamera->AddComponent<EditorCameraComponent>();
 };
 
 void SceneWindow::Draw(int phase){
@@ -117,7 +117,7 @@ void SceneWindow::Draw(int phase){
                     //ToDo will be something similar to objects on scene
                     for(auto camera : *cameraEntities)
                     {
-                        auto cameraTransformComponent = camera.GetComponent<TransformComponent>();
+                        auto cameraTransformComponent = camera->GetComponent<TransformComponent>();
                         cameraTransformComponent->Move(mouseMoviment);
                     }
 

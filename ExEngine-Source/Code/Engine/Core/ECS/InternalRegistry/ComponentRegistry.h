@@ -7,7 +7,7 @@
 
 class ComponentRegistry{
 public:
-    static inline std::unordered_map<unsigned int, std::function<void(EntityCS&)>> components;
+    static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<EntityCS>)>> components;
     static inline std::unordered_map<unsigned int, std::string> componentsNameById;
 };
 
@@ -19,7 +19,7 @@ struct type##AutoRegister{\
         static bool registered = false;\
         if(!registered)\
         {\
-            ComponentRegistry::components.insert({type::GetId(), [](EntityCS& entity){ entity.AddComponent<type>(); }});\
+            ComponentRegistry::components.insert({type::GetId(), [](std::shared_ptr<EntityCS> entity){ entity->AddComponent<type>(); }});\
             ComponentRegistry::componentsNameById.insert({type::GetId(), Demangle(typeid(type).name())});\
             registered = true;\
         }\

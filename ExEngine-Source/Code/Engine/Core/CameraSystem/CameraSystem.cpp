@@ -20,8 +20,8 @@ void CameraSystem::UpdateSystem(){
     auto exRenderer = ExRendererGetters::renderer;
 
     for(auto camera : allEntities){
-        ExRendererGetters::currentRenderCamera = &camera;
-        auto display = camera.GetComponent<CameraComponent>()->display;
+        ExRendererGetters::currentRenderCamera = camera;
+        auto display = camera->GetComponent<CameraComponent>()->display;
 
         UpdateDisplayTexture(display);
 
@@ -62,7 +62,7 @@ void CameraSystem::DisableAllDisplayTextures(){
 
     std::set<int> usedDisplays;
     for (auto& camera : allEntities) {
-        auto camComp = camera.GetComponent<CameraComponent>();
+        auto camComp = camera->GetComponent<CameraComponent>();
         if (camComp) {
             usedDisplays.insert(camComp->display);
         }

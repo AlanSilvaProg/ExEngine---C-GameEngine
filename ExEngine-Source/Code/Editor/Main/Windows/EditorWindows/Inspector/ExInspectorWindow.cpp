@@ -196,7 +196,7 @@ void ExInspectorWindow::DrawAddComponentButton(const int entityId){
             auto componentName = ComponentRegistry::componentsNameById[componentRegistryPair.first];
             auto popupLabel = componentName + "###id_" + componentName;
             if(ImGui::MenuItem(popupLabel.c_str())){
-                componentRegistryPair.second(*ecsManager->GetEntity(entityId));
+                componentRegistryPair.second(ecsManager->GetEntity(entityId));
             }
         }
         ImGui::EndPopup();

@@ -24,23 +24,30 @@ class EntityCS{
 private:
     bool internal;
     unsigned int id;
+    std::string guid;
     std::string name;
 
     class ECSManager* ecsManager;
 public:
     unsigned int GetId() const { return id; };
+    const std::string GetGuid() const { return guid; };
+
+    void RegenerateGuid(std::string* newGuid = nullptr);
 
     EntityCS() = default;
-    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager, const bool internal = false) : id(id), name(name), ecsManager(ecsManager), internal(internal){}
+    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager, const bool internal = false) : id(id), name(name), ecsManager(ecsManager), internal(internal){
+        RegenerateGuid();
+    };
 
     void ChangeName(const std::string name);
     const std::string GetName() const;
 
+    void KillImmediately();
     void Kill();
     Signature& GetComponentSignature() const;
 
     template<typename TComponent, typename ...TArgs>
-    void AddComponent(TArgs&& ...args) const;
+    std::shared_ptr<TComponent> AddComponent(TArgs&& ...args) const;
 
     template<typename TComponent>
     std::shared_ptr<TComponent> GetComponent() const;
@@ -64,7 +71,7 @@ class ECSystem {
 protected:
     std::vector<int> systemSignatureIds;
     std::vector<int> systemOptionalSignatureIds;
-    std::vector<EntityCS> systemEntities; 
+    std::vector<std::shared_ptr<EntityCS>> systemEntities; 
 
     template<typename TComponent>
     void Require(const bool optional);
@@ -72,10 +79,10 @@ protected:
     bool CheckForRegisteredId(const int componentId) const;
 
 public:
-    std::vector<EntityCS>* GetSystemEntities();
+    std::vector<std::shared_ptr<EntityCS>>* GetSystemEntities();
     bool CheckEntitySignatureMatch(const Signature& entitySignature) const;
-    void AddEntity(const EntityCS entity);
-    void ValidateEntity(EntityCS entity);
+    void AddEntity(const std::shared_ptr<EntityCS> entity);
+    void ValidateEntity(std::shared_ptr<EntityCS> entity);
     void RemoveEntity(const int id);
     virtual void UpdateSystem(){};
 
@@ -134,7 +141,7 @@ public:
     ~ECSystemContext() = default;
 
     void UpdateContext();
-    void ValidateEntity(EntityCS entity);
+    void ValidateEntity(std::shared_ptr<EntityCS> entity);
     void Register(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
     void Unregister(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
 
@@ -152,7 +159,7 @@ class ECSManager{
 private:
     std::vector<Signature> entitiesSignature; // each entity will have it own signature
 
-    std::vector<EntityCS> entities;
+    std::vector<std::shared_ptr<EntityCS>> entities;
 
     std::unordered_map<std::type_index, std::shared_ptr<ECSystem>> systems;
 
@@ -172,24 +179,25 @@ public:
 
     void Update();
 
-    EntityCS& CreateEntity(const std::string entityName, const bool internal = false);
-    EntityCS* GetEntity(const int entityId); 
-    void DestroyEntity(EntityCS entity);
+    std::shared_ptr<EntityCS> CreateEntity(const std::string entityName, const bool internal = false);
+    std::shared_ptr<EntityCS> GetEntity(const int entityId); 
+    void DestroyEntityImmediately(const int entityId);
+    void DestroyEntity(std::shared_ptr<EntityCS> entity);
     std::unordered_set<int>& GetAliveEntities();
     void DestroyAllEntities();
     void DestroyAllEntitiesImmediately();
 
     template<typename TComponent, typename ...TArgs>
-    void AddComponent(EntityCS entity, TArgs&& ...args);
+    std::shared_ptr<TComponent> AddComponent(std::shared_ptr<EntityCS> entity, TArgs&& ...args);
     template<typename TComponent>
-    std::shared_ptr<TComponent> GetComponent(EntityCS entity) const;
+    std::shared_ptr<TComponent> GetComponent(std::shared_ptr<EntityCS> entity) const;
     template<typename TComponent>
-    bool HasComponent(EntityCS entity) const;
+    bool HasComponent(std::shared_ptr<EntityCS> entity) const;
     bool HasComponent(const int entityId, const int componentId);
     template<typename TComponent>
-    void RemoveComponent(EntityCS entity);
+    void RemoveComponent(std::shared_ptr<EntityCS> entity);
     void RemoveComponent(const int entityId, const int componentId);
-    void RemoveAllComponents(EntityCS entity);
+    void RemoveAllComponents(std::shared_ptr<EntityCS> entity);
     Signature& GetEntitySignature(const int id);
     const std::vector<std::shared_ptr<IPool>>& GetEntityComponentPools() const;
 
@@ -205,10 +213,10 @@ public:
 };
 
 template<typename TComponent, typename ...TArgs>
-void ECSManager::AddComponent(EntityCS entity, TArgs&& ...args){
+std::shared_ptr<TComponent> ECSManager::AddComponent(std::shared_ptr<EntityCS> entity, TArgs&& ...args){
     auto componentId = EComponentS<TComponent>::GetId();
     auto componentCreationIndex = componentId + 1;
-    auto entityId = entity.GetId();
+    auto entityId = entity->GetId();
     auto entitiesSignatureSize = entitiesSignature.size();
 
     if(entitiesSignatureSize <= entityId)
@@ -223,7 +231,7 @@ void ECSManager::AddComponent(EntityCS entity, TArgs&& ...args){
         entitySignature->resize(componentCreationIndex * 2, false);
     }
 
-    if(HasComponent<TComponent>(entity)) return;
+    if(HasComponent<TComponent>(entity)) return entity->GetComponent<TComponent>();
     
     //Creating Component pool as needed
     
@@ -235,16 +243,19 @@ void ECSManager::AddComponent(EntityCS entity, TArgs&& ...args){
 
     auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentPools[componentId]);
 
-    castedPoolManager->ComponentAddedToEntity(entityId, std::make_shared<TComponent>(std::forward<TArgs>(args)...));
+    auto component = std::make_shared<TComponent>(std::forward<TArgs>(args)...);
+
+    castedPoolManager->ComponentAddedToEntity(entityId, component);
 
     SetToValidation(entityId);
     entitiesSignature[entityId][componentId] = true;
+    return component;
 };
 
 template<typename TComponent>
-std::shared_ptr<TComponent> ECSManager::GetComponent(EntityCS entity) const{
+std::shared_ptr<TComponent> ECSManager::GetComponent(std::shared_ptr<EntityCS> entity) const{
     auto componentId = EComponentS<TComponent>::GetId();
-    auto entityId = entity.GetId();
+    auto entityId = entity->GetId();
     auto entitySignature = entitiesSignature[entityId];
 
     if(entitySignature.size() > componentId && entitySignature[componentId])
@@ -263,9 +274,9 @@ std::shared_ptr<TComponent> ECSManager::GetComponent(EntityCS entity) const{
 };
 
 template<typename TComponent>
-bool ECSManager::HasComponent(EntityCS entity) const{
+bool ECSManager::HasComponent(std::shared_ptr<EntityCS> entity) const{
     auto componentId = EComponentS<TComponent>::GetId();
-    auto entityId = entity.GetId();
+    auto entityId = entity->GetId();
     auto entitySignature = entitiesSignature[entityId];
 
     if(entitySignature.size() <= componentId)
@@ -277,8 +288,8 @@ bool ECSManager::HasComponent(EntityCS entity) const{
 };
 
 template<typename TComponent>
-void ECSManager::RemoveComponent(EntityCS entity){
-    auto entityId = entity.GetId();
+void ECSManager::RemoveComponent(std::shared_ptr<EntityCS> entity){
+    auto entityId = entity->GetId();
     auto entitySignature = entitiesSignature[entityId];
 
     if(!HasComponent<TComponent>(entity)) return;
@@ -325,13 +336,13 @@ void ECSManager::UpdateSystem(){
 
 
 template<typename TComponent, typename ...TArgs>
-void EntityCS::AddComponent(TArgs&& ...args) const{    
-    ecsManager->AddComponent<TComponent>(*this, std::forward<TArgs>(args)...);
+std::shared_ptr<TComponent> EntityCS::AddComponent(TArgs&& ...args) const{    
+    return ecsManager->AddComponent<TComponent>(ecsManager->GetEntity(id), std::forward<TArgs>(args)...);
 };
 
 template<typename TComponent>
 std::shared_ptr<TComponent> EntityCS::GetComponent() const{
-    return ecsManager->GetComponent<TComponent>(*this);
+    return ecsManager->GetComponent<TComponent>(ecsManager->GetEntity(id));
 };
 
 template<typename TComponent>

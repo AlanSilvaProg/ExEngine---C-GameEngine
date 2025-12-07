@@ -6,7 +6,7 @@
 class RenderingSystem2D : public ECSystem{
 private: 
     std::shared_ptr<AssetManager> assetManager;
-    bool RenderOrderCheck(const EntityCS& a, const EntityCS& b);
+    bool RenderOrderCheck(const std::shared_ptr<EntityCS> a, const std::shared_ptr<EntityCS> b);
 public:
     RenderingSystem2D();
 

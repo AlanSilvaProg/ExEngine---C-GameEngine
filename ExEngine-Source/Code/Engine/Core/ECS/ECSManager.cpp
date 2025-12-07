@@ -3,7 +3,9 @@
 #include "../Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
 #include "../../GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
 #include "../Serializer/Demangle.h"
+#include "../UID/UID.h"
 #include <new>
+#include <memory>
 
 ECSManager::ECSManager(){
     
@@ -32,11 +34,7 @@ void ECSManager::LifeCycleCheck(){
     if(entitiesToBeKilled.size() > 0)
     {
         for(auto entityId : entitiesToBeKilled){
-            RemoveAllComponents(entities[entityId]);
-            aliveEntities.erase(entityId);
-            freeEntities.push_back(entityId);
-            
-            Logger::Log("Entity with ID: " + std::to_string(entityId) + " has been killed.");
+            DestroyEntityImmediately(entityId);
         }
 
         entitiesToBeKilled.clear();
@@ -60,10 +58,10 @@ void ECSManager::Update(){
     LifeCycleCheck();
 };
 
-EntityCS& ECSManager::CreateEntity(const std::string entityName, const bool internal){
+std::shared_ptr<EntityCS> ECSManager::CreateEntity(const std::string entityName, const bool internal){
     if(freeEntities.empty()){
-        EntityCS entity(EntityCSCounter::GetEntitiesCreated(), entityName, this, internal);
-        auto entityId = entity.GetId();
+        auto entity = std::make_shared<EntityCS>(EntityCSCounter::GetEntitiesCreated(), entityName, this, internal);
+        auto entityId = entity->GetId();
 
         auto entitiesCreated = EntityCSCounter::IncreaseEntitiesCreated();
 
@@ -84,7 +82,7 @@ EntityCS& ECSManager::CreateEntity(const std::string entityName, const bool inte
 
     auto entityId = freeEntities.front();
 
-    entities[entityId].ChangeName(entityName);
+    entities[entityId]->ChangeName(entityName);
     aliveEntities.insert(entityId);
     SetToValidation(entityId);
     freeEntities.pop_front();
@@ -94,22 +92,30 @@ EntityCS& ECSManager::CreateEntity(const std::string entityName, const bool inte
     return entities[entityId];
 };
 
-EntityCS* ECSManager::GetEntity(const int entityId){
+std::shared_ptr<EntityCS> ECSManager::GetEntity(const int entityId){
     if(entityId > EntityCSCounter::GetEntitiesCreated())
     {
         Logger::LogError("Entity wasn't created yet, ID: " + std::to_string(entityId));
         return nullptr;
     }
 
-    return &entities[entityId];
+    return entities[entityId];
 };
 
-void ECSManager::DestroyEntity(EntityCS entity){
-    entitiesToBeKilled.emplace_back(entity.GetId());
+void ECSManager::DestroyEntityImmediately(int entityId){
+    RemoveAllComponents(entities[entityId]);
+    aliveEntities.erase(entityId);
+    freeEntities.push_back(entityId);
+    
+    Logger::Log("Entity with ID: " + std::to_string(entityId) + " has been killed.");
 };
 
-void ECSManager::RemoveAllComponents(EntityCS entity){
-    auto entityId = entity.GetId();
+void ECSManager::DestroyEntity(std::shared_ptr<EntityCS> entity){
+    entitiesToBeKilled.emplace_back(entity->GetId());
+};
+
+void ECSManager::RemoveAllComponents(std::shared_ptr<EntityCS> entity){
+    auto entityId = entity->GetId();
     auto& entitySignature = entitiesSignature[entityId];
 
     for(int i = 0; i < entitySignature.size(); i ++)
@@ -166,7 +172,7 @@ const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& ECSManager
 void ECSManager::DestroyAllEntities(){
     for(auto entityId : aliveEntities)
     {
-        DestroyEntity(*GetEntity(entityId));
+        DestroyEntity(GetEntity(entityId));
     }
 };
 
@@ -176,6 +182,16 @@ void ECSManager::DestroyAllEntitiesImmediately(){
 };
 
 //Entity
+
+void EntityCS::RegenerateGuid(std::string* newGuid){
+    if(newGuid != nullptr)
+    {
+        guid = *newGuid;
+        return;
+    }
+
+    guid = UID::GenerateGUID();
+};
 
 void EntityCS::ChangeName(const std::string name){
     this->name = name;
@@ -189,8 +205,12 @@ void EntityCS::RemoveComponent(const int componentId) const{
     ecsManager->RemoveComponent(GetId(), componentId);
 };
 
+void EntityCS::KillImmediately(){
+    ecsManager->DestroyEntityImmediately(id);
+};
+
 void EntityCS::Kill(){
-    ecsManager->DestroyEntity(*this);
+    ecsManager->DestroyEntity(ecsManager->GetEntity(id));
 };
 
 const std::string EntityCS::GetName() const{
@@ -199,7 +219,7 @@ const std::string EntityCS::GetName() const{
 
 //System
 
-std::vector<EntityCS>* ECSystem::GetSystemEntities(){
+std::vector<std::shared_ptr<EntityCS>>* ECSystem::GetSystemEntities(){
     return &systemEntities;
 };
 
@@ -212,18 +232,18 @@ bool ECSystem::CheckEntitySignatureMatch(const Signature& entitySignature) const
     return true;
 };
 
-void ECSystem::AddEntity(const EntityCS entity){
+void ECSystem::AddEntity(const std::shared_ptr<EntityCS> entity){
     systemEntities.push_back(entity);
 };
 
-void ECSystem::ValidateEntity(EntityCS entity)
+void ECSystem::ValidateEntity(std::shared_ptr<EntityCS> entity)
 {
-    auto entityId = entity.GetId();
+    auto entityId = entity->GetId();
     for(int i = 0; i < systemEntities.size(); i++)
     {
-        if(systemEntities[i].GetId() == entityId)
+        if(systemEntities[i]->GetId() == entityId)
         {
-            if(!CheckEntitySignatureMatch(entity.GetComponentSignature()))
+            if(!CheckEntitySignatureMatch(entity->GetComponentSignature()))
             {
                 RemoveEntity(entityId);
             }
@@ -231,7 +251,7 @@ void ECSystem::ValidateEntity(EntityCS entity)
         }
     }
 
-    if(CheckEntitySignatureMatch(entity.GetComponentSignature()))
+    if(CheckEntitySignatureMatch(entity->GetComponentSignature()))
     {
         AddEntity(entity);
     }
@@ -239,7 +259,7 @@ void ECSystem::ValidateEntity(EntityCS entity)
 
 void ECSystem::RemoveEntity(const int id){
     systemEntities.erase(std::remove_if(systemEntities.begin(), systemEntities.end(),
-                        [id](EntityCS entity) { return entity.GetId() == id; }),
+                        [id](std::shared_ptr<EntityCS> entity) { return entity->GetId() == id; }),
                         systemEntities.end());
 };
 
@@ -273,7 +293,7 @@ void ECSystemContext::UpdateContext(){
     }
 };
 
-void ECSystemContext::ValidateEntity(EntityCS entity){
+void ECSystemContext::ValidateEntity(std::shared_ptr<EntityCS> entity){
     for(auto& systemEntry : systemEntries)
     {
         systemEntry.system->ValidateEntity(entity);

@@ -9,7 +9,7 @@ class ExRendererGetters{
 public:
     static SDL_Renderer* renderer;
     static SDL_Window* window;
-    static EntityCS* currentRenderCamera;
+    static std::shared_ptr<EntityCS> currentRenderCamera;
 
     static std::map<int, SDL_Texture*> sceneDisplay;
 };

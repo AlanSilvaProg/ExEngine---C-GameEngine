@@ -98,6 +98,7 @@ void EntityBrowserWindow::DrawEntity(int entityId){
         {
             if(ImGui::MenuItem("Delete"))
             {
+                ECSWorldManager::GetCurrentWorld()->DetachEntity(entity);
                 entity->Kill();
                 selectionDetected = false;
                 ElementSelectionController::SetSelected(nullptr);//null selection
@@ -124,7 +125,8 @@ void EntityBrowserWindow::CheckContextWindowWithoutSelection(){
     {
         if(ImGui::MenuItem("Create new Entity"))
         {
-            EditorInterfaceGetters::engine->GetECSManagerPtr()->CreateEntity(defaultEntityName);
+            auto entity = EditorInterfaceGetters::engine->GetECSManagerPtr()->CreateEntity(defaultEntityName);
+            ECSWorldManager::GetCurrentWorld()->AttachEntity(entity);
         }
         ImGui::EndPopup();
     }

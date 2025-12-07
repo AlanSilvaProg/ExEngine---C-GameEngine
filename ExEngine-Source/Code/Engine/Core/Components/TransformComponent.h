@@ -3,6 +3,7 @@
 #include "../ECS/ECSManager.h"
 #include "../Serializer/ISerializable.h"
 #include "../ECS/InternalRegistry/ComponentRegistry.h"
+#include "../Utils/Algorithms/JsonExtensions.h"
 
 struct TransformComponent : public EComponentS<TransformComponent>{
 public:
@@ -27,6 +28,20 @@ public:
             }
         };
     };
+
+    virtual nlohmann::json ToJson() override {
+        return {
+            {"position", JsonExtensions::glm_to_json(position)},
+            {"rotation", JsonExtensions::glm_to_json(rotation)},
+            {"scale", JsonExtensions::glm_to_json(scale)}
+        };
+    }
+
+    virtual void FromJson(const nlohmann::json& json) override {
+        if (json.contains("position")) JsonExtensions::glm_from_json(json["position"], position);
+        if (json.contains("rotation")) JsonExtensions::glm_from_json(json["rotation"], rotation);
+        if (json.contains("scale")) JsonExtensions::glm_from_json(json["scale"], scale);
+    }
 };
 
 REGISTER_COMPONENT(TransformComponent)

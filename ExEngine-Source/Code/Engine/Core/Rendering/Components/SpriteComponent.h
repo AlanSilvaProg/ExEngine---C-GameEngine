@@ -10,6 +10,13 @@
 struct SpriteComponent : public EComponentS<SpriteComponent>{
 private: 
     std::shared_ptr<AssetManager> assetManager;
+
+    inline void GetTextureInformation(){
+        SDL_Point point;
+        SDL_QueryTexture(texture, NULL, NULL, &point.x, &point.y);
+        this->srcRect = new SDL_Rect { 0, 0, point.x, point.y };
+    };
+
 public:
     std::string id;
     std::string path;
@@ -33,15 +40,21 @@ public:
         assetManager = AssetManager::GetInstance();
         texture = assetManager->GetTextureAsset(id, path);
 
-        SDL_Point point;
-        SDL_QueryTexture(texture, NULL, NULL, &point.x, &point.y);
-        this->srcRect = new SDL_Rect { 0, 0, point.x, point.y };
+        GetTextureInformation();
     };
 
     ~SpriteComponent() {
         assetManager->FreeAsset(id);
     };
 
+    inline SpriteComponent& SetSprite(std::string spriteId, std::string spritePath){
+        id = spriteId;
+        path = spritePath;
+        texture = assetManager->GetTextureAsset(id, path);
+        GetTextureInformation();
+
+        return *this;
+    };
 
     virtual ExSerializedClass Serialize() override{
         return ExSerializedClass{
@@ -52,6 +65,33 @@ public:
                 EX_SERIALIZER((*this), layerAttributes, true)
             }
         };
+    };
+
+    virtual nlohmann::json ToJson() override {
+        return {
+            {"id", id},
+            {"path", path},
+            {"layerAttributes", layerAttributes.ToJson()},
+            {"flipX", flipX},
+        };
+    };
+
+    virtual void FromJson(const nlohmann::json& json) override {
+        std::string loadedId;
+        std::string loadedPath;
+        if (json.contains("id"))
+            loadedId = json["id"];
+
+        if (json.contains("path"))
+            loadedPath = json["path"];
+
+        if (json.contains("layerAttributes"))
+            layerAttributes.FromJson(json["layerAttributes"]);
+
+        if (json.contains("flipX"))
+            flipX = json["flipX"];
+
+        SetSprite(loadedId, loadedPath);
     };
 };
 
