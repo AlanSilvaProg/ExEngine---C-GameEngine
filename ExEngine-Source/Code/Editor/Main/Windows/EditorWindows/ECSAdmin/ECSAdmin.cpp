@@ -13,7 +13,10 @@ void ECSAdmin::Draw(int phase){
 
     if(!EditorInterfaceGetters::ecsAdministratorEnabled) return;
 
-    if(ImGui::Begin("Entity Component System Administrator", &EditorInterfaceGetters::ecsAdministratorEnabled, ImGuiWindowFlags_MenuBar)) // 0
+    ImGui::SetNextWindowSize(ImVec2(1200, 600), ImGuiCond_FirstUseEver);
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    
+    if(ImGui::Begin("Entity Component System Administrator", &EditorInterfaceGetters::ecsAdministratorEnabled, windowFlags)) // 0
     {
         if(ImGui::BeginMenuBar()) // 1
         {
@@ -152,7 +155,7 @@ void ECSAdmin::Draw(int phase){
             ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x /2) - (entitiesTextSize / 2));
             ImGui::Text("%s", entitiesText);
             
-            // Add your existing world entities display code here if needed
+            //ToDo Add existing world entities display code here if needed
         }
 
         
