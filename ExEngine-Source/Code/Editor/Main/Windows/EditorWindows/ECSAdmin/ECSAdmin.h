@@ -11,6 +11,8 @@ private:
     bool showWorldEntities;
     bool showSystems;
     bool includeInternals;
+    
+    void DrawSystemWithContextMenu(const SystemEntry& systemEntry, SystemContext currentContext);
 public:
     ECSAdmin();
 
