@@ -287,6 +287,7 @@ void ExInspectorWindow::DrawAsset(const AssetBrowserSelection* assetBrowserSelec
             if (ImGui::Button("Open"))
             {
                 ECSWorldManager::LoadWorld(assetPath);
+                EditorInterfaceGetters::worldWithoutPath = false;
             }
 
             buttonWidth = ImGui::CalcTextSize("Open as Incremental").x + ImGui::GetStyle().FramePadding.x * 2;
@@ -296,6 +297,7 @@ void ExInspectorWindow::DrawAsset(const AssetBrowserSelection* assetBrowserSelec
             if (ImGui::Button("Open as Incremental"))
             {
                 ECSWorldManager::LoadIncrementalWorld(assetPath);
+                EditorInterfaceGetters::worldWithoutPath = false;
             }
             return;
         }

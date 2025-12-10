@@ -8,7 +8,16 @@
 #include <memory>
 
 ECSManager::ECSManager(){
+    CreateSystemContexts();
+};
     
+void ECSManager::CreateSystemContexts(){
+    systemContext.emplace(SystemContext::EARLY_UPDATE, std::make_shared<ECSystemContext>(SystemContext::EARLY_UPDATE));
+    systemContext.emplace(SystemContext::UPDATE, std::make_shared<ECSystemContext>(SystemContext::UPDATE));
+    systemContext.emplace(SystemContext::FIXED_UPDATE, std::make_shared<ECSystemContext>(SystemContext::FIXED_UPDATE));
+    systemContext.emplace(SystemContext::LATE_UPDATE, std::make_shared<ECSystemContext>(SystemContext::LATE_UPDATE));
+    systemContext.emplace(SystemContext::PRE_RENDER, std::make_shared<ECSystemContext>(SystemContext::PRE_RENDER));
+    systemContext.emplace(SystemContext::POST_RENDER, std::make_shared<ECSystemContext>(SystemContext::POST_RENDER));
 };
 
 void ECSManager::LifeCycleCheck(){
@@ -169,6 +178,15 @@ const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& ECSManager
     return systems;
 };
 
+const std::shared_ptr<ECSystemContext> ECSManager::GetECSystemContext(const SystemContext context) const{
+    for(auto ctxt : systemContext)
+    {
+        if(ctxt.first == context) return ctxt.second;
+    }
+
+    return nullptr;
+};
+
 void ECSManager::DestroyAllEntities(){
     for(auto entityId : aliveEntities)
     {
@@ -312,11 +330,6 @@ void ECSystemContext::Unregister(const std::type_index typeIndex, std::shared_pt
             return;
         }
     }
-};
-
-const void ECSystemContext::SetSystemContext(SystemContext context) {
-    if(systemContext == context) return;
-    RefreshContext(context);
 };
 
 void ECSystemContext::RefreshContext(SystemContext newContext){

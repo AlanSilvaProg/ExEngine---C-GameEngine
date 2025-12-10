@@ -14,10 +14,7 @@ private:
     void ProcessInputPhase();
     void ProcessCollisionPhase();
 public:
-    Gameloop(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ecsManager){
-        //Creating event Handlers
-        GameUpdateEventHandler::Create();
-    }; 
+    Gameloop(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ecsManager){ }; 
 
     void Initialize();
     void ExecuteGameLoop();

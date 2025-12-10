@@ -137,7 +137,9 @@ private:
 
     void RefreshContext(SystemContext newContext);
 public:
-    inline ECSystemContext(SystemContext systemContext) : systemContext(systemContext) { RefreshContext(systemContext); };
+    bool enabled;
+
+    inline ECSystemContext(SystemContext systemContext, bool enabled = true) : systemContext(systemContext), enabled(enabled) { RefreshContext(systemContext); };
     ~ECSystemContext() = default;
 
     void UpdateContext();
@@ -145,7 +147,6 @@ public:
     void Register(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
     void Unregister(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
 
-    const void SetSystemContext(SystemContext context);
     inline const std::vector<SystemEntry>& GetContextSystems() const { return systemEntries; };
     inline const SystemContext GetSystemContext() { return systemContext; };
     inline const bool IsInternal() const { return internal; };
@@ -162,6 +163,7 @@ private:
     std::vector<std::shared_ptr<EntityCS>> entities;
 
     std::unordered_map<std::type_index, std::shared_ptr<ECSystem>> systems;
+    std::unordered_map<SystemContext, std::shared_ptr<ECSystemContext>> systemContext;
 
     std::vector<std::shared_ptr<IPool>> componentPools; // one pool by each component id 
 
@@ -173,12 +175,14 @@ private:
     std::unordered_set<int> aliveEntities;
 
     void LifeCycleCheck();
+    void CreateSystemContexts();
 public:
     ECSManager();
     ~ECSManager() = default;
 
     void Update();
 
+    //entities
     std::shared_ptr<EntityCS> CreateEntity(const std::string entityName, const bool internal = false);
     std::shared_ptr<EntityCS> GetEntity(const int entityId); 
     void DestroyEntityImmediately(const int entityId);
@@ -187,6 +191,7 @@ public:
     void DestroyAllEntities();
     void DestroyAllEntitiesImmediately();
 
+    // components
     template<typename TComponent, typename ...TArgs>
     std::shared_ptr<TComponent> AddComponent(std::shared_ptr<EntityCS> entity, TArgs&& ...args);
     template<typename TComponent>
@@ -201,7 +206,9 @@ public:
     Signature& GetEntitySignature(const int id);
     const std::vector<std::shared_ptr<IPool>>& GetEntityComponentPools() const;
 
+    //systems
     const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& GetAllSystems();
+    const std::shared_ptr<ECSystemContext> GetECSystemContext(const SystemContext context) const;
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
     template<typename TSystem>

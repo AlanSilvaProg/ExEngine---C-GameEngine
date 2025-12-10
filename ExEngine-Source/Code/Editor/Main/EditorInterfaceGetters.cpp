@@ -1,6 +1,7 @@
 #include "EditorInterfaceGetters.h"
 #include "../../Engine/Core/Engine.h"
 #include "../../Engine/Core/Scene/ECSWorldManager.h"
+#include "../../Engine/Core/Runtime/App.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <filesystem>
 
@@ -21,6 +22,8 @@ bool EditorInterfaceGetters::worldWithoutPath;
 bool EditorInterfaceGetters::buildWindowEnabled;
 
 void EditorInterfaceGetters::Save(){
+    if(App::isPlaying) return;
+
     if(EditorInterfaceGetters::worldWithoutPath)
     {
         std::filesystem::path targetPath = EditorInterfaceGetters::currentProjectPath/"Worlds";

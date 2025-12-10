@@ -17,6 +17,7 @@ private:
     void StartEngine();
     void StopEngine();
 
+    void CreateEngineBaseEventHandlers();
     void CreateBaseCamera();
 public:
     Engine();

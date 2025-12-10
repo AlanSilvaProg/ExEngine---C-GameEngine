@@ -8,7 +8,7 @@ class ExRenderer{
 private:
     static std::shared_ptr<ECSManager> ecsManager;
     static std::shared_ptr<RenderingSystem2D> renderingSystem2D;
-    static std::shared_ptr<CameraSystem> cameraSystem;
+    static std::shared_ptr<ECSystemContext> preRenderSystemContext;
 
     static bool initialized;
 

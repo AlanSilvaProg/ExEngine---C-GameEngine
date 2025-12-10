@@ -7,7 +7,7 @@
 bool ExRenderer::initialized = false;
 std::shared_ptr<ECSManager> ExRenderer::ecsManager = nullptr;
 std::shared_ptr<RenderingSystem2D> ExRenderer::renderingSystem2D = nullptr;
-std::shared_ptr<CameraSystem> ExRenderer::cameraSystem = nullptr;
+std::shared_ptr<ECSystemContext> ExRenderer::preRenderSystemContext = nullptr;
 
 void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
@@ -34,11 +34,15 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
     SDL_PumpEvents();
 
     ecsManager = ecsManagerPtr;
-    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
-    cameraSystem = ecsManager->CreateSystem<CameraSystem>(renderingSystem2D);
-    initialized = true;
+    preRenderSystemContext = ecsManager->GetECSystemContext(SystemContext::PRE_RENDER);
 
-    PreRenderEventHandler::Create();
+    //camera system creation and context registry
+    renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
+    auto cameraSystem = ecsManager->CreateSystem<CameraSystem>(renderingSystem2D);
+    auto cameraSystemTypeId = std::type_index(typeid(CameraSystem));
+    preRenderSystemContext->Register(cameraSystemTypeId, cameraSystem);
+
+    initialized = true;
 };
 
 void ExRenderer::RenderSequence(){
@@ -46,7 +50,7 @@ void ExRenderer::RenderSequence(){
     
     PreRenderEventHandler::preRenderHandler->Invoke();
 
-    cameraSystem->UpdateSystem();
+    //ECS System Context runs throughout the events, ECSManager do the registry
 
     PreRenderEventHandler::postRenderHandler->Invoke();
 };
