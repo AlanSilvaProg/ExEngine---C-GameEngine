@@ -21,6 +21,11 @@ void ECSAdmin::Draw(int phase){
     
     if(ImGui::Begin("Entity Component System Administrator", &EditorInterfaceGetters::ecsAdministratorEnabled, windowFlags)) // 0
     {
+        if(!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+        {
+            EditorInterfaceGetters::ecsAdministratorEnabled = false;
+        }
+        
         if(ImGui::BeginMenuBar()) // 1
         {
             ImGui::Separator();
@@ -177,57 +182,57 @@ void ECSAdmin::DrawSystemWithContextMenu(const SystemEntry& systemEntry, SystemC
     {
         if(ImGui::BeginMenu("Move To"))
         {
-            // EARLY_UPDATE option
             if(currentContext != SystemContext::EARLY_UPDATE)
             {
                 if(ImGui::MenuItem("EARLY_UPDATE"))
                 {
-                    // TODO: Implement move system to EARLY_UPDATE context
+                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
+                    ecsManager->GetECSystemContext(SystemContext::EARLY_UPDATE)->Register(systemEntry.type, systemEntry.system);
                 }
             }
             
-            // UPDATE option
             if(currentContext != SystemContext::UPDATE)
             {
                 if(ImGui::MenuItem("UPDATE"))
                 {
-                    // TODO: Implement move system to UPDATE context
+                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
+                    ecsManager->GetECSystemContext(SystemContext::UPDATE)->Register(systemEntry.type, systemEntry.system);
                 }
             }
             
-            // FIXED_UPDATE option
             if(currentContext != SystemContext::FIXED_UPDATE)
             {
                 if(ImGui::MenuItem("FIXED_UPDATE"))
                 {
-                    // TODO: Implement move system to FIXED_UPDATE context
+                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
+                    ecsManager->GetECSystemContext(SystemContext::FIXED_UPDATE)->Register(systemEntry.type, systemEntry.system);
                 }
             }
             
-            // LATE_UPDATE option
             if(currentContext != SystemContext::LATE_UPDATE)
             {
                 if(ImGui::MenuItem("LATE_UPDATE"))
                 {
-                    // TODO: Implement move system to LATE_UPDATE context
+                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
+                    ecsManager->GetECSystemContext(SystemContext::LATE_UPDATE)->Register(systemEntry.type, systemEntry.system);
                 }
             }
             
-            // PRE_RENDER option
             if(currentContext != SystemContext::PRE_RENDER)
             {
                 if(ImGui::MenuItem("PRE_RENDER"))
                 {
-                    // TODO: Implement move system to PRE_RENDER context
+                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
+                    ecsManager->GetECSystemContext(SystemContext::PRE_RENDER)->Register(systemEntry.type, systemEntry.system);
                 }
             }
             
-            // POST_RENDER option
             if(currentContext != SystemContext::POST_RENDER)
             {
                 if(ImGui::MenuItem("POST_RENDER"))
                 {
-                    // TODO: Implement move system to POST_RENDER context
+                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
+                    ecsManager->GetECSystemContext(SystemContext::POST_RENDER)->Register(systemEntry.type, systemEntry.system);
                 }
             }
             
