@@ -34,33 +34,36 @@ void GameWindow::Draw(int phase) {
     int w = 0;
     int h = 0;
 
+    int textureW = 0;
+    int textureH = 0;
+    float displayW, displayH;
+    
     if(canRenderWindow)
     {
         sdlTexture = ExRendererGetters::sceneDisplay[targetDisplay];
-        w = 0;
-        h = 0;
-        SDL_QueryTexture(sdlTexture, NULL, NULL, &w, &h);
-
-        auto viewportGCD = ExMath::GetGCD(w, h);
-
-        auto sizeW = ImGui::GetContentRegionAvail().x;
-        auto sizeH = ImGui::GetContentRegionAvail().y;
-        auto aspectW = w / viewportGCD;
-        auto aspectH = h / viewportGCD;
-
-        auto limitFactor = sizeW / sizeH;
-
-        if(sizeW < w || sizeH < h)
-        {
-            if(limitFactor >= 1){
-                h = sizeH;
-                w = (h / aspectH) * aspectW;
-            }
-            else{
-                w = sizeW;
-                h = (w / aspectW) * aspectH;
-            }
+        SDL_QueryTexture(sdlTexture, NULL, NULL, &textureW, &textureH);
+        
+        auto availableW = ImGui::GetContentRegionAvail().x;
+        auto availableH = ImGui::GetContentRegionAvail().y;
+        
+        // Calculate aspect ratio
+        float textureAspect = (float)textureW / (float)textureH;
+        float availableAspect = availableW / availableH;
+        
+        // Fit texture to available space while maintaining aspect ratio
+        if (textureAspect > availableAspect) {
+            // Texture is wider, fit to width
+            displayW = availableW;
+            displayH = availableW / textureAspect;
+        } else {
+            // Texture is taller, fit to height
+            displayH = availableH;
+            displayW = availableH * textureAspect;
         }
+
+        auto viewportGCD = ExMath::GetGCD(textureW, textureH);
+        auto aspectW = textureW / viewportGCD;
+        auto aspectH = textureH / viewportGCD;
 
         if(ImGui::BeginMenuBar())
         {
@@ -122,18 +125,18 @@ void GameWindow::Draw(int phase) {
     }
 
     // Calculate the position to center the image
-    ImVec2 pos = ImVec2((ImGui::GetWindowSize().x - h) * 0.5f, (ImGui::GetWindowSize().y - w) * 0.5f);
-    ImVec2 viewportSize(w, h);
+    ImVec2 pos = ImVec2((ImGui::GetWindowSize().x - displayW) * 0.5f, (ImGui::GetWindowSize().y - displayH) * 0.5f);
+    ImVec2 viewportSize(displayW, displayH);
     ImGui::SetCursorPos(pos);
     ImGui::Image((ImTextureID)(intptr_t)sdlTexture, viewportSize);
 
     ImVec2 window_pos = ImGui::GetWindowPos();
     ImVec2 absolute_pos = ImVec2(window_pos.x + pos.x, window_pos.y + pos.y);
     ImVec2 canvas_p0 = absolute_pos;
-    ImVec2 canvas_p1(canvas_p0.x + h, canvas_p0.y + w);
+    ImVec2 canvas_p1(canvas_p0.x + displayW, canvas_p0.y + displayH);
 
     ImGui::SetCursorPos(pos);
-    ImGui::InvisibleButton("gameView", ImVec2(h == 0 ? 1 : h,w == 0 ? 1 : w), ImGuiButtonFlags_MouseButtonLeft);
+    ImGui::InvisibleButton("gameView", ImVec2(displayW == 0 ? 1 : displayW, displayH == 0 ? 1 : displayH), ImGuiButtonFlags_MouseButtonLeft);
 
     if(ImGui::IsItemDeactivated())
     {
