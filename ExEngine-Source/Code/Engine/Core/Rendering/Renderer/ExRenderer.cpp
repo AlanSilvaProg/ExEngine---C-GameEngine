@@ -15,7 +15,9 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
         return;
     }
 
-    ExRendererGetters::window = ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 800, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
+    int renderWidth, renderHeight;
+    ExRendererGetters::GetRenderResolution(renderWidth, renderHeight);
+    ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, renderWidth, renderHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
 
     if(!ExRendererGetters::window)
     {

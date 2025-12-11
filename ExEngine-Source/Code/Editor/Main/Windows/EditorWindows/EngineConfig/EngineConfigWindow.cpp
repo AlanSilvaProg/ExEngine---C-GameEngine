@@ -1,13 +1,14 @@
 #include "EngineConfigWindow.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Core/Utils/Color.h"
+#include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
 #include <cfloat>
 
 EngineConfigWindow::EngineConfigWindow() {
-    selectedSection = ConfigSection::EditorStyle;
+    selectedSection = ConfigSection::RenderSettings;
     hasUnsavedChanges = false;
     lastChangeTime = 0.0f;
     lastErrorTime = 0.0f;
@@ -75,6 +76,33 @@ void EngineConfigWindow::DrawSideMenu() {
     ImGui::Separator();
     ImGui::Spacing();
     
+    bool isRenderSettingsSelected = (selectedSection == ConfigSection::RenderSettings);
+    
+    if (isRenderSettingsSelected) {
+        ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]);
+    }
+    
+    if (ImGui::Selectable("Render Settings", isRenderSettingsSelected, ImGuiSelectableFlags_SpanAllColumns)) {
+        selectedSection = ConfigSection::RenderSettings;
+    }
+    
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Configure render resolution and camera settings");
+    }
+    
+    if (ImGui::IsItemFocused()) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            selectedSection = ConfigSection::RenderSettings;
+        }
+    }
+    
+    if (isRenderSettingsSelected) {
+        ImGui::PopStyleColor(2);
+    }
+    
+    ImGui::Spacing();
+    
     bool isEditorStyleSelected = (selectedSection == ConfigSection::EditorStyle);
     
     if (isEditorStyleSelected) {
@@ -108,6 +136,9 @@ void EngineConfigWindow::DrawSideMenu() {
 
 void EngineConfigWindow::DrawDetailsPanel() {
     switch (selectedSection) {
+        case ConfigSection::RenderSettings:
+            DrawRenderSettingsSection();
+            break;
         case ConfigSection::EditorStyle:
             DrawEditorStyleSection();
             break;
@@ -668,6 +699,137 @@ void EngineConfigWindow::ApplyWindowConstraints() {
 
 bool EngineConfigWindow::ShouldClose() const {
     return shouldClose;
+}
+
+void EngineConfigWindow::DrawRenderSettingsSection() {
+    ImGui::Text("Render Settings Configuration");
+    ImGui::Separator();
+    
+    static int renderWidth, renderHeight;
+    static bool initialized = false;
+    
+    if (!initialized) {
+        ExRendererGetters::GetRenderResolution(renderWidth, renderHeight);
+        initialized = true;
+    }
+    
+    ImGui::Text("Current Resolution: %dx%d", renderWidth, renderHeight);
+    ImGui::Spacing();
+    
+    // Resolution presets
+    ImGui::Text("Resolution Presets:");
+    ImGui::Separator();
+    
+    if (ImGui::Button("720p (1280x720)")) {
+        renderWidth = 1280;
+        renderHeight = 720;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("1080p (1920x1080)")) {
+        renderWidth = 1920;
+        renderHeight = 1080;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("1440p (2560x1440)")) {
+        renderWidth = 2560;
+        renderHeight = 1440;
+    }
+    
+    if (ImGui::Button("4K (3840x2160)")) {
+        renderWidth = 3840;
+        renderHeight = 2160;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Square 800x800")) {
+        renderWidth = 800;
+        renderHeight = 800;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Square 1024x1024")) {
+        renderWidth = 1024;
+        renderHeight = 1024;
+    }
+    
+    ImGui::Spacing();
+    ImGui::Text("Custom Resolution:");
+    ImGui::Separator();
+    
+    // Custom resolution inputs
+    ImGui::PushItemWidth(150);
+    ImGui::InputInt("Width", &renderWidth);
+    ImGui::SameLine();
+    ImGui::InputInt("Height", &renderHeight);
+    ImGui::PopItemWidth();
+    
+    // Clamp values to reasonable ranges
+    if (renderWidth < 320) renderWidth = 320;
+    if (renderWidth > 7680) renderWidth = 7680;
+    if (renderHeight < 240) renderHeight = 240;
+    if (renderHeight > 4320) renderHeight = 4320;
+    
+    ImGui::Spacing();
+    
+    // Apply button
+    int currentWidth, currentHeight;
+    ExRendererGetters::GetRenderResolution(currentWidth, currentHeight);
+    
+    bool resolutionChanged = (renderWidth != currentWidth || renderHeight != currentHeight);
+    
+    if (resolutionChanged) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.6f, 0.0f, 1.0f));
+    }
+    
+    if (ImGui::Button("Apply Resolution")) {
+        ExRendererGetters::SetRenderResolution(renderWidth, renderHeight);
+        lastChangeTime = ImGui::GetTime();
+    }
+    
+    if (resolutionChanged) {
+        ImGui::PopStyleColor(3);
+    }
+    
+    if (ImGui::IsItemHovered()) {
+        if (resolutionChanged) {
+            ImGui::SetTooltip("Apply new resolution: %dx%d", renderWidth, renderHeight);
+        } else {
+            ImGui::SetTooltip("Resolution is already set to %dx%d", renderWidth, renderHeight);
+        }
+    }
+    
+    ImGui::SameLine();
+    
+    if (ImGui::Button("Reset to Default")) {
+        renderWidth = 800;
+        renderHeight = 800;
+    }
+    
+    ImGui::Spacing();
+    ImGui::Separator();
+    
+    // Information section
+    ImGui::Text("Resolution Information:");
+    ImGui::BulletText("Resolution affects all camera outputs and SDL window");
+    ImGui::BulletText("Changes are applied immediately to all systems");
+    ImGui::BulletText("Scene and Game windows will automatically adjust");
+    ImGui::BulletText("Minimum: 320x240, Maximum: 7680x4320");
+    
+    float aspectRatio = (float)renderWidth / (float)renderHeight;
+    ImGui::Text("Aspect Ratio: %.3f:1", aspectRatio);
+    
+    // Show feedback when resolution changes
+    float timeSinceChange = ImGui::GetTime() - lastChangeTime;
+    if (timeSinceChange < 3.0f) {
+        ImGui::Spacing();
+        ImGui::Separator();
+        
+        float alpha = 1.0f - (timeSinceChange / 3.0f);
+        ImVec4 feedbackColor = ImVec4(0.0f, 1.0f, 0.0f, alpha);
+        
+        ImGui::TextColored(feedbackColor, "Resolution applied successfully!");
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, alpha), "All camera systems and windows have been updated.");
+    }
 }
 
 void EngineConfigWindow::HandleGlobalKeyboardShortcuts() {

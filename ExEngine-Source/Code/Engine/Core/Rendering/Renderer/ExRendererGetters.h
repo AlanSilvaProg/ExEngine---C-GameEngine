@@ -12,4 +12,12 @@ public:
     static std::shared_ptr<EntityCS> currentRenderCamera;
 
     static std::map<int, SDL_Texture*> sceneDisplay;
+    
+    // Resolution management
+    static int renderWidth;
+    static int renderHeight;
+    
+    // Resolution methods
+    static void SetRenderResolution(int width, int height);
+    static void GetRenderResolution(int& width, int& height);
 };

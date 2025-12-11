@@ -9,6 +9,7 @@ private:
 
     void UpdateDisplayTexture();
     void DisableDisplayTextures();
+    void OnResolutionChanged(int width, int height);
 public:
     EditorCameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem);
 

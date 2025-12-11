@@ -1,6 +1,7 @@
 #include "CameraSystem.h"
 #include "../Components/CameraComponent.h"
 #include "../Rendering/Renderer/ExRendererGetters.h"
+#include "../Rendering/Renderer/RendererEvent/ResolutionChangeEventHandler.h"
 #include "../Components/TransformComponent.h"
 #include "../Utils/Color.h"
 #include <SDL.h>
@@ -11,6 +12,13 @@ CameraSystem::CameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem){
     Require<TransformComponent>(false);
 
     this->renderingSystem = renderingSystem;
+    
+    // Register for resolution change events
+    if(ResolutionChangeEventHandler::resolutionChangeHandler != nullptr) {
+        *ResolutionChangeEventHandler::resolutionChangeHandler += [this](int width, int height) {
+            this->OnResolutionChanged(width, height);
+        };
+    }
 };
 
 void CameraSystem::UpdateSystem(){
@@ -41,7 +49,9 @@ void CameraSystem::UpdateDisplayTexture(int displayIndex){
 #ifdef EXENGINE_EDITOR
     if(ExRendererGetters::sceneDisplay.find(displayIndex) == ExRendererGetters::sceneDisplay.end())
     {
-        auto sdlTexture = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, 800, 800);
+        int renderWidth, renderHeight;
+        ExRendererGetters::GetRenderResolution(renderWidth, renderHeight);
+        auto sdlTexture = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, renderWidth, renderHeight);
         ExRendererGetters::sceneDisplay.insert_or_assign(displayIndex, sdlTexture);
         return;
     }
@@ -75,6 +85,18 @@ void CameraSystem::DisableAllDisplayTextures(){
             it = sceneDisplay.erase(it);
         } else {
             ++it;
+        }
+    }
+#endif
+};
+
+void CameraSystem::OnResolutionChanged(int width, int height) {
+#ifdef EXENGINE_EDITOR
+    // Recreate all display textures with new resolution
+    for (auto& pair : ExRendererGetters::sceneDisplay) {
+        if (pair.second != nullptr) {
+            SDL_DestroyTexture(pair.second);
+            pair.second = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, width, height);
         }
     }
 #endif

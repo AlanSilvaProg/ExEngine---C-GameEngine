@@ -1,6 +1,7 @@
 #include "EditorCameraSystem.h"
 #include "../Component/EditorCameraComponent.h"
 #include "../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
+#include "../../../Engine/Core/Rendering/Renderer/RendererEvent/ResolutionChangeEventHandler.h"
 #include "../../../Engine/Core/Components/TransformComponent.h"
 #include "../../../Engine/Core/Utils/Color.h"
 #include "../../Main/Windows/EditorWindows/SceneView/SceneWindow.h"
@@ -11,6 +12,13 @@ EditorCameraSystem::EditorCameraSystem(std::shared_ptr<RenderingSystem2D> render
     Require<TransformComponent>(false);
 
     this->renderingSystem = renderingSystem;
+    
+    // Register for resolution change events
+    if(ResolutionChangeEventHandler::resolutionChangeHandler != nullptr) {
+        *ResolutionChangeEventHandler::resolutionChangeHandler += [this](int width, int height) {
+            this->OnResolutionChanged(width, height);
+        };
+    }
 };
 
 void EditorCameraSystem::UpdateSystem(){
@@ -39,7 +47,9 @@ void EditorCameraSystem::UpdateDisplayTexture(){
 #ifdef EXENGINE_EDITOR
     if(SceneWindow::sceneDisplay == nullptr)
     {
-        auto sdlTexture = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, 800, 800);
+        int renderWidth, renderHeight;
+        ExRendererGetters::GetRenderResolution(renderWidth, renderHeight);
+        auto sdlTexture = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, renderWidth, renderHeight);
         SceneWindow::sceneDisplay = sdlTexture;
         return;
     }
@@ -51,5 +61,15 @@ void EditorCameraSystem::DisableDisplayTextures(){
 #ifdef EXENGINE_EDITOR
     if(SceneWindow::sceneDisplay == nullptr) return;
     SDL_SetRenderTarget(ExRendererGetters::renderer, NULL);
+#endif
+};
+
+void EditorCameraSystem::OnResolutionChanged(int width, int height) {
+#ifdef EXENGINE_EDITOR
+    // Recreate scene display texture with new resolution
+    if (SceneWindow::sceneDisplay != nullptr) {
+        SDL_DestroyTexture(SceneWindow::sceneDisplay);
+        SceneWindow::sceneDisplay = SDL_CreateTexture(ExRendererGetters::renderer, SDL_PIXELFORMAT_ABGR1555, SDL_TEXTUREACCESS_TARGET, width, height);
+    }
 #endif
 };

@@ -10,6 +10,7 @@ private:
     void UpdateDisplayTexture(int displayIndex);
     void DisableDisplayTextures(int displayIndex);
     void DisableAllDisplayTextures();
+    void OnResolutionChanged(int width, int height);
 public:
     CameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem);
 
