@@ -11,6 +11,8 @@
 #include "../../Engine/File/FileManagement.h"
 #include "../../Engine/Core/Runtime/Time/Time.h"
 #include "EditorInterfaceGetters.h"
+#include "Windows/EditorWindows/EngineConfig/ConfigurationManager.h"
+#include "Windows/EditorWindows/EngineConfig/EngineConfigWindow.h"
 #include <imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
@@ -42,6 +44,8 @@ void EditorInterface::InitializeEditor(){
     ImGui_ImplSDL2_InitForSDLRenderer(ExRendererGetters::window, ExRendererGetters::renderer);
     ImGui_ImplSDLRenderer2_Init(ExRendererGetters::renderer);
 
+    ConfigurationManager::Initialize();
+
     //Editor loading presets
     EditorPresetInfo result;
     if(FileManagement::LoadFromJson(std::string("engine_editor_layout"), result))
@@ -53,10 +57,13 @@ void EditorInterface::InitializeEditor(){
         EditorInterfaceGetters::ecsMonitoringEnabled = result.ecsMonitoringEnabled;
         EditorInterfaceGetters::ecsAdministratorEnabled = result.ecsAdministratorEnabled;
         EditorInterfaceGetters::assetBrowserIsOpened = result.assetBrowserIsOpened;
+        EditorInterfaceGetters::engineConfigEnabled = result.engineConfigEnabled;
         EditorInterfaceGetters::buildTarget = result.buildTarget;
 
         ImGui::LoadIniSettingsFromMemory(result.editorLayout.c_str());
     }
+    
+    ConfigurationManager::LoadStyleConfig();
 
     EditorInterfaceGetters::defaultIconsInformation["DefaultIcons"] = std::make_unique<SpriteInformation>("Engine-Image-Icon", ICONS_PATH / "AssetIcons.png", glm::vec2(4,2));
     
@@ -90,13 +97,16 @@ void EditorInterface::LateUpdate() const{
     {
         EditorInterfaceGetters::Save();
     }
+    
+    // Handle global keyboard shortcuts for Engine Config window
+    EngineConfigWindow::HandleGlobalKeyboardShortcuts();
 };
 
-void EditorInterface::PreRender() const{ //need to call on late update
+void EditorInterface::PreRender() const{ 
     EditorUpdateEventHandler::earlyHandler->Invoke();
 };
 
-void EditorInterface::PostRender() const{ //need to call on late update
+void EditorInterface::PostRender() const{ 
     EditorUpdateEventHandler::lateHandler->Invoke();
 
     ImGui::Render();
@@ -104,6 +114,9 @@ void EditorInterface::PostRender() const{ //need to call on late update
 };
 
 EditorInterface::~EditorInterface(){
+    // Save engine configuration (including style settings) before shutdown
+    ConfigurationManager::SaveStyleConfig();
+    
     //Saving Editor presets
     EditorPresetInfo result;
     result.gameViewEnabled = EditorInterfaceGetters::gameViewEnabled;
@@ -113,6 +126,7 @@ EditorInterface::~EditorInterface(){
     result.ecsMonitoringEnabled = EditorInterfaceGetters::ecsMonitoringEnabled;
     result.ecsAdministratorEnabled = EditorInterfaceGetters::ecsAdministratorEnabled;
     result.assetBrowserIsOpened = EditorInterfaceGetters::assetBrowserIsOpened;
+    result.engineConfigEnabled = EditorInterfaceGetters::engineConfigEnabled;
     result.buildTarget = EditorInterfaceGetters::buildTarget;
     //layout persistence
     size_t size;

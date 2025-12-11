@@ -1,6 +1,7 @@
 #include "BuildSettingsWindow.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../ImGuiUtils.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <imgui.h>
 
 BuildSettingsWindow::BuildSettingsWindow(){
@@ -13,11 +14,12 @@ BuildSettingsWindow::BuildSettingsWindow(){
 void BuildSettingsWindow::Draw(int phase){
     if(phase != 1 || !EditorInterfaceGetters::buildWindowEnabled) return;
 
+    // Apply minimum size constraint and validate initial size using WindowSizeManager
+    WindowSizeManager::ApplyConstraintWithValidatedSize("BuildSettings", ImVec2(400, 600), ImGuiCond_Once);
     ImGui::Begin("BuildSettings", &EditorInterfaceGetters::buildWindowEnabled, ImGuiWindowFlags_NoDocking);
     
     //BuildSettings
     {
-        ImGui::SetWindowSize({400, 600}, ImGuiCond_Once);
 
 #pragma region Plataform Selection
 

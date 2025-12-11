@@ -13,9 +13,8 @@ void ECSAdmin::Draw(int phase){
 
     if(!EditorInterfaceGetters::ecsAdministratorEnabled) return;
 
-    // Set initial window size and minimum size constraints
-    ImGui::SetNextWindowSize(ImVec2(1200, 600), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSizeConstraints(ImVec2(800, 400), ImVec2(FLT_MAX, FLT_MAX));
+    WindowSizeManager::ApplyConstraintWithValidatedSize("Entity Component System Administrator", ImVec2(1200, 600), ImGuiCond_FirstUseEver);
     
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     
@@ -25,7 +24,7 @@ void ECSAdmin::Draw(int phase){
         {
             EditorInterfaceGetters::ecsAdministratorEnabled = false;
         }
-        
+
         if(ImGui::BeginMenuBar()) // 1
         {
             ImGui::Separator();
@@ -60,10 +59,8 @@ void ECSAdmin::Draw(int phase){
 
             ImGui::Separator();
 
-            // Create table with equal-sized columns that stretch to fill available space
             if(ImGui::BeginTable("SystemContextTable", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollX | ImGuiTableFlags_SizingStretchSame))
             {
-                // Setup column headers - all columns will have equal width and stretch to fill space
                 ImGui::TableSetupColumn("EARLY_UPDATE");
                 ImGui::TableSetupColumn("UPDATE");
                 ImGui::TableSetupColumn("FIXED_UPDATE");

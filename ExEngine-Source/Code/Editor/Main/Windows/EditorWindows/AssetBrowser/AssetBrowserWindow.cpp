@@ -4,6 +4,7 @@
 #include "../../../../../Engine/Core/Input/Input.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <imgui.h>
 #include <SDL.h>
 
@@ -27,7 +28,12 @@ void AssetBrowserWindow::Draw(int phase){
     int w = 0, h = 0;
     SDL_GetWindowSize(ExRendererGetters::window, &w, &h);
 
-    ImGui::SetNextWindowSizeConstraints({static_cast<float>(w), 200}, {static_cast<float>(w), static_cast<float>(h)});
+    // Apply minimum size constraint using WindowSizeManager, but also preserve custom behavior
+    ImVec2 minSize = WindowSizeManager::GetMinimumWindowSize();
+    ImGui::SetNextWindowSizeConstraints(
+        {static_cast<float>(w), std::max(200.0f, minSize.y)}, 
+        {static_cast<float>(w), static_cast<float>(h)}
+    );
 
     ImGui::SetNextWindowSize({static_cast<float>(w), ImGui::GetWindowSize().y}, ImGuiCond_Always);
 

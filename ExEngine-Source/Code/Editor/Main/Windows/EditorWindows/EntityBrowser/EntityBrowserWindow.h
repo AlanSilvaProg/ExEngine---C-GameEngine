@@ -1,6 +1,7 @@
 #pragma once
 #include "EntityBrowserSelection.h"
 #include "../../EditorWindow.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <imgui.h>
 #include <memory>
 #include <string>

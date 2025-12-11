@@ -1,5 +1,6 @@
 #pragma once
 #include "../../EditorWindow.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <imgui.h>
 
 class GameWindow : public EditorWindow {

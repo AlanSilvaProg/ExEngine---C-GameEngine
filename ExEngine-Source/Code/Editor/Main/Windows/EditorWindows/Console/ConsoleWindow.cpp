@@ -22,7 +22,8 @@ void ConsoleWindow::Draw(int phase){
 
     if(!EditorInterfaceGetters::consoleEnabled) return;
 
-    ImGui::SetNextWindowSizeConstraints({100, consoleContentSizeY}, ImGui::GetWindowSize());
+    // Apply minimum size constraint using WindowSizeManager
+    WindowSizeManager::ApplyMinimumSizeConstraint("Console");
     if(ImGui::Begin("Console", &EditorInterfaceGetters::consoleEnabled, ImGuiWindowFlags_MenuBar)) //0
     {
     

@@ -1,5 +1,6 @@
 #include "ECSMonitoring.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <imgui.h>
 
 ECSMonitoring::ECSMonitoring(){
@@ -10,6 +11,7 @@ ECSMonitoring::ECSMonitoring(){
 void ECSMonitoring::Draw(int phase){
     if(phase != 1 || !EditorInterfaceGetters::ecsMonitoringEnabled) return;
 
+    // Apply minimum size constraint and validate initial size using WindowSizeManager
     ImVec2 standardSize = {600, 600};
     auto availableSpace = ImGui::GetContentRegionAvail();
 
@@ -18,7 +20,7 @@ void ECSMonitoring::Draw(int phase){
     if(standardSize.y > availableSpace.y)
         standardSize.y = availableSpace.y;
 
-    ImGui::SetNextWindowSize(standardSize, ImGuiCond_Appearing);
+    WindowSizeManager::ApplyConstraintWithValidatedSize("Ecs Monitoring Panel", standardSize, ImGuiCond_Appearing);
     if(ImGui::Begin("Ecs Monitoring Panel", &EditorInterfaceGetters::ecsMonitoringEnabled)) //0
     {
         auto aliveEntities = ecsManagerPtr->GetAliveEntities();

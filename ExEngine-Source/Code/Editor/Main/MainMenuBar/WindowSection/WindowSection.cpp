@@ -36,6 +36,11 @@ void WindowSection::Draw(){
             {
                 EditorInterfaceGetters::ecsAdministratorEnabled = true;
             }
+
+            if(ImGui::MenuItem("Engine Config"))
+            {
+                EditorInterfaceGetters::engineConfigEnabled = true;
+            }
             ImGui::EndMenu();
         }
         ImGui::EndMenu();

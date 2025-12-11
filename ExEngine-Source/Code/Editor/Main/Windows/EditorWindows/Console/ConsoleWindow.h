@@ -1,5 +1,6 @@
 #pragma once
 #include "../../EditorWindow.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Utils/Color.h"
 #include <vector>

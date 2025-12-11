@@ -17,6 +17,7 @@ public:
     static bool ecsMonitoringEnabled;
     static bool ecsAdministratorEnabled;
     static bool assetBrowserIsOpened;
+    static bool engineConfigEnabled;
     static std::filesystem::path currentProjectPath;
     static BuildType buildTarget;
 

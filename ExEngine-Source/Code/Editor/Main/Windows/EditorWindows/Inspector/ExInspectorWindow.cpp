@@ -25,6 +25,9 @@ void ExInspectorWindow::Draw(int phase){
 
     spriteInformations.clear();
 
+    // Apply minimum size constraint using WindowSizeManager
+    WindowSizeManager::ApplyMinimumSizeConstraint("ExInspector");
+    
     if(ImGui::Begin("ExInspector", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
     {
         auto selectedElement = ElementSelectionController::GetCurrentSelection();

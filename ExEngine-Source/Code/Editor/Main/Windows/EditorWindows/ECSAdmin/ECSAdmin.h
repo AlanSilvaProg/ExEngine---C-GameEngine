@@ -1,5 +1,6 @@
 #pragma once
 #include "../../EditorWindow.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include "../../../../../Engine/Core/Engine.h"
 #include "../../../../../Engine/Core/ECS/ECSManager.h"
 #include <memory>

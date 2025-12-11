@@ -1,6 +1,7 @@
 #pragma once
 #include "../../EditorWindow.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include "../../../../EditorECS/System/EditorCameraSystem.h"
 #include <SDL.h>
 #include <imgui.h>

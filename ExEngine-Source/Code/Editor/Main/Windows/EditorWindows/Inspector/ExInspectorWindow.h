@@ -6,6 +6,7 @@
 #include "../EntityBrowser/EntityBrowserSelection.h"
 #include "../AssetBrowser/AssetBrowserSelection.h"
 #include "../../EditorWindow.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <memory>
 #include <vector>
 #include <string>

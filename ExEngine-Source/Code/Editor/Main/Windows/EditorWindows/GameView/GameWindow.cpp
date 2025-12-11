@@ -19,6 +19,9 @@ void GameWindow::Draw(int phase) {
     if(phase != 1) return;
     if(!EditorInterfaceGetters::gameViewEnabled) return;
     
+    // Apply minimum size constraint using WindowSizeManager
+    WindowSizeManager::ApplyMinimumSizeConstraint("Game");
+    
     if(!ImGui::Begin("Game", &EditorInterfaceGetters::gameViewEnabled, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
     {
         Logger::LogError("Game editor window openning has been failed");

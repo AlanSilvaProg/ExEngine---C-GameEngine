@@ -12,6 +12,7 @@ public:
     bool ecsMonitoringEnabled;
     bool ecsAdministratorEnabled;
     bool assetBrowserIsOpened;
+    bool engineConfigEnabled;
     BuildType buildTarget;
     std::string editorLayout;
 
@@ -27,6 +28,7 @@ public:
             {"ecsMonitoringEnabled", ecsMonitoringEnabled},
             {"ecsAdministratorEnabled", ecsAdministratorEnabled},
             {"assetBrowserIsOpened", assetBrowserIsOpened},
+            {"engineConfigEnabled", engineConfigEnabled},
             {"buildTarget", buildTarget},
             {"editorLayout", editorLayout}
         };
@@ -40,6 +42,7 @@ public:
         if (json.contains("ecsMonitoringEnabled")) ecsMonitoringEnabled = json["ecsMonitoringEnabled"];
         if (json.contains("ecsAdministratorEnabled")) ecsAdministratorEnabled = json["ecsAdministratorEnabled"];
         if (json.contains("assetBrowserIsOpened")) assetBrowserIsOpened = json["assetBrowserIsOpened"];
+        if (json.contains("engineConfigEnabled")) engineConfigEnabled = json["engineConfigEnabled"];
         if (json.contains("buildTarget")) buildTarget = json["buildTarget"];
         if (json.contains("editorLayout")) editorLayout = json["editorLayout"];
     };

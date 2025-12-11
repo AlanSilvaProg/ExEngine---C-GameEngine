@@ -3,6 +3,7 @@
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Configuration/ConfigurationFileManager.h"
 #include "../../../../../Engine/Core/Runtime/Settings/RuntimeSettings.h"
+#include "../EngineConfig/WindowSizeManager.h"
 #include <imgui.h>
 
 void ExProjectSettingsWindow::Draw(int phase){
@@ -10,7 +11,8 @@ void ExProjectSettingsWindow::Draw(int phase){
 
     if(!EditorInterfaceGetters::projectSettingsEnabled) return;
 
-    ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_Once);
+    // Apply minimum size constraint and validate initial size using WindowSizeManager
+    WindowSizeManager::ApplyConstraintWithValidatedSize("Project Settings", ImVec2(600, 400), ImGuiCond_Once);
 
     if(ImGui::Begin("Project Settings", &EditorInterfaceGetters::projectSettingsEnabled))
     {

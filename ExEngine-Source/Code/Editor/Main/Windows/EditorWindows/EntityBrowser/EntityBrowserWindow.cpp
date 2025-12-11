@@ -16,6 +16,9 @@ void EntityBrowserWindow::Draw(int phase){
         EditorInterfaceGetters::worldWithoutPath = true;
     }
 
+    // Apply minimum size constraint using WindowSizeManager
+    WindowSizeManager::ApplyMinimumSizeConstraint("World Inspection");
+    
     //ToDo include the currently scene name
     if(!ImGui::Begin("World Inspection", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
     {

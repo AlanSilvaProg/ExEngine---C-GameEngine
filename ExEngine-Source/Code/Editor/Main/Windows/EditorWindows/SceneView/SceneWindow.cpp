@@ -34,6 +34,9 @@ void SceneWindow::Draw(int phase){
         return;
     }
     
+    // Apply minimum size constraint using WindowSizeManager
+    WindowSizeManager::ApplyMinimumSizeConstraint("Scene");
+    
     if(!ImGui::Begin("Scene", &EditorInterfaceGetters::sceneViewEnabled, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
     {
         Logger::LogError("Scene editor window openning has been failed");
