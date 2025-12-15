@@ -6,6 +6,7 @@
 #include "../UID/UID.h"
 #include <new>
 #include <memory>
+#include <algorithm>
 
 ECSManager::ECSManager(){
     CreateSystemContexts();
@@ -49,17 +50,38 @@ void ECSManager::LifeCycleCheck(){
         entitiesToBeKilled.clear();
     }
 
-    if(entitiesToBeValidated.size() > 0)
+    if(!entitiesToBeValidated.empty())
     {
-        for(auto system : systems)
+        for(const auto entityId : entitiesToBeValidated)
         {
-            for(auto entityId : entitiesToBeValidated)
+            const auto& entity = entities[entityId];
+            for(const auto& [typeIndex, system] : systems)
             {
-                system.second->ValidateEntity(entities[entityId]);
+                system->ValidateEntity(entity);
+            }
+
+            for(const auto& system : customECSystems)
+            {   
+                system->ValidateEntity(entity);
             }
         }
 
         entitiesToBeValidated.clear();
+    }
+
+    if(!systemsToBeValidate.empty())
+    {
+        for(auto ecsystem : systemsToBeValidate)
+        {
+            ecsystem->ClearEntities();
+
+            for(auto entityId : aliveEntities)
+            {
+                ecsystem->ValidateEntity(GetEntity(entityId));
+            }
+        }
+
+        systemsToBeValidate.clear();
     }
 };
 
@@ -178,6 +200,10 @@ const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& ECSManager
     return systems;
 };
 
+const std::vector<std::shared_ptr<CustomECSystem>>& ECSManager::GetAllCustomSystems(){
+    return customECSystems;
+};
+
 const std::shared_ptr<ECSystemContext> ECSManager::GetECSystemContext(const SystemContext context) const{
     for(auto ctxt : systemContext)
     {
@@ -185,6 +211,14 @@ const std::shared_ptr<ECSystemContext> ECSManager::GetECSystemContext(const Syst
     }
 
     return nullptr;
+};
+
+const void ECSManager::RevalidateSystem(std::shared_ptr<ECSystem> ecsystem){
+    systemsToBeValidate.emplace_back(ecsystem);
+};
+
+const void ECSManager::DestroyCustomECSystem(std::shared_ptr<CustomECSystem> customECSystem){
+    std::erase_if(customECSystems, [&](const std::shared_ptr<CustomECSystem> ecsystem){ return ecsystem->GetId() == customECSystem->GetId(); });
 };
 
 void ECSManager::DestroyAllEntities(){
@@ -241,6 +275,15 @@ std::vector<std::shared_ptr<EntityCS>>* ECSystem::GetSystemEntities(){
     return &systemEntities;
 };
 
+std::vector<int>& ECSystem::GetRequirements(const bool getOptionals){
+    if(getOptionals)
+    {
+        return systemOptionalSignatureIds;
+    }
+    
+    return systemSignatureIds;
+};
+
 bool ECSystem::CheckEntitySignatureMatch(const Signature& entitySignature) const{
     for(auto signatureId : systemSignatureIds)
     {
@@ -279,6 +322,10 @@ void ECSystem::RemoveEntity(const int id){
     systemEntities.erase(std::remove_if(systemEntities.begin(), systemEntities.end(),
                         [id](std::shared_ptr<EntityCS> entity) { return entity->GetId() == id; }),
                         systemEntities.end());
+};
+
+void ECSystem::ClearEntities(){
+    systemEntities.clear();
 };
 
 bool ECSystem::CheckForRegisteredId(const int componentId) const{
@@ -341,7 +388,6 @@ void ECSystemContext::RegisterCustom(std::shared_ptr<CustomECSystem> customECSys
     customSystemEntries.push_back(customECSystem);
 };
 
-//ToDo resolver o crash quando tenta unregistrar um elemento que não está no fim do vector
 void ECSystemContext::UnregisterCustom(std::shared_ptr<CustomECSystem> customECSystem){
     std::erase_if(customSystemEntries, [&](const auto element){ return element->GetId() == customECSystem->GetId(); });
 };

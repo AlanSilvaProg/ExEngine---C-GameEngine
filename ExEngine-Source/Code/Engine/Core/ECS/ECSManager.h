@@ -80,10 +80,12 @@ protected:
 
 public:
     std::vector<std::shared_ptr<EntityCS>>* GetSystemEntities();
+    std::vector<int>& GetRequirements(const bool getOptionals = false);
     bool CheckEntitySignatureMatch(const Signature& entitySignature) const;
     void AddEntity(const std::shared_ptr<EntityCS> entity);
     void ValidateEntity(std::shared_ptr<EntityCS> entity);
     void RemoveEntity(const int id);
+    void ClearEntities();
     virtual void UpdateSystem(){};
 
     virtual const char* SystemName() = 0; //adicionar nome para os sistemas
@@ -111,7 +113,10 @@ public:
     template<typename TComponent>
     void IsNotRequired();
 
-    u_int8_t GetId() { return systemId; };  
+    inline u_int8_t GetId() { return systemId; };  
+
+    template<typename TComponent>
+    inline void AddRequire(const bool optional) { this->Require<TComponent>(optional); };
 };
 
 
@@ -181,6 +186,7 @@ private:
     std::deque<int> entitiesToBeValidated; // validated to a system
     std::deque<int> entitiesToBeKilled; // removed from system and remove all components
     std::unordered_map<int,int> componentsToBeRemoved; // entityId, componentId
+    std::deque<std::shared_ptr<ECSystem>> systemsToBeValidate; // revalidate all entities
     std::deque<int> freeEntities;
 
     std::unordered_set<int> aliveEntities;
@@ -219,7 +225,11 @@ public:
 
     //systems
     const std::unordered_map<std::type_index, std::shared_ptr<ECSystem>>& GetAllSystems();
+    const std::vector<std::shared_ptr<CustomECSystem>>& GetAllCustomSystems();
     const std::shared_ptr<ECSystemContext> GetECSystemContext(const SystemContext context) const;
+    const void RevalidateSystem(std::shared_ptr<ECSystem> ecsystem);
+    const void DestroyCustomECSystem(std::shared_ptr<CustomECSystem> customECSystem);
+
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
     template<typename ...TArgs>

@@ -8,6 +8,7 @@
 class ComponentRegistry{
 public:
     static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<EntityCS>)>> components;
+    static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<CustomECSystem>, const bool)>> ecsystemRequirement;
     static inline std::unordered_map<unsigned int, std::string> componentsNameById;
 };
 
@@ -20,6 +21,7 @@ struct type##AutoRegister{\
         if(!registered)\
         {\
             ComponentRegistry::components.insert({type::GetId(), [](std::shared_ptr<EntityCS> entity){ entity->AddComponent<type>(); }});\
+            ComponentRegistry::ecsystemRequirement.insert({type::GetId(), [](std::shared_ptr<CustomECSystem> ecsystem, const bool isOptional){ ecsystem->AddRequire<type>(isOptional); }});\
             ComponentRegistry::componentsNameById.insert({type::GetId(), Demangle(typeid(type).name())});\
             registered = true;\
         }\

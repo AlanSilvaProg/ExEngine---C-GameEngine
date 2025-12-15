@@ -1,5 +1,6 @@
 #include "ECSAdmin.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include <imgui.h>
 #include <string>
 #include <cstring>
@@ -10,6 +11,13 @@ ECSAdmin::ECSAdmin(){
     showRenameDialog = false;
     memset(renameBuffer, 0, sizeof(renameBuffer));
     systemToRename = nullptr;
+    
+    // Initialize deferred move operation variables
+    pendingMoveOperation = false;
+    pendingMoveFromContext = SystemContext::UPDATE;
+    pendingMoveToContext = SystemContext::UPDATE;
+    pendingMoveSystemTypeId = nullptr;
+    pendingMoveSystem = nullptr;
 };
 
 void ECSAdmin::Draw(int phase){
@@ -25,6 +33,7 @@ void ECSAdmin::Draw(int phase){
     if(ImGui::Begin("Entity Component System Administrator", &EditorInterfaceGetters::ecsAdministratorEnabled, windowFlags)) // 0
     {
         createNewECSystemTriggered = false;
+        editECSystemTriggered = false;
 
         if(!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
         {
@@ -121,12 +130,22 @@ void ECSAdmin::Draw(int phase){
             ImGui::OpenPopup("Create System");
         }
 
+        if(editECSystemTriggered && editingSystem != nullptr)
+        {
+            ImGui::OpenPopup("Edit System");
+        }
+
+        //Draw Edtiting system Panel if needed
+        DrawEditSystemPanel();
         // Draw rename dialog if needed
         DrawRenameDialog();
         // Draw creating system dialog if needed
         DrawCreateSystemDialog();
     }
     ImGui::End(); // 0
+    
+    // Process any pending move operations after UI iteration is complete
+    ProcessPendingMoveOperation();
 };
 
 void ECSAdmin::DrawColumnElement(const SystemContext currentContext)
@@ -157,6 +176,12 @@ void ECSAdmin::DrawSystemWithContextMenu(const std::type_index* systemTypeId, st
     
     if(ImGui::BeginPopupContextItem(uniqueId.c_str()))
     {
+        if(ImGui::MenuItem("Edit"))
+        {
+            editingSystem = ecsystem;
+            editECSystemTriggered = true;
+        }
+
         if(ImGui::BeginMenu("Move To"))
         {
             DrawMoveToOption(currentContext, SystemContext::EARLY_UPDATE, systemTypeId, ecsystem);
@@ -182,7 +207,8 @@ void ECSAdmin::DrawSystemWithContextMenu(const std::type_index* systemTypeId, st
 
             if(ImGui::MenuItem("Delete System"))
             {
-
+                ecsManager->GetECSystemContext(currentContext)->UnregisterCustom(castedSystem);
+                ecsManager->DestroyCustomECSystem(castedSystem);
             }
         }
 
@@ -204,17 +230,12 @@ void ECSAdmin::DrawMoveToOption(const SystemContext currentContext, const System
     {
         if(ImGui::MenuItem(std::to_string(targetContext).c_str()))
         {
-            if(systemTypeId == nullptr)
-            {
-                auto castedSystem = std::dynamic_pointer_cast<CustomECSystem>(ecsystem);
-                ecsManager->GetECSystemContext(currentContext)->UnregisterCustom(castedSystem);
-                ecsManager->GetECSystemContext(targetContext)->RegisterCustom(castedSystem);
-            }
-            else
-            {
-                ecsManager->GetECSystemContext(currentContext)->Unregister(*systemTypeId, ecsystem);
-                ecsManager->GetECSystemContext(targetContext)->Register(*systemTypeId, ecsystem);
-            }
+            // Defer the move operation to avoid iterator invalidation during UI iteration
+            pendingMoveOperation = true;
+            pendingMoveFromContext = currentContext;
+            pendingMoveToContext = targetContext;
+            pendingMoveSystemTypeId = const_cast<std::type_index*>(systemTypeId);
+            pendingMoveSystem = ecsystem;
         }
     }
 };
@@ -255,6 +276,157 @@ void ECSAdmin::DrawCreateSystemDialog(){
     }
 };
 
+void ECSAdmin::DrawEditSystemPanel(){
+    if(editingSystem == nullptr) return;
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_Appearing);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
+
+    if(ImGui::BeginPopup("Edit System", flags))
+    {
+        ImGui::Text("System: %s", editingSystem->SystemName());
+        ImGui::Separator();
+        
+        auto systemEntities = *editingSystem->GetSystemEntities();
+
+        if(systemEntities.empty())
+        {
+            ImGui::Text("No entities in this system");
+        }
+        else
+        {
+            ImGui::Text("Entities (%zu):", systemEntities.size());
+
+            auto lineHeight = ImGui::GetFrameHeight();
+            
+            if(ImGui::BeginChild("EntitiesList", ImVec2(0, lineHeight * (systemEntities.size() - 1) + ImGui::GetFrameHeightWithSpacing()), 0, ImGuiWindowFlags_NoScrollbar))
+            {
+                for(auto entity : systemEntities)
+                {
+                    auto entityName = entity->GetName();
+                    std::string uniqueId = entityName + "##" + std::to_string((uintptr_t)entity.get());
+                    ImGui::Selectable(("• " + entityName + "##" + std::to_string(entity->GetId())).c_str(), false);
+
+                    if(ImGui::BeginPopupContextItem(uniqueId.c_str()))
+                    {
+                        if(ImGui::MenuItem("Delete Entity")){
+                            entityToDelete = entity;
+                        }
+
+                        ImGui::EndPopup();
+                    }
+                }
+                ImGui::EndChild();
+            }
+        }
+
+        if(entityToDelete != nullptr)
+        {
+            entityToDelete->KillImmediately();
+            entityToDelete = nullptr;
+        }
+
+        ImGui::Separator();
+
+        ImGui::Text("System Requirements:");
+
+        ImGui::Separator();
+
+        if(editingSystem->GetRequirements().size() == 0)
+        {
+            ImGui::Text("No components required");
+        }
+        else
+        {
+            for(auto systemRequirement : editingSystem->GetRequirements())
+            {
+                auto componentName = ComponentRegistry::componentsNameById[systemRequirement];
+                auto popupLabel = componentName + "###id_" + componentName;
+                std::string uniqueId = componentName + "##" + std::to_string((uintptr_t)editingSystem.get());
+
+                ImGui::Selectable(popupLabel.c_str(), nullptr, false);
+                        
+                if(ImGui::BeginPopupContextItem(uniqueId.c_str())){
+                    if(ImGui::MenuItem("Remove Requirement"))
+                    {
+                        //ToDo remove requirement
+                    }
+                }
+            }
+        }
+        
+        ImGui::Separator();
+
+        ImGui::Text("System Optional Requirements:");
+
+        ImGui::Separator();
+
+        if(editingSystem->GetRequirements().size() == 0)
+        {
+            ImGui::Text("No optional components");
+        }
+        else
+        {
+            for(auto systemRequirement : editingSystem->GetRequirements(true))
+            {
+                //ToDo draw requirement and create option to remove
+            }
+        }
+
+        ImGui::Separator();
+
+        auto castedSystem = std::dynamic_pointer_cast<CustomECSystem>(editingSystem);
+
+        if(castedSystem != nullptr)
+        {
+            auto addRequirementTxt = "Add Requirement";
+            float buttonWidth = ImGui::CalcTextSize(addRequirementTxt).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+            float availableWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((availableWidth - buttonWidth) * 0.5f);
+
+            if(ImGui::Button(addRequirementTxt))
+            {
+                ImGui::OpenPopup("AddRequirementContext");
+            }
+            
+            if(ImGui::BeginPopup("AddRequirementContext"))
+            {   
+                for(auto ecsystemRequirement : ComponentRegistry::ecsystemRequirement)
+                {
+                    auto componentName = ComponentRegistry::componentsNameById[ecsystemRequirement.first];
+                    auto popupLabel = componentName + "###id_" + componentName;
+                    
+                    if(ImGui::MenuItem(popupLabel.c_str())){
+                        ecsystemRequirement.second(castedSystem, false);
+                        ecsManager->RevalidateSystem(editingSystem);
+                    }
+                }
+                ImGui::EndPopup();
+            }
+        }
+
+        ImGui::Separator();
+        
+        auto buttonCloseTxt = "Close";
+        float buttonWidth = ImGui::CalcTextSize(buttonCloseTxt).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        float availableWidth = ImGui::GetContentRegionAvail().x;
+        ImGui::SetCursorPosX((availableWidth - buttonWidth) * 0.5f);
+        
+        if(ImGui::Button(buttonCloseTxt))
+        {
+            editingSystem = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+    else
+        editingSystem = nullptr;
+};
+
 void ECSAdmin::DrawRenameDialog(){
     if(!showRenameDialog || !systemToRename) return;
 
@@ -293,3 +465,42 @@ void ECSAdmin::DrawRenameDialog(){
         ImGui::EndPopup();
     }
 };
+
+bool ECSAdmin::DrawIfCanMoveEntityToSystem(std::shared_ptr<EntityCS> entity, std::shared_ptr<ECSystem> system){
+    if(system->CheckEntitySignatureMatch(entity->GetComponentSignature()))
+    {
+        std::string uniqueId = std::string(system->SystemName()) + "##" + std::to_string((uintptr_t)system.get());
+        if(ImGui::MenuItem(uniqueId.c_str()))
+        {
+            system->ValidateEntity(entity);
+            return true;
+        }
+    }
+    return false;
+}
+
+void ECSAdmin::ProcessPendingMoveOperation(){
+    if(!pendingMoveOperation) return;
+    
+    if(pendingMoveSystemTypeId == nullptr)
+    {
+        // Custom system move
+        auto castedSystem = std::dynamic_pointer_cast<CustomECSystem>(pendingMoveSystem);
+        if(castedSystem)
+        {
+            ecsManager->GetECSystemContext(pendingMoveFromContext)->UnregisterCustom(castedSystem);
+            ecsManager->GetECSystemContext(pendingMoveToContext)->RegisterCustom(castedSystem);
+        }
+    }
+    else
+    {
+        // Regular system move
+        ecsManager->GetECSystemContext(pendingMoveFromContext)->Unregister(*pendingMoveSystemTypeId, pendingMoveSystem);
+        ecsManager->GetECSystemContext(pendingMoveToContext)->Register(*pendingMoveSystemTypeId, pendingMoveSystem);
+    }
+    
+    // Reset pending operation state
+    pendingMoveOperation = false;
+    pendingMoveSystemTypeId = nullptr;
+    pendingMoveSystem = nullptr;
+}
