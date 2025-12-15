@@ -53,6 +53,7 @@ void Engine::StartEngine(){
     running = true;
 
     gameLoop->Initialize();
+    
     ExRenderer::Initialize(ecsManager);
 };
 

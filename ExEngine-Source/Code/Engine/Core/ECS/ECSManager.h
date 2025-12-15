@@ -96,17 +96,22 @@ public:
 class CustomECSystem: public ECSystem{
 private:
     std::string systemName;
+    inline static u_int8_t id = 0;
+    u_int8_t systemId;
 public:
-    CustomECSystem() = default;
+    CustomECSystem() { systemId = id ++;};
+    CustomECSystem(std::string systemName) : systemName(systemName) { systemId = id ++; };
     ~CustomECSystem() = default;
 
     inline void SetSystemName(std::string name) { systemName = name; };
-    inline std::string GetSystemName() const { return systemName; };
+    virtual const char* SystemName() override { return systemName.c_str(); };
 
     template<typename TComponent>
     void IsRequired(const bool optional);
     template<typename TComponent>
     void IsNotRequired();
+
+    u_int8_t GetId() { return systemId; };  
 };
 
 
@@ -130,7 +135,8 @@ struct SystemEntry {
 class ECSystemContext{
 private:
     SystemContext systemContext;
-    std::vector<SystemEntry> systemEntries;
+    std::vector<SystemEntry> systemEntries; //strong typed systems
+    std::vector<std::shared_ptr<CustomECSystem>> customSystemEntries; //weak typed systems
 
     bool internal;
     std::function<void()> removeEventHandlerCallback;
@@ -147,7 +153,11 @@ public:
     void Register(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
     void Unregister(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem);
 
+    void RegisterCustom(std::shared_ptr<CustomECSystem> customECSystem);
+    void UnregisterCustom(std::shared_ptr<CustomECSystem> customECSystem);
+
     inline const std::vector<SystemEntry>& GetContextSystems() const { return systemEntries; };
+    inline const std::vector<std::shared_ptr<CustomECSystem>>& GetContextCustomSystems() const { return customSystemEntries; };
     inline const SystemContext GetSystemContext() { return systemContext; };
     inline const bool IsInternal() const { return internal; };
 };
@@ -163,6 +173,7 @@ private:
     std::vector<std::shared_ptr<EntityCS>> entities;
 
     std::unordered_map<std::type_index, std::shared_ptr<ECSystem>> systems;
+    std::vector<std::shared_ptr<CustomECSystem>> customECSystems;
     std::unordered_map<SystemContext, std::shared_ptr<ECSystemContext>> systemContext;
 
     std::vector<std::shared_ptr<IPool>> componentPools; // one pool by each component id 
@@ -211,6 +222,8 @@ public:
     const std::shared_ptr<ECSystemContext> GetECSystemContext(const SystemContext context) const;
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
+    template<typename ...TArgs>
+    std::shared_ptr<CustomECSystem> CreateCustomSystem(TArgs&& ...args);
     template<typename TSystem>
     std::shared_ptr<TSystem> GetSystem() const;
     template<typename TSystem>
@@ -316,6 +329,16 @@ std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
     systems.insert(make_pair(std::type_index(typeid(TSystem)), castedNewSystem));
 
     Logger::Log("ECS System Created: " + std::string(castedNewSystem->SystemName()));
+
+    return newSystem;
+};
+
+template<typename ...TArgs>
+std::shared_ptr<CustomECSystem> ECSManager::CreateCustomSystem(TArgs&& ...args){
+    auto newSystem = std::make_shared<CustomECSystem>(std::forward<TArgs>(args)...);
+    customECSystems.push_back(newSystem);
+
+    Logger::Log("ECS Custom System Created: " + std::string(newSystem->SystemName()));
 
     return newSystem;
 };

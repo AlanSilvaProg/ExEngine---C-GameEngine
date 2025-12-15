@@ -12,8 +12,22 @@ private:
     bool showWorldEntities;
     bool showSystems;
     bool includeInternals;
+    bool createNewECSystemTriggered;
     
-    void DrawSystemWithContextMenu(const SystemEntry& systemEntry, SystemContext currentContext);
+    bool creatingSystem;
+    char systemName[256];
+    SystemContext selectedContext;
+
+    bool showRenameDialog;
+    char renameBuffer[256];
+    std::shared_ptr<CustomECSystem> systemToRename;
+    
+    void DrawSystemWithContextMenu(const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem, SystemContext currentContext);
+    void DrawColumnElement(const SystemContext currentContext);
+    void DrawCreateButton(const SystemContext currentContext);
+    void DrawMoveToOption(const SystemContext currentContext, const SystemContext targetContext, const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem);
+    void DrawRenameDialog();
+    void DrawCreateSystemDialog();
 public:
     ECSAdmin();
 

@@ -309,6 +309,11 @@ void ECSystemContext::UpdateContext(){
     {
         systemEntry.system->UpdateSystem();
     }
+
+    for(auto& systemEntry : customSystemEntries)
+    {
+        systemEntry->UpdateSystem();
+    }
 };
 
 void ECSystemContext::ValidateEntity(std::shared_ptr<EntityCS> entity){
@@ -318,7 +323,7 @@ void ECSystemContext::ValidateEntity(std::shared_ptr<EntityCS> entity){
     }
 };
 
-void ECSystemContext::Register(std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem){
+void ECSystemContext::Register(const std::type_index typeIndex, std::shared_ptr<ECSystem> ecsSystem){
     systemEntries.push_back({typeIndex, ecsSystem});
 };
 
@@ -330,6 +335,15 @@ void ECSystemContext::Unregister(const std::type_index typeIndex, std::shared_pt
             return;
         }
     }
+};
+
+void ECSystemContext::RegisterCustom(std::shared_ptr<CustomECSystem> customECSystem){
+    customSystemEntries.push_back(customECSystem);
+};
+
+//ToDo resolver o crash quando tenta unregistrar um elemento que não está no fim do vector
+void ECSystemContext::UnregisterCustom(std::shared_ptr<CustomECSystem> customECSystem){
+    std::erase_if(customSystemEntries, [&](const auto element){ return element->GetId() == customECSystem->GetId(); });
 };
 
 void ECSystemContext::RefreshContext(SystemContext newContext){

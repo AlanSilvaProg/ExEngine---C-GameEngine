@@ -2,10 +2,14 @@
 #include "../../../EditorInterfaceGetters.h"
 #include <imgui.h>
 #include <string>
+#include <cstring>
 
 ECSAdmin::ECSAdmin(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
     showWorldEntities = true;
+    showRenameDialog = false;
+    memset(renameBuffer, 0, sizeof(renameBuffer));
+    systemToRename = nullptr;
 };
 
 void ECSAdmin::Draw(int phase){
@@ -20,6 +24,8 @@ void ECSAdmin::Draw(int phase){
     
     if(ImGui::Begin("Entity Component System Administrator", &EditorInterfaceGetters::ecsAdministratorEnabled, windowFlags)) // 0
     {
+        createNewECSystemTriggered = false;
+
         if(!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
         {
             EditorInterfaceGetters::ecsAdministratorEnabled = false;
@@ -73,81 +79,27 @@ void ECSAdmin::Draw(int phase){
 
                 // EARLY_UPDATE column
                 ImGui::TableSetColumnIndex(0);
-                auto earlyUpdateContext = ecsManager->GetECSystemContext(SystemContext::EARLY_UPDATE);
-                if(earlyUpdateContext)
-                {
-                    const auto& systems = earlyUpdateContext->GetContextSystems();
-                    for(const auto& systemEntry : systems)
-                    {
-                        if(!includeInternals && earlyUpdateContext->IsInternal()) continue;
-                        DrawSystemWithContextMenu(systemEntry, SystemContext::EARLY_UPDATE);
-                    }
-                }
+                DrawColumnElement(SystemContext::EARLY_UPDATE);
 
                 // UPDATE column
                 ImGui::TableSetColumnIndex(1);
-                auto updateContext = ecsManager->GetECSystemContext(SystemContext::UPDATE);
-                if(updateContext)
-                {
-                    const auto& systems = updateContext->GetContextSystems();
-                    for(const auto& systemEntry : systems)
-                    {
-                        if(!includeInternals && updateContext->IsInternal()) continue;
-                        DrawSystemWithContextMenu(systemEntry, SystemContext::UPDATE);
-                    }
-                }
+                DrawColumnElement(SystemContext::UPDATE);
 
                 // FIXED_UPDATE column
                 ImGui::TableSetColumnIndex(2);
-                auto fixedUpdateContext = ecsManager->GetECSystemContext(SystemContext::FIXED_UPDATE);
-                if(fixedUpdateContext)
-                {
-                    const auto& systems = fixedUpdateContext->GetContextSystems();
-                    for(const auto& systemEntry : systems)
-                    {
-                        if(!includeInternals && fixedUpdateContext->IsInternal()) continue;
-                        DrawSystemWithContextMenu(systemEntry, SystemContext::FIXED_UPDATE);
-                    }
-                }
+                DrawColumnElement(SystemContext::FIXED_UPDATE);
 
                 // LATE_UPDATE column
                 ImGui::TableSetColumnIndex(3);
-                auto lateUpdateContext = ecsManager->GetECSystemContext(SystemContext::LATE_UPDATE);
-                if(lateUpdateContext)
-                {
-                    const auto& systems = lateUpdateContext->GetContextSystems();
-                    for(const auto& systemEntry : systems)
-                    {
-                        if(!includeInternals && lateUpdateContext->IsInternal()) continue;
-                        DrawSystemWithContextMenu(systemEntry, SystemContext::LATE_UPDATE);
-                    }
-                }
+                DrawColumnElement(SystemContext::LATE_UPDATE);
 
                 // PRE_RENDER column
                 ImGui::TableSetColumnIndex(4);
-                auto preRenderContext = ecsManager->GetECSystemContext(SystemContext::PRE_RENDER);
-                if(preRenderContext)
-                {
-                    const auto& systems = preRenderContext->GetContextSystems();
-                    for(const auto& systemEntry : systems)
-                    {
-                        if(!includeInternals && preRenderContext->IsInternal()) continue;
-                        DrawSystemWithContextMenu(systemEntry, SystemContext::PRE_RENDER);
-                    }
-                }
+                DrawColumnElement(SystemContext::PRE_RENDER);
 
                 // POST_RENDER column
                 ImGui::TableSetColumnIndex(5);
-                auto postRenderContext = ecsManager->GetECSystemContext(SystemContext::POST_RENDER);
-                if(postRenderContext)
-                {
-                    const auto& systems = postRenderContext->GetContextSystems();
-                    for(const auto& systemEntry : systems)
-                    {
-                        if(!includeInternals && postRenderContext->IsInternal()) continue;
-                        DrawSystemWithContextMenu(systemEntry, SystemContext::POST_RENDER);
-                    }
-                }
+                DrawColumnElement(SystemContext::POST_RENDER);
 
                 ImGui::EndTable();
             }
@@ -163,15 +115,43 @@ void ECSAdmin::Draw(int phase){
             //ToDo Add existing world entities display code here if needed
         }
 
-        
+        if(createNewECSystemTriggered)
+        {
+            creatingSystem = true;
+            ImGui::OpenPopup("Create System");
+        }
+
+        // Draw rename dialog if needed
+        DrawRenameDialog();
+        // Draw creating system dialog if needed
+        DrawCreateSystemDialog();
     }
     ImGui::End(); // 0
 };
 
-void ECSAdmin::DrawSystemWithContextMenu(const SystemEntry& systemEntry, SystemContext currentContext)
+void ECSAdmin::DrawColumnElement(const SystemContext currentContext)
 {
-    const char* systemName = systemEntry.system->SystemName();
-    std::string uniqueId = std::string(systemName) + "##" + std::to_string((uintptr_t)systemEntry.system.get());
+    auto ecsystemContext = ecsManager->GetECSystemContext(currentContext);
+    if(ecsystemContext)
+    {
+        for(const auto& systemEntry : ecsystemContext->GetContextSystems())
+        {
+            if(!includeInternals && ecsystemContext->IsInternal()) continue;
+            DrawSystemWithContextMenu(&systemEntry.type, systemEntry.system, currentContext);
+        }
+
+        for(const auto& systemEntry : ecsystemContext->GetContextCustomSystems())
+        {
+            if(!includeInternals && ecsystemContext->IsInternal()) continue;
+            DrawSystemWithContextMenu(nullptr, systemEntry, currentContext);
+        }
+        DrawCreateButton(currentContext);
+    }
+};
+
+void ECSAdmin::DrawSystemWithContextMenu(const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem, SystemContext currentContext){
+    auto systemName = ecsystem->SystemName();
+    std::string uniqueId = std::string(systemName) + "##" + std::to_string((uintptr_t)ecsystem.get());
     
     ImGui::Selectable(("• " + std::string(systemName)).c_str(), false);
     
@@ -179,63 +159,137 @@ void ECSAdmin::DrawSystemWithContextMenu(const SystemEntry& systemEntry, SystemC
     {
         if(ImGui::BeginMenu("Move To"))
         {
-            if(currentContext != SystemContext::EARLY_UPDATE)
-            {
-                if(ImGui::MenuItem("EARLY_UPDATE"))
-                {
-                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
-                    ecsManager->GetECSystemContext(SystemContext::EARLY_UPDATE)->Register(systemEntry.type, systemEntry.system);
-                }
-            }
-            
-            if(currentContext != SystemContext::UPDATE)
-            {
-                if(ImGui::MenuItem("UPDATE"))
-                {
-                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
-                    ecsManager->GetECSystemContext(SystemContext::UPDATE)->Register(systemEntry.type, systemEntry.system);
-                }
-            }
-            
-            if(currentContext != SystemContext::FIXED_UPDATE)
-            {
-                if(ImGui::MenuItem("FIXED_UPDATE"))
-                {
-                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
-                    ecsManager->GetECSystemContext(SystemContext::FIXED_UPDATE)->Register(systemEntry.type, systemEntry.system);
-                }
-            }
-            
-            if(currentContext != SystemContext::LATE_UPDATE)
-            {
-                if(ImGui::MenuItem("LATE_UPDATE"))
-                {
-                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
-                    ecsManager->GetECSystemContext(SystemContext::LATE_UPDATE)->Register(systemEntry.type, systemEntry.system);
-                }
-            }
-            
-            if(currentContext != SystemContext::PRE_RENDER)
-            {
-                if(ImGui::MenuItem("PRE_RENDER"))
-                {
-                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
-                    ecsManager->GetECSystemContext(SystemContext::PRE_RENDER)->Register(systemEntry.type, systemEntry.system);
-                }
-            }
-            
-            if(currentContext != SystemContext::POST_RENDER)
-            {
-                if(ImGui::MenuItem("POST_RENDER"))
-                {
-                    ecsManager->GetECSystemContext(currentContext)->Unregister(systemEntry.type, systemEntry.system);
-                    ecsManager->GetECSystemContext(SystemContext::POST_RENDER)->Register(systemEntry.type, systemEntry.system);
-                }
-            }
+            DrawMoveToOption(currentContext, SystemContext::EARLY_UPDATE, systemTypeId, ecsystem);
+            DrawMoveToOption(currentContext, SystemContext::UPDATE, systemTypeId, ecsystem);
+            DrawMoveToOption(currentContext, SystemContext::FIXED_UPDATE, systemTypeId, ecsystem);
+            DrawMoveToOption(currentContext, SystemContext::LATE_UPDATE, systemTypeId, ecsystem);
+            DrawMoveToOption(currentContext, SystemContext::PRE_RENDER, systemTypeId, ecsystem);
+            DrawMoveToOption(currentContext, SystemContext::POST_RENDER, systemTypeId, ecsystem);
             
             ImGui::EndMenu();
         }
         
+        auto castedSystem = std::dynamic_pointer_cast<CustomECSystem>(ecsystem);
+        if(castedSystem)
+        {
+            if(ImGui::MenuItem("Rename"))
+            {
+                systemToRename = castedSystem;
+                strncpy(renameBuffer, castedSystem->SystemName(), sizeof(renameBuffer) - 1);
+                renameBuffer[sizeof(renameBuffer) - 1] = '\0';
+                showRenameDialog = true;
+            }
+
+            if(ImGui::MenuItem("Delete System"))
+            {
+
+            }
+        }
+
         ImGui::EndPopup();
     }
-}
+};
+
+void ECSAdmin::DrawCreateButton(const SystemContext currentContext){
+    auto id = "Create new ECSystem##" + std::to_string(currentContext);
+    if(ImGui::Button(id.c_str()))
+    {
+        selectedContext = currentContext;
+        createNewECSystemTriggered = true;
+    }
+};
+
+void ECSAdmin::DrawMoveToOption(const SystemContext currentContext, const SystemContext targetContext, const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem){
+    if(currentContext != targetContext)
+    {
+        if(ImGui::MenuItem(std::to_string(targetContext).c_str()))
+        {
+            if(systemTypeId == nullptr)
+            {
+                auto castedSystem = std::dynamic_pointer_cast<CustomECSystem>(ecsystem);
+                ecsManager->GetECSystemContext(currentContext)->UnregisterCustom(castedSystem);
+                ecsManager->GetECSystemContext(targetContext)->RegisterCustom(castedSystem);
+            }
+            else
+            {
+                ecsManager->GetECSystemContext(currentContext)->Unregister(*systemTypeId, ecsystem);
+                ecsManager->GetECSystemContext(targetContext)->Register(*systemTypeId, ecsystem);
+            }
+        }
+    }
+};
+
+void ECSAdmin::DrawCreateSystemDialog(){
+    if(!creatingSystem) return;
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(300, 120), ImGuiCond_Appearing);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+    if(ImGui::BeginPopup("Create System", flags)){
+        ImGui::Text("Enter system name:");
+        ImGui::Separator();
+
+        bool enterPressed = ImGui::InputText("##set_system_name_input", systemName, sizeof(systemName), ImGuiInputTextFlags_EnterReturnsTrue);
+
+        ImGui::Separator();
+
+        if(ImGui::Button("Apply") || enterPressed)
+        {
+            auto ecsystemCreated = ecsManager->CreateCustomSystem(systemName);
+            ecsManager->GetECSystemContext(selectedContext)->RegisterCustom(ecsystemCreated);
+            creatingSystem = false;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::SameLine();
+        
+        if(ImGui::Button("Cancel"))
+        {
+            creatingSystem = false;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
+};
+
+void ECSAdmin::DrawRenameDialog(){
+    if(!showRenameDialog || !systemToRename) return;
+
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(300, 120), ImGuiCond_Appearing);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+    
+    if(ImGui::BeginPopup("Rename System", flags))
+    {
+        ImGui::Text("Enter new name:");
+        ImGui::Separator();
+        
+        bool enterPressed = ImGui::InputText("##rename_input", renameBuffer, sizeof(renameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+        
+        ImGui::Separator();
+        
+        if(ImGui::Button("Apply") || enterPressed)
+        {
+            systemToRename->SetSystemName(renameBuffer);
+            showRenameDialog = false;
+            systemToRename = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::SameLine();
+        
+        if(ImGui::Button("Cancel"))
+        {
+            showRenameDialog = false;
+            systemToRename = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
+};
