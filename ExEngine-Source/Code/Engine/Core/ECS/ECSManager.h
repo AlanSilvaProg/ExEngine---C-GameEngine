@@ -86,6 +86,7 @@ public:
     void ValidateEntity(std::shared_ptr<EntityCS> entity);
     void RemoveEntity(const int id);
     void ClearEntities();
+    void RemoveRequirement(const int componentId);
     virtual void UpdateSystem(){};
 
     virtual const char* SystemName() = 0; //adicionar nome para os sistemas
@@ -116,7 +117,7 @@ public:
     inline u_int8_t GetId() { return systemId; };  
 
     template<typename TComponent>
-    inline void AddRequire(const bool optional) { this->Require<TComponent>(optional); };
+    inline void AddRequire(const bool optional) { Require<TComponent>(optional); };
 };
 
 

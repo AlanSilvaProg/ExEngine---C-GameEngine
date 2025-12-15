@@ -17,6 +17,7 @@ private:
     
     std::shared_ptr<ECSystem> editingSystem;
     std::shared_ptr<EntityCS> entityToDelete;
+    int systemRequirementToRemove = -1;
     
     bool creatingSystem;
     char systemName[256];

@@ -134,7 +134,6 @@ void ECSAdmin::Draw(int phase){
         {
             ImGui::OpenPopup("Edit System");
         }
-
         //Draw Edtiting system Panel if needed
         DrawEditSystemPanel();
         // Draw rename dialog if needed
@@ -278,7 +277,6 @@ void ECSAdmin::DrawCreateSystemDialog(){
 
 void ECSAdmin::DrawEditSystemPanel(){
     if(editingSystem == nullptr) return;
-
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_Appearing);
@@ -308,6 +306,7 @@ void ECSAdmin::DrawEditSystemPanel(){
                 {
                     auto entityName = entity->GetName();
                     std::string uniqueId = entityName + "##" + std::to_string((uintptr_t)entity.get());
+
                     ImGui::Selectable(("• " + entityName + "##" + std::to_string(entity->GetId())).c_str(), false);
 
                     if(ImGui::BeginPopupContextItem(uniqueId.c_str()))
@@ -344,18 +343,26 @@ void ECSAdmin::DrawEditSystemPanel(){
             for(auto systemRequirement : editingSystem->GetRequirements())
             {
                 auto componentName = ComponentRegistry::componentsNameById[systemRequirement];
-                auto popupLabel = componentName + "###id_" + componentName;
-                std::string uniqueId = componentName + "##" + std::to_string((uintptr_t)editingSystem.get());
+                auto popupLabel = componentName + "###id_" + componentName + std::to_string(systemRequirement);
+                std::string uniqueId = componentName + "##id_" + componentName + std::to_string((uintptr_t)editingSystem.get());
 
-                ImGui::Selectable(popupLabel.c_str(), nullptr, false);
-                        
+                ImGui::Selectable(popupLabel.c_str(), false);
+
                 if(ImGui::BeginPopupContextItem(uniqueId.c_str())){
                     if(ImGui::MenuItem("Remove Requirement"))
                     {
-                        //ToDo remove requirement
+                        systemRequirementToRemove = systemRequirement;
                     }
+                    ImGui::EndPopup();
                 }
             }
+        }
+
+        if(systemRequirementToRemove >= 0)
+        {
+            Logger::LogError("Tentou remover: " + std::to_string(systemRequirementToRemove));
+            editingSystem->RemoveRequirement(systemRequirementToRemove);
+            systemRequirementToRemove = -1;
         }
         
         ImGui::Separator();

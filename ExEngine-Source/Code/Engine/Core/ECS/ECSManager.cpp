@@ -280,7 +280,7 @@ std::vector<int>& ECSystem::GetRequirements(const bool getOptionals){
     {
         return systemOptionalSignatureIds;
     }
-    
+
     return systemSignatureIds;
 };
 
@@ -328,12 +328,19 @@ void ECSystem::ClearEntities(){
     systemEntities.clear();
 };
 
+void ECSystem::RemoveRequirement(const int componentId){
+    if(CheckForRegisteredId(componentId)) return;
+//ToDo entender porque não remove
+    std::erase(systemOptionalSignatureIds, componentId);
+    std::erase(systemSignatureIds, componentId);
+};
+
 bool ECSystem::CheckForRegisteredId(const int componentId) const{
     for(auto id : systemOptionalSignatureIds)
     {
         if(id == componentId)
         {
-            Logger::LogWarning("Same component has been added multiple times for system requirements at " + Demangle(typeid(*this).name()));
+            Logger::LogWarning("Component has already been registered as optional: " + Demangle(typeid(*this).name()));
             return true;
         }
     }
@@ -342,7 +349,7 @@ bool ECSystem::CheckForRegisteredId(const int componentId) const{
     {
         if(id == componentId)
         {
-            Logger::LogWarning("Same component has been added multiple times for system requirements at " + Demangle(typeid(*this).name()));
+            Logger::LogWarning("Component has already been registered as requirement: " + Demangle(typeid(*this).name()));
             return true;
         }
     }
