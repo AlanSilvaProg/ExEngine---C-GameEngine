@@ -134,6 +134,13 @@ void ECSAdmin::Draw(int phase){
         {
             ImGui::OpenPopup("Edit System");
         }
+
+        if(showRenameDialog)
+        {
+            ImGui::OpenPopup("Rename System");
+            showRenameDialog = false;
+        }
+
         //Draw Edtiting system Panel if needed
         DrawEditSystemPanel();
         // Draw rename dialog if needed
@@ -171,7 +178,7 @@ void ECSAdmin::DrawSystemWithContextMenu(const std::type_index* systemTypeId, st
     auto systemName = ecsystem->SystemName();
     std::string uniqueId = std::string(systemName) + "##" + std::to_string((uintptr_t)ecsystem.get());
     
-    ImGui::Selectable(("• " + std::string(systemName)).c_str(), false);
+    ImGui::Selectable((std::string(systemName)).c_str(), false);
     
     if(ImGui::BeginPopupContextItem(uniqueId.c_str()))
     {
@@ -342,19 +349,7 @@ void ECSAdmin::DrawEditSystemPanel(){
         {
             for(auto systemRequirement : editingSystem->GetRequirements())
             {
-                auto componentName = ComponentRegistry::componentsNameById[systemRequirement];
-                auto popupLabel = componentName + "###id_" + componentName + std::to_string(systemRequirement);
-                std::string uniqueId = componentName + "##id_" + componentName + std::to_string((uintptr_t)editingSystem.get());
-
-                ImGui::Selectable(popupLabel.c_str(), false);
-
-                if(ImGui::BeginPopupContextItem(uniqueId.c_str())){
-                    if(ImGui::MenuItem("Remove Requirement"))
-                    {
-                        systemRequirementToRemove = systemRequirement;
-                    }
-                    ImGui::EndPopup();
-                }
+                DrawRequirement(systemRequirement);
             }
         }
 
@@ -378,7 +373,7 @@ void ECSAdmin::DrawEditSystemPanel(){
         {
             for(auto systemRequirement : editingSystem->GetRequirements(true))
             {
-                //ToDo draw requirement and create option to remove
+                DrawRequirement(systemRequirement);
             }
         }
 
@@ -400,21 +395,26 @@ void ECSAdmin::DrawEditSystemPanel(){
             
             if(ImGui::BeginPopup("AddRequirementContext"))
             {   
-                for(auto ecsystemRequirement : ComponentRegistry::ecsystemRequirement)
-                {
-                    auto componentName = ComponentRegistry::componentsNameById[ecsystemRequirement.first];
-                    auto popupLabel = componentName + "###id_" + componentName;
-                    
-                    if(ImGui::MenuItem(popupLabel.c_str())){
-                        ecsystemRequirement.second(castedSystem, false);
-                        ecsManager->RevalidateSystem(editingSystem);
-                    }
-                }
+                DrawAddRequirementOptions(castedSystem, false);
+                ImGui::EndPopup();
+            }
+
+            auto addOptionalRequirementTxt = "Add Optional Requirement";
+            buttonWidth = ImGui::CalcTextSize(addOptionalRequirementTxt).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+            availableWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetCursorPosX((availableWidth - buttonWidth) * 0.5f);
+
+            if(ImGui::Button(addOptionalRequirementTxt))
+            {
+                ImGui::OpenPopup("AddOptionalRequirementTxt");
+            }
+            
+            if(ImGui::BeginPopup("AddOptionalRequirementTxt"))
+            {   
+                DrawAddRequirementOptions(castedSystem, true);
                 ImGui::EndPopup();
             }
         }
-
-        ImGui::Separator();
         
         auto buttonCloseTxt = "Close";
         float buttonWidth = ImGui::CalcTextSize(buttonCloseTxt).x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -434,7 +434,7 @@ void ECSAdmin::DrawEditSystemPanel(){
 };
 
 void ECSAdmin::DrawRenameDialog(){
-    if(!showRenameDialog || !systemToRename) return;
+    if(systemToRename == nullptr) return;
 
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
@@ -454,7 +454,6 @@ void ECSAdmin::DrawRenameDialog(){
         if(ImGui::Button("Apply") || enterPressed)
         {
             systemToRename->SetSystemName(renameBuffer);
-            showRenameDialog = false;
             systemToRename = nullptr;
             ImGui::CloseCurrentPopup();
         }
@@ -463,12 +462,40 @@ void ECSAdmin::DrawRenameDialog(){
         
         if(ImGui::Button("Cancel"))
         {
-            showRenameDialog = false;
             systemToRename = nullptr;
             ImGui::CloseCurrentPopup();
         }
         
         ImGui::EndPopup();
+    }
+};
+
+void ECSAdmin::DrawRequirement(int systemRequirement){
+    auto componentName = ComponentRegistry::componentsNameById[systemRequirement];
+    auto popupLabel = componentName + "###id_" + componentName + std::to_string(systemRequirement);
+    std::string uniqueId = componentName + "##id_" + componentName + std::to_string((uintptr_t)editingSystem.get());
+
+    ImGui::Selectable(popupLabel.c_str(), false);
+
+    if(ImGui::BeginPopupContextItem(uniqueId.c_str())){
+        if(ImGui::MenuItem("Remove Requirement"))
+        {
+            systemRequirementToRemove = systemRequirement;
+        }
+        ImGui::EndPopup();
+    }
+};
+
+void ECSAdmin::DrawAddRequirementOptions(std::shared_ptr<CustomECSystem>& castedSystem, const bool isOptional){
+    for(auto ecsystemRequirement : ComponentRegistry::ecsystemRequirement)
+    {
+        auto componentName = ComponentRegistry::componentsNameById[ecsystemRequirement.first];
+        auto popupLabel = componentName + "###id_" + componentName;
+        
+        if(ImGui::MenuItem(popupLabel.c_str())){
+            ecsystemRequirement.second(castedSystem, isOptional);
+            ecsManager->RevalidateSystem(editingSystem);
+        }
     }
 };
 

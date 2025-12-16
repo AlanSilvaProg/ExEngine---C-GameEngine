@@ -42,6 +42,8 @@ private:
     void DrawCreateSystemDialog();
     bool DrawIfCanMoveEntityToSystem(std::shared_ptr<EntityCS> entity, std::shared_ptr<ECSystem> system);
     void ProcessPendingMoveOperation();
+    void DrawRequirement(int systemRequirement);
+    void DrawAddRequirementOptions(std::shared_ptr<CustomECSystem>& castedSystem, const bool isOptional);
 public:
     ECSAdmin();
 
