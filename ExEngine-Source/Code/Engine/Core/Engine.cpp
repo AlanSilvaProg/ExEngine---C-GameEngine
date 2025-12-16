@@ -8,7 +8,6 @@
 #include "Runtime/App.h"
 #include "Runtime/AppEvents/AppEventsHandler.h"
 #include "GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
-
 #include "Configuration/ConfigurationFileManager.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
