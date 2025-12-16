@@ -329,8 +329,8 @@ void ECSystem::ClearEntities(){
 };
 
 void ECSystem::RemoveRequirement(const int componentId){
-    if(CheckForRegisteredId(componentId)) return;
-//ToDo entender porque não remove
+    if(!CheckForRegisteredId(componentId)) return;
+    
     std::erase(systemOptionalSignatureIds, componentId);
     std::erase(systemSignatureIds, componentId);
 };

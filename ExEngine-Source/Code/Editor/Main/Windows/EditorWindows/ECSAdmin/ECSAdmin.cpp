@@ -360,7 +360,6 @@ void ECSAdmin::DrawEditSystemPanel(){
 
         if(systemRequirementToRemove >= 0)
         {
-            Logger::LogError("Tentou remover: " + std::to_string(systemRequirementToRemove));
             editingSystem->RemoveRequirement(systemRequirementToRemove);
             systemRequirementToRemove = -1;
         }
@@ -371,7 +370,7 @@ void ECSAdmin::DrawEditSystemPanel(){
 
         ImGui::Separator();
 
-        if(editingSystem->GetRequirements().size() == 0)
+        if(editingSystem->GetRequirements(true).size() == 0)
         {
             ImGui::Text("No optional components");
         }
