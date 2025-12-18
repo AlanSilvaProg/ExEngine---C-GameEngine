@@ -7,6 +7,7 @@
 #include "../../../../../Engine/Core/Input/Input.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/Utils/Path/PathUtils.h"
+#include "../../../../../Engine/Logger/Logger.h"
 #include <imgui.h>
 #include <SDL.h>
 #include <fstream>
@@ -143,8 +144,28 @@ void AssetBrowserWindow::DrawFolderTree(const std::filesystem::path& path)
                     }
                 }
 
+                // Right-click context menu for directory tree nodes
+                if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+                {
+                    UpdateSelection(treeNodeId, subElementPath, true);
+                    ImGui::OpenPopup("TreeNodeContextMenu");
+                }
+
+                DrawRightClickContextMenu("TreeNodeContextMenu");
+
                 DrawFolderTree(subElement);
                 ImGui::TreePop();
+            }
+            else
+            {
+                // Handle right-click on collapsed tree nodes
+                if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+                {
+                    UpdateSelection(treeNodeId, subElementPath, true);
+                    ImGui::OpenPopup("TreeNodeContextMenu");
+                }
+
+                DrawRightClickContextMenu("TreeNodeContextMenu");
             }
         }
         else
@@ -179,6 +200,15 @@ void AssetBrowserWindow::DrawFolderContent(const std::filesystem::path& entry)
             UpdateSelection(id, entry);
         }
     }
+
+    // Right-click context menu for individual items
+    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        UpdateSelection(id, entry);
+        ImGui::OpenPopup("ItemContextMenu");
+    }
+
+    DrawRightClickContextMenu("ItemContextMenu");
 };
 
 void AssetBrowserWindow::UpdatePositionTarget(float& targetPosition, float& currentPosition, int& h)
@@ -262,6 +292,39 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
             }
 
             FileManagement::CreateDirectory(targetFolder / "NewDirectory");
+        }
+
+        // Delete option - only show if something is selected
+        auto currentSelectionPath = assetBrowserSelection->GetPath();
+        if(currentSelectionPath != "" && std::filesystem::exists(currentSelectionPath))
+        {
+            ImGui::Separator();
+            
+            if (ImGui::MenuItem("Delete"))
+            {
+                try
+                {
+                    if(std::filesystem::is_directory(currentSelectionPath))
+                    {
+                        std::filesystem::remove_all(currentSelectionPath);
+                    }
+                    else
+                    {
+                        std::filesystem::remove(currentSelectionPath);
+                    }
+                    
+                    // Clear selection after deletion
+                    assetBrowserSelection->Setup("", "", false);
+                    ElementSelectionController::SetSelected(nullptr);
+                }
+                catch(const std::filesystem::filesystem_error& e)
+                {
+                    // Log error if deletion fails
+                    Logger::LogError("Failed to delete: " + std::string(e.what()));
+                }
+                
+                ImGui::CloseCurrentPopup();
+            }
         }
 
         ImGui::EndPopup();
