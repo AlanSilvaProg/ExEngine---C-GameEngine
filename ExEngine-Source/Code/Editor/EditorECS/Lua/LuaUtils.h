@@ -5,7 +5,7 @@
 #define BASE_LUA_ECSYSTEM "\
 local variable = 10 \n\
 \n\
-print(variable.. \"ECSystem\");\n\
+print(variable.. \"ECSystem\")\n\
 \
 "
 #endif
@@ -14,7 +14,7 @@ print(variable.. \"ECSystem\");\n\
 #define BASE_LUA_ECOMPONENTS "\
 local variable = 5\n\
 \n\
-print(variable.. \"EComponentS\");\n\
+print(variable.. \"EComponentS\")\n\
 \
 "
 #endif
