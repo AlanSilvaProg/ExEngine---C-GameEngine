@@ -1,6 +1,7 @@
 #include "AssetBrowserWindow.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../EngineConfig/WindowSizeManager.h"
+#include "../../../../EditorECS/Lua/LuaUtils.h"
 #include "../../../../../Engine/File/FileManagement.h"
 #include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../../../Engine/Core/Runtime/Time/Time.h"
@@ -251,47 +252,99 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
 {
     if (ImGui::BeginPopup(id.c_str()))
     {
-        if (ImGui::MenuItem("Create File"))
+        if (ImGui::BeginMenu("Create..."))
         {
-            auto targetFolder = EditorInterfaceGetters::currentProjectPath;
-            auto currentSelectionPath = assetBrowserSelection->GetPath();
-
-            if(currentSelectionPath != "")
+            if(ImGui::BeginMenu("LUA Script"))
             {
-                if(currentSelectionPath.has_extension())
+                if(ImGui::MenuItem("ECSystem"))
                 {
-                    currentSelectionPath = currentSelectionPath.parent_path();
+                    auto targetFolder = EditorInterfaceGetters::currentProjectPath;
+                    auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+                    if(currentSelectionPath != "")
+                    {
+                        if(currentSelectionPath.has_extension())
+                        {
+                            currentSelectionPath = currentSelectionPath.parent_path();
+                        }
+
+                        if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                        {
+                            targetFolder = currentSelectionPath;
+                        }
+                    }
+                    
+                    LuaUtils::CreateLuaECSystem(targetFolder/ "NewECSystem.lua");
                 }
 
-                if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                if(ImGui::MenuItem("EComponenteS"))
                 {
-                    targetFolder = currentSelectionPath;
+                    auto targetFolder = EditorInterfaceGetters::currentProjectPath;
+                    auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+                    if(currentSelectionPath != "")
+                    {
+                        if(currentSelectionPath.has_extension())
+                        {
+                            currentSelectionPath = currentSelectionPath.parent_path();
+                        }
+
+                        if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                        {
+                            targetFolder = currentSelectionPath;
+                        }
+                    }
+                    LuaUtils::CreateLuaEComponenteS(targetFolder/ "NewEComponentS.lua");
                 }
+                ImGui::EndMenu();
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("File"))
+            {
+                auto targetFolder = EditorInterfaceGetters::currentProjectPath;
+                auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+                if(currentSelectionPath != "")
+                {
+                    if(currentSelectionPath.has_extension())
+                    {
+                        currentSelectionPath = currentSelectionPath.parent_path();
+                    }
+
+                    if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                    {
+                        targetFolder = currentSelectionPath;
+                    }
+                }
+                
+                FileManagement::CreateFile(targetFolder/ "NewFile", "");
+                ImGui::CloseCurrentPopup();
+            }
+
+            if(ImGui::MenuItem("Directory"))
+            {
+                auto targetFolder = EditorInterfaceGetters::currentProjectPath;
+                auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+                if(currentSelectionPath != "")
+                {
+                    if(currentSelectionPath.has_extension())
+                    {
+                        currentSelectionPath = currentSelectionPath.parent_path();
+                    }
+
+                    if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                    {
+                        targetFolder = currentSelectionPath;
+                    }
+                }
+
+                FileManagement::CreateDirectory(targetFolder / "NewDirectory");
             }
             
-            FileManagement::CreateFile(targetFolder/ "NewFile", "");
-            ImGui::CloseCurrentPopup();
-        }
-
-        if(ImGui::MenuItem("Create Folder"))
-        {
-            auto targetFolder = EditorInterfaceGetters::currentProjectPath;
-            auto currentSelectionPath = assetBrowserSelection->GetPath();
-
-            if(currentSelectionPath != "")
-            {
-                if(currentSelectionPath.has_extension())
-                {
-                    currentSelectionPath = currentSelectionPath.parent_path();
-                }
-
-                if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
-                {
-                    targetFolder = currentSelectionPath;
-                }
-            }
-
-            FileManagement::CreateDirectory(targetFolder / "NewDirectory");
+            ImGui::EndMenu();
         }
 
         // Delete option - only show if something is selected
