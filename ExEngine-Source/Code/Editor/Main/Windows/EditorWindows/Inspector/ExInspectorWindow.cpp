@@ -15,6 +15,7 @@
 #include <sstream>
 #include <glm/glm.hpp>
 #include <SDL.h>
+#include <sol/sol.hpp>
 
 ExInspectorWindow::ExInspectorWindow(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
@@ -395,6 +396,18 @@ void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath
         // TODO: Implement open in IDE functionality
         Logger::Log("TODO: Open Lua file in IDE: " + pathStr);
     }
+
+    if(ImGui::Button("Run"))
+    {
+        try {
+            sol::state state;
+            state.open_libraries(sol::lib::base);
+            state.script_file(pathStr);
+            Logger::Log("Successfully executed Lua script: " + pathStr);
+        } catch (const sol::error& e) {
+            Logger::Log("Lua execution error: " + std::string(e.what()));
+        }
+    }
     
     ImGui::Spacing();
     
@@ -488,16 +501,6 @@ void ExInspectorWindow::DrawSaveConfirmDialog() {
             
             lastSelectedAssetPath = pendingSelectionPath;
             showSaveConfirmDialog = false;
-            ImGui::CloseCurrentPopup();
-        }
-        
-        ImGui::SameLine();
-        
-        // Cancel button
-        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
-            // Stay with current selection
-            showSaveConfirmDialog = false;
-            pendingSelectionPath = "";
             ImGui::CloseCurrentPopup();
         }
         
