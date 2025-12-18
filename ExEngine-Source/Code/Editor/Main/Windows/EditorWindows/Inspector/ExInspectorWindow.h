@@ -21,6 +21,11 @@ private:
     std::map<std::string, std::string> luaFileContents;
     std::map<std::string, std::string> originalLuaContents;
     std::map<std::string, bool> luaFileModified;
+    
+    // Selection tracking for unsaved changes
+    std::string lastSelectedAssetPath;
+    bool showSaveConfirmDialog;
+    std::string pendingSelectionPath;
 
     void DrawEntity(const EntityBrowserSelection* entityBrowserSelection);
     void DrawEntityComponent(const std::shared_ptr<IPool> componentPool, const int entityId);
@@ -29,7 +34,10 @@ private:
     void DrawAddComponentButton(const int entityId);
 
     void DrawAsset(AssetBrowserSelection* assetBrowserSelection);
-    void DrawLuaFileEditor(const std::filesystem::path& assetPath); 
+    void DrawLuaFileEditor(const std::filesystem::path& assetPath);
+    void CheckForUnsavedChanges(const std::string& newAssetPath);
+    void DrawSaveConfirmDialog();
+    bool HasUnsavedLuaChanges() const; 
 public:
     ExInspectorWindow();
     void Draw(int phase) override; //0 == early 1 == late

@@ -18,6 +18,9 @@
 
 ExInspectorWindow::ExInspectorWindow(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    showSaveConfirmDialog = false;
+    lastSelectedAssetPath = "";
+    pendingSelectionPath = "";
 };
 
 void ExInspectorWindow::Draw(int phase){
@@ -27,6 +30,11 @@ void ExInspectorWindow::Draw(int phase){
 
     // Apply minimum size constraint using WindowSizeManager
     WindowSizeManager::ApplyMinimumSizeConstraint("ExInspector");
+    
+    // Draw save confirmation dialog if needed
+    if (showSaveConfirmDialog) {
+        DrawSaveConfirmDialog();
+    }
     
     if(ImGui::Begin("ExInspector", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
     {
@@ -40,7 +48,23 @@ void ExInspectorWindow::Draw(int phase){
             }
             else if(selectedElement->GetType() == EditorSelectableType::Asset)
             {
-                DrawAsset(dynamic_cast<AssetBrowserSelection*>(selectedElement));
+                auto assetSelection = dynamic_cast<AssetBrowserSelection*>(selectedElement);
+                std::string currentAssetPath = assetSelection->GetPath().string();
+                
+                // Check for selection change and unsaved changes
+                if (currentAssetPath != lastSelectedAssetPath) {
+                    CheckForUnsavedChanges(currentAssetPath);
+                }
+                
+                if (!showSaveConfirmDialog) {
+                    DrawAsset(assetSelection);
+                }
+            }
+        }
+        else {
+            // No selection - check if we had unsaved changes
+            if (!lastSelectedAssetPath.empty()) {
+                CheckForUnsavedChanges("");
             }
         }
     }
@@ -352,11 +376,16 @@ void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath
     // Apply button (only show if modified)
     if (luaFileModified[pathStr]) {
         if (ImGui::Button("Apply")) {
-            // TODO: Implement save functionality
-            // Save luaFileContents[pathStr] to file
-            Logger::Log("TODO: Save Lua file changes to: " + pathStr);
-            originalLuaContents[pathStr] = luaFileContents[pathStr];
-            luaFileModified[pathStr] = false;
+            std::ofstream file(assetPath);
+            if (file.is_open()) {
+                file << luaFileContents[pathStr];
+                file.close();
+                originalLuaContents[pathStr] = luaFileContents[pathStr];
+                luaFileModified[pathStr] = false;
+                Logger::Log("Saved changes to: " + pathStr);
+            } else {
+                Logger::Log("Failed to save file: " + pathStr);
+            }
         }
         ImGui::SameLine();
     }
@@ -396,4 +425,91 @@ void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath
     }
     
     ImGui::EndChild();
+};
+
+void ExInspectorWindow::CheckForUnsavedChanges(const std::string& newAssetPath) {
+    // Check if we have unsaved changes in the current Lua file
+    if (!lastSelectedAssetPath.empty() && 
+        lastSelectedAssetPath.ends_with(".lua") && 
+        luaFileModified.find(lastSelectedAssetPath) != luaFileModified.end() &&
+        luaFileModified[lastSelectedAssetPath]) {
+        
+        // We have unsaved changes, show confirmation dialog
+        showSaveConfirmDialog = true;
+        pendingSelectionPath = newAssetPath;
+    } else {
+        // No unsaved changes, proceed with selection change
+        lastSelectedAssetPath = newAssetPath;
+    }
+}
+
+void ExInspectorWindow::DrawSaveConfirmDialog() {
+    ImGui::OpenPopup("Unsaved Changes");
+    
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    
+    if (ImGui::BeginPopupModal("Unsaved Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text("You have unsaved changes in:");
+        ImGui::Text("%s", std::filesystem::path(lastSelectedAssetPath).filename().string().c_str());
+        ImGui::Separator();
+        ImGui::Text("Do you want to save your changes?");
+        
+        ImGui::Spacing();
+        
+        // Save button
+        if (ImGui::Button("Save", ImVec2(120, 0))) {
+            // TODO: Implement save functionality
+            std::ofstream file(lastSelectedAssetPath);
+            if (file.is_open()) {
+                file << luaFileContents[lastSelectedAssetPath];
+                file.close();
+                originalLuaContents[lastSelectedAssetPath] = luaFileContents[lastSelectedAssetPath];
+                luaFileModified[lastSelectedAssetPath] = false;
+                Logger::Log("Saved changes to: " + lastSelectedAssetPath);
+            } else {
+                Logger::Log("Failed to save file: " + lastSelectedAssetPath);
+            }
+            
+            lastSelectedAssetPath = pendingSelectionPath;
+            showSaveConfirmDialog = false;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::SameLine();
+        
+        // Don't Save button
+        if (ImGui::Button("Don't Save", ImVec2(120, 0))) {
+            // Discard changes
+            if (luaFileContents.find(lastSelectedAssetPath) != luaFileContents.end()) {
+                luaFileContents[lastSelectedAssetPath] = originalLuaContents[lastSelectedAssetPath];
+                luaFileModified[lastSelectedAssetPath] = false;
+            }
+            
+            lastSelectedAssetPath = pendingSelectionPath;
+            showSaveConfirmDialog = false;
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::SameLine();
+        
+        // Cancel button
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            // Stay with current selection
+            showSaveConfirmDialog = false;
+            pendingSelectionPath = "";
+            ImGui::CloseCurrentPopup();
+        }
+        
+        ImGui::EndPopup();
+    }
+}
+
+bool ExInspectorWindow::HasUnsavedLuaChanges() const {
+    for (const auto& pair : luaFileModified) {
+        if (pair.second) {
+            return true;
+        }
+    }
+    return false;
 };
