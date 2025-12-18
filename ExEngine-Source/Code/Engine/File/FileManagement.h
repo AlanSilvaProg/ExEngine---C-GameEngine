@@ -32,6 +32,9 @@ public:
     static bool CreateFile(std::filesystem::path path, const char* value);
     static bool CreateFile(std::string key, const char* value);
 
+    static bool CreateDirectory(std::string path);
+    static bool CreateDirectory(std::filesystem::path path);
+
     //Save & Load
     template<typename T>
     static bool SaveFile(std::filesystem::path path, T& value);

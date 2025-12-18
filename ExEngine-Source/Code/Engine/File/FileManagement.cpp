@@ -208,6 +208,34 @@ bool FileManagement::CreateFileAtPath(std::filesystem::path path, const char* va
     return true;
 };
 
+bool FileManagement::CreateDirectory(std::string path){
+    return CreateDirectory(std::filesystem::path(path));
+};
+
+bool FileManagement::CreateDirectory(std::filesystem::path path){
+    std::filesystem::path dir;
+    if(path.has_extension())
+        dir = path.parent_path();
+    else
+        dir = path;
+
+    int number = 0;
+    std::filesystem::path newPath;
+
+    do
+    {
+        if (number == 0)
+            newPath = dir;
+        else
+            newPath = dir.string() + ("(" + std::to_string(number) + ")");
+
+        number++;
+    }
+    while (std::filesystem::exists(newPath));
+
+    return std::filesystem::create_directory(newPath);
+};
+
 void FileManagement::ValidateExtension(std::filesystem::path& path){
     if(!path.has_extension()){
         path.replace_extension(".exfile");

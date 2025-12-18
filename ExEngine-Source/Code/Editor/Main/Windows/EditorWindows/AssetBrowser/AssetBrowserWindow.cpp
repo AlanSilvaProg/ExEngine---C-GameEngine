@@ -76,6 +76,13 @@ void AssetBrowserWindow::Draw(int phase){
     ImGui::SetNextWindowSize({static_cast<float>(availableSize.x * 0.3), static_cast<float>(availableSize.y)}, ImGuiCond_Always);
     ImGui::BeginChild("ProjectFolderList", {0, 0}, ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
     
+    // Left-click on empty space to clear selection
+    if (ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && !ImGui::IsAnyItemHovered())
+    {
+        assetBrowserSelection->Setup("", "", false);
+        ElementSelectionController::SetSelected(nullptr);
+    }
+    
     DrawFolderTree(EditorInterfaceGetters::currentProjectPath);
 
     // Right-click context menu for empty space
@@ -94,6 +101,13 @@ void AssetBrowserWindow::Draw(int phase){
     
     ImGui::SetNextWindowSize({0, static_cast<float>(availableSize.y)}, ImGuiCond_Always);
     ImGui::BeginChild("ProjectExplorer", {0, 0}, ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
+    
+    // Left-click on empty space to clear selection
+    if (ImGui::IsWindowHovered() && (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && !ImGui::IsAnyItemHovered())
+    {
+        assetBrowserSelection->Setup("", "", false);
+        ElementSelectionController::SetSelected(nullptr);
+    }
     
     // Right-click context menu for empty space
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -231,7 +245,23 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
 
         if(ImGui::MenuItem("Create Folder"))
         {
-            //assetBrowserSelection->GetPath().
+            auto targetFolder = EditorInterfaceGetters::currentProjectPath;
+            auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+            if(currentSelectionPath != "")
+            {
+                if(currentSelectionPath.has_extension())
+                {
+                    currentSelectionPath = currentSelectionPath.parent_path();
+                }
+
+                if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                {
+                    targetFolder = currentSelectionPath;
+                }
+            }
+
+            FileManagement::CreateDirectory(targetFolder / "NewDirectory");
         }
 
         ImGui::EndPopup();
