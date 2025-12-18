@@ -9,6 +9,7 @@
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/Utils/Path/PathUtils.h"
 #include "../../../../../Engine/Logger/Logger.h"
+#include "../../../../Utils/FileSystemOpener.h"
 #include <imgui.h>
 #include <SDL.h>
 #include <fstream>
@@ -372,7 +373,6 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
                 }
                 catch(const std::filesystem::filesystem_error& e)
                 {
-                    // Log error if deletion fails
                     Logger::LogError("Failed to delete: " + std::string(e.what()));
                 }
                 
@@ -412,9 +412,16 @@ void AssetBrowserWindow::InteractCurrentSelection() const{
 
     if(!path.has_extension()) return;
 
-    if(path.extension().string() == ".exworld")
+    auto extension = path.extension().string();
+    
+    if(extension == ".exworld")
     {
         ECSWorldManager::LoadWorld(path);
         EditorInterfaceGetters::worldWithoutPath = false;
     }
+    else if(extension == ".lua")
+    {
+        FileSystemOpener::OpenFileInSystemEditor(path);
+    }
 };
+

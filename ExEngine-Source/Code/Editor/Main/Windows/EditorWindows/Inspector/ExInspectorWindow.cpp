@@ -9,6 +9,7 @@
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
+#include "../../../../Utils/FileSystemOpener.h"
 #include <imgui.h>
 #include <filesystem>
 #include <fstream>
@@ -63,7 +64,6 @@ void ExInspectorWindow::Draw(int phase){
             }
         }
         else {
-            // No selection - check if we had unsaved changes
             if (!lastSelectedAssetPath.empty()) {
                 CheckForUnsavedChanges("");
             }
@@ -115,7 +115,6 @@ void ExInspectorWindow::DrawEntity(const EntityBrowserSelection* entityBrowserSe
 
 void ExInspectorWindow::DrawEntityComponent(const std::shared_ptr<IPool> componentPool, const int entityId){
     //casting to component
-    
     auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentPool);
 
     if(castedPoolManager == nullptr) return;
@@ -347,12 +346,20 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
 void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath) {
     std::string pathStr = assetPath.string();
     
-    // Header
+    // Header with double-click to open in IDE
     auto textContent = "Lua Script - " + assetPath.filename().string();
     auto textSize = ImGui::CalcTextSize(textContent.c_str());
     auto availableSize = ImGui::GetContentRegionAvail().x;
     ImGui::SetCursorPosX((availableSize / 2) - (textSize.x / 2));
     ImGui::Text("%s", textContent.c_str());
+    
+    // Double-click on header to open in IDE
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Double-click to open in system editor");
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            FileSystemOpener::OpenFileInSystemEditor(assetPath);
+        }
+    }
     
     // Load file content if not already loaded
     if (luaFileContents.find(pathStr) == luaFileContents.end()) {
@@ -373,9 +380,29 @@ void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath
     
     // Buttons row
     ImGui::Spacing();
+
+    if(ImGui::Button("Run"))
+    {
+        try {
+            sol::state state;
+            state.open_libraries(sol::lib::base);
+            state.script_file(pathStr);
+            Logger::Log("Successfully executed Lua script: " + pathStr);
+        } catch (const sol::error& e) {
+            Logger::Log("Lua execution error: " + std::string(e.what()));
+        }
+    }
+    
+    ImGui::SameLine();
+
+    if (ImGui::Button("Open..")) {
+        FileSystemOpener::OpenFileInSystemEditor(assetPath);
+    }
     
     // Apply button (only show if modified)
     if (luaFileModified[pathStr]) {
+        ImGui::SameLine();
+
         if (ImGui::Button("Apply")) {
             std::ofstream file(assetPath);
             if (file.is_open()) {
@@ -387,25 +414,6 @@ void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath
             } else {
                 Logger::Log("Failed to save file: " + pathStr);
             }
-        }
-        ImGui::SameLine();
-    }
-    
-    // Open in IDE button
-    if (ImGui::Button("Open in IDE")) {
-        // TODO: Implement open in IDE functionality
-        Logger::Log("TODO: Open Lua file in IDE: " + pathStr);
-    }
-
-    if(ImGui::Button("Run"))
-    {
-        try {
-            sol::state state;
-            state.open_libraries(sol::lib::base);
-            state.script_file(pathStr);
-            Logger::Log("Successfully executed Lua script: " + pathStr);
-        } catch (const sol::error& e) {
-            Logger::Log("Lua execution error: " + std::string(e.what()));
         }
     }
     
@@ -434,6 +442,14 @@ void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath
         if (newContent != currentContent) {
             luaFileContents[pathStr] = newContent;
             luaFileModified[pathStr] = (newContent != originalLuaContents[pathStr]);
+        }
+    }
+    
+    // Double-click on text editor to open in IDE
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Double-click to open in system editor");
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            FileSystemOpener::OpenFileInSystemEditor(assetPath);
         }
     }
     
@@ -516,3 +532,6 @@ bool ExInspectorWindow::HasUnsavedLuaChanges() const {
     }
     return false;
 };
+
+
+
