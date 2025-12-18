@@ -20,6 +20,7 @@ private:
 
     void UpdatePositionTarget(float& targetPosition, float& currentPosition, int& h);
     void DrawFolderTree(const std::filesystem::path& path);
+    void DrawRightClickContextMenu(const std::string id);
     void DrawFolderContent(const std::filesystem::path& entry);
     void DrawFolderInspection();
     void UpdateSelection(const std::string& id, const std::filesystem::path& path, const bool isDirectory = false);

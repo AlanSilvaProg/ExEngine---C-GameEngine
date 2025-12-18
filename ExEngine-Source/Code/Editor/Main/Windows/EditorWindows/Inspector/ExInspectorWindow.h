@@ -23,7 +23,7 @@ private:
     void DrawComponentField(const ExSerializedField& exSerializedField, const std::string& className) const;
     void DrawAddComponentButton(const int entityId);
 
-    void DrawAsset(const AssetBrowserSelection* assetBrowserSelection); 
+    void DrawAsset(AssetBrowserSelection* assetBrowserSelection); 
 public:
     ExInspectorWindow();
     void Draw(int phase) override; //0 == early 1 == late

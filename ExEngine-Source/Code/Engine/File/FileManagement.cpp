@@ -3,6 +3,7 @@
 #include "../Logger/Logger.h"
 #include <sstream>
 
+//Save & Load
 bool FileManagement::LoadFileAsJson(std::string key, nlohmann::json& json){
     std::string contentAsString;
 
@@ -144,6 +145,68 @@ bool FileManagement::SaveFileAtPath(std::filesystem::path path, const char* valu
 
     return false;
 }
+
+//Creation
+
+bool FileManagement::CreateFile(std::filesystem::path path, std::string value){
+    return CreateFileAtPath(path, value.c_str());
+};
+
+bool FileManagement::CreateFile(std::string key, std::string value){
+    return CreateFile(key, value.c_str());
+};
+
+bool FileManagement::CreateFile(std::filesystem::path path, const char* value){
+    return CreateFileAtPath(path, value);
+};
+
+bool FileManagement::CreateFile(std::string key, const char* value){
+    std::filesystem::path path = "";
+    std::string p = Engine::GetEnginePath() / key;
+    path.append(p);
+
+    return CreateFileAtPath(path, value);
+};
+
+bool FileManagement::CreateFileAtPath(std::filesystem::path path, std::string& value){
+    return CreateFileAtPath(path, value.c_str());
+};
+
+bool FileManagement::CreateFileAtPath(std::filesystem::path path, const char* value)
+{
+    ValidateExtension(path);
+
+    std::filesystem::path dir = path.parent_path();
+    std::string stem = path.stem().string();      
+    std::string ext = path.extension().string(); 
+
+    int number = 0;
+    std::filesystem::path newPath;
+
+    do
+    {
+        if (number == 0)
+            newPath = path;
+        else
+            newPath = dir / (stem + "(" + std::to_string(number) + ")" + ext);
+
+        number++;
+    }
+    while (std::filesystem::exists(newPath));
+
+    std::ofstream out(newPath);
+    if (!out.is_open())
+    {
+        Logger::LogError("File creation failed");
+        return false;
+    }
+
+    out << value;
+    out.close();
+
+    Logger::Log("File created at: " + newPath.string());
+    return true;
+};
 
 void FileManagement::ValidateExtension(std::filesystem::path& path){
     if(!path.has_extension()){

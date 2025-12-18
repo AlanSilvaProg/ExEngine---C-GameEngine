@@ -6,13 +6,19 @@
 
 class FileManagement{
 private:
-    static bool LoadFileAsJson(std::string key, nlohmann::json& result);
-    static bool LoadFileAsJson(std::filesystem::path path, nlohmann::json& result);
+    //Save & Load
     static bool SaveFileAtPath(std::filesystem::path path, std::string& value);
     static bool SaveFileAtPath(std::filesystem::path path, const char* value);
+    static bool LoadFileAsJson(std::string key, nlohmann::json& result);
+    static bool LoadFileAsJson(std::filesystem::path path, nlohmann::json& result);
+
+    //Creation
+    static bool CreateFileAtPath(std::filesystem::path path, std::string& value);
+    static bool CreateFileAtPath(std::filesystem::path path, const char* value);
 
     static void ValidateExtension(std::filesystem::path& path);
 public:
+    //Save & Load
     static bool SaveFile(std::filesystem::path path, std::string value);
     static bool SaveFile(std::string key, std::string value);
     static bool SaveFile(std::filesystem::path path, const char* value);
@@ -20,6 +26,13 @@ public:
     static bool LoadFile(std::string key, std::string& result);
     static bool LoadFile(std::filesystem::path key, std::string& result);
 
+    //Creation
+    static bool CreateFile(std::filesystem::path path, std::string value);
+    static bool CreateFile(std::string key, std::string value);
+    static bool CreateFile(std::filesystem::path path, const char* value);
+    static bool CreateFile(std::string key, const char* value);
+
+    //Save & Load
     template<typename T>
     static bool SaveFile(std::filesystem::path path, T& value);
     template<typename T>
@@ -28,8 +41,15 @@ public:
     static bool LoadFromJson(std::string key, T& result);
     template<typename T>
     static bool LoadFromJson(std::filesystem::path path, T& result);
+
+    //Creation
+    template<typename T>
+    static bool CreateFile(std::filesystem::path path, T& value);
+    template<typename T>
+    static bool CreateFile(std::string key, T& value);
 };
 
+//Save & Load
 template<typename T>
 bool FileManagement::LoadFromJson(std::string key, T& result){
     nlohmann::json json;
@@ -64,4 +84,19 @@ bool FileManagement::SaveFile(std::string key, T& value){
     nlohmann::json json = JsonUtility::ToJson(value);
     
     return SaveFile(key, json.template get<std::string>());
+};
+
+//Creation
+template<typename T>
+bool FileManagement::CreateFile(std::filesystem::path key, T& value){
+    nlohmann::json json = JsonUtility::ToJson(value);
+    
+    return CreateFile(key, json.template get<std::string>());
+};
+
+template<typename T>
+bool FileManagement::CreateFile(std::string key, T& value){
+    nlohmann::json json = JsonUtility::ToJson(value);
+    
+    return CreateFile(key, json.template get<std::string>());
 };

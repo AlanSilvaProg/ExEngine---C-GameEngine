@@ -11,7 +11,7 @@ private:
 public:
     inline virtual EditorSelectableType GetType() override { return EditorSelectableType::Asset; };
 
-    inline std::filesystem::path GetPath() const { return assetPath; };
+    inline std::filesystem::path& GetPath() { return assetPath; };
     inline std::string GetID() const { return assetId; };
 
     inline void Setup(const std::string& id, const std::filesystem::path& path, const bool directory)

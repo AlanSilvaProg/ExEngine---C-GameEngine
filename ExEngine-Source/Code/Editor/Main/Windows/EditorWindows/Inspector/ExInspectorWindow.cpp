@@ -206,7 +206,7 @@ void ExInspectorWindow::DrawAddComponentButton(const int entityId){
     }
 };
 
-void ExInspectorWindow::DrawAsset(const AssetBrowserSelection* assetBrowserSelection){
+void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
     auto assetPath = assetBrowserSelection->GetPath();
 
     if(assetPath.has_extension())

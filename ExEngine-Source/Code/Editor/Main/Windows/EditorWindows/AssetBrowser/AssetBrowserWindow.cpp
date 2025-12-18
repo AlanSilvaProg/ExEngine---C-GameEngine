@@ -1,12 +1,15 @@
 #include "AssetBrowserWindow.h"
+#include "../../../EditorInterfaceGetters.h"
+#include "../EngineConfig/WindowSizeManager.h"
+#include "../../../../../Engine/File/FileManagement.h"
 #include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../../../Engine/Core/Runtime/Time/Time.h"
 #include "../../../../../Engine/Core/Input/Input.h"
-#include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
-#include "../EngineConfig/WindowSizeManager.h"
+#include "../../../../../Engine/Core/Utils/Path/PathUtils.h"
 #include <imgui.h>
 #include <SDL.h>
+#include <fstream>
 
 AssetBrowserWindow::AssetBrowserWindow(){
     assetManager = AssetManager::GetInstance();
@@ -75,6 +78,14 @@ void AssetBrowserWindow::Draw(int phase){
     
     DrawFolderTree(EditorInterfaceGetters::currentProjectPath);
 
+    // Right-click context menu for empty space
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        ImGui::OpenPopup("ProjectFolderListContextMenu");
+    }
+
+    DrawRightClickContextMenu("ProjectFolderListContextMenu");
+
     projectWindowSize = ImGui::GetWindowSize().x;
     ImGui::EndChild();
 
@@ -84,7 +95,15 @@ void AssetBrowserWindow::Draw(int phase){
     ImGui::SetNextWindowSize({0, static_cast<float>(availableSize.y)}, ImGuiCond_Always);
     ImGui::BeginChild("ProjectExplorer", {0, 0}, ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoTitleBar);
     
+    // Right-click context menu for empty space
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        ImGui::OpenPopup("ProjectExplorerContextMenu");
+    }
+
     DrawFolderInspection();
+
+    DrawRightClickContextMenu("ProjectExplorerContextMenu");
 
     ImGui::EndChild();
 
@@ -181,6 +200,41 @@ void AssetBrowserWindow::UpdatePositionTarget(float& targetPosition, float& curr
         currentPosition = currentPosition - ImGui::GetIO().DeltaTime * windowVelocity;
 
         if(currentPosition < targetPosition) currentPosition = targetPosition;
+    }
+};
+
+void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
+{
+    if (ImGui::BeginPopup(id.c_str()))
+    {
+        if (ImGui::MenuItem("Create File"))
+        {
+            auto targetFolder = EditorInterfaceGetters::currentProjectPath;
+            auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+            if(currentSelectionPath != "")
+            {
+                if(currentSelectionPath.has_extension())
+                {
+                    currentSelectionPath = currentSelectionPath.parent_path();
+                }
+
+                if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+                {
+                    targetFolder = currentSelectionPath;
+                }
+            }
+            
+            FileManagement::CreateFile(targetFolder/ "NewFile", "");
+            ImGui::CloseCurrentPopup();
+        }
+
+        if(ImGui::MenuItem("Create Folder"))
+        {
+            //assetBrowserSelection->GetPath().
+        }
+
+        ImGui::EndPopup();
     }
 };
 

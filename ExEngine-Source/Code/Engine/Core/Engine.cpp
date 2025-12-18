@@ -20,6 +20,7 @@ Engine::Engine(){
     
     ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>(ecsManager);
+    scriptingExecutor = std::make_unique<ScriptingExecutor>();
 
     *AppEventsHandler::onApplicationQuitHandler += [this](){
         StopEngine();
