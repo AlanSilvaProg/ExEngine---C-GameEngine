@@ -254,7 +254,13 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
             return;
         }
 
-        if(assetExtension == ".exfile" || assetExtension == ".lua")
+        if(assetExtension == ".lua")
+        {
+            DrawLuaFileEditor(assetPath);
+            return;
+        }
+
+        if(assetExtension == ".exfile")
         {
             auto textContent = "File - " + assetPath.filename().string();
             auto textSize = ImGui::CalcTextSize(textContent.c_str());
@@ -311,4 +317,83 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
     }
 
     ImGui::Text("%s", assetPath.stem().c_str());
+};
+
+void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath) {
+    std::string pathStr = assetPath.string();
+    
+    // Header
+    auto textContent = "Lua Script - " + assetPath.filename().string();
+    auto textSize = ImGui::CalcTextSize(textContent.c_str());
+    auto availableSize = ImGui::GetContentRegionAvail().x;
+    ImGui::SetCursorPosX((availableSize / 2) - (textSize.x / 2));
+    ImGui::Text("%s", textContent.c_str());
+    
+    // Load file content if not already loaded
+    if (luaFileContents.find(pathStr) == luaFileContents.end()) {
+        std::ifstream file(assetPath);
+        if (file.is_open()) {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            luaFileContents[pathStr] = buffer.str();
+            originalLuaContents[pathStr] = luaFileContents[pathStr];
+            luaFileModified[pathStr] = false;
+            file.close();
+        } else {
+            luaFileContents[pathStr] = "";
+            originalLuaContents[pathStr] = "";
+            luaFileModified[pathStr] = false;
+        }
+    }
+    
+    // Buttons row
+    ImGui::Spacing();
+    
+    // Apply button (only show if modified)
+    if (luaFileModified[pathStr]) {
+        if (ImGui::Button("Apply")) {
+            // TODO: Implement save functionality
+            // Save luaFileContents[pathStr] to file
+            Logger::Log("TODO: Save Lua file changes to: " + pathStr);
+            originalLuaContents[pathStr] = luaFileContents[pathStr];
+            luaFileModified[pathStr] = false;
+        }
+        ImGui::SameLine();
+    }
+    
+    // Open in IDE button
+    if (ImGui::Button("Open in IDE")) {
+        // TODO: Implement open in IDE functionality
+        Logger::Log("TODO: Open Lua file in IDE: " + pathStr);
+    }
+    
+    ImGui::Spacing();
+    
+    // Text editor
+    ImGui::BeginChild((std::string("##LuaEditor") + pathStr).c_str(), 
+                      ImVec2(0, ImGui::GetContentRegionAvail().y), 
+                      ImGuiChildFlags_Borders);
+    
+    // Create a large text buffer for editing
+    static char textBuffer[32768]; // 32KB buffer
+    
+    // Copy current content to buffer if it fits
+    std::string& currentContent = luaFileContents[pathStr];
+    if (currentContent.length() < sizeof(textBuffer) - 1) {
+        std::strncpy(textBuffer, currentContent.c_str(), sizeof(textBuffer) - 1);
+        textBuffer[sizeof(textBuffer) - 1] = '\0';
+    }
+    
+    // Multi-line text input
+    ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput;
+    if (ImGui::InputTextMultiline("##LuaContent", textBuffer, sizeof(textBuffer), 
+                                  ImVec2(-1, -1), flags)) {
+        std::string newContent(textBuffer);
+        if (newContent != currentContent) {
+            luaFileContents[pathStr] = newContent;
+            luaFileModified[pathStr] = (newContent != originalLuaContents[pathStr]);
+        }
+    }
+    
+    ImGui::EndChild();
 };

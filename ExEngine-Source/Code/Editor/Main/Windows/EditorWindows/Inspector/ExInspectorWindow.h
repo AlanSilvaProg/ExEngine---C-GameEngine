@@ -16,6 +16,11 @@ class ExInspectorWindow : public EditorWindow{
 private:
     std::shared_ptr<ECSManager> ecsManager;
     std::vector<std::shared_ptr<SpriteInformation>> spriteInformations;
+    
+    // Lua file editing state
+    std::map<std::string, std::string> luaFileContents;
+    std::map<std::string, std::string> originalLuaContents;
+    std::map<std::string, bool> luaFileModified;
 
     void DrawEntity(const EntityBrowserSelection* entityBrowserSelection);
     void DrawEntityComponent(const std::shared_ptr<IPool> componentPool, const int entityId);
@@ -23,7 +28,8 @@ private:
     void DrawComponentField(const ExSerializedField& exSerializedField, const std::string& className) const;
     void DrawAddComponentButton(const int entityId);
 
-    void DrawAsset(AssetBrowserSelection* assetBrowserSelection); 
+    void DrawAsset(AssetBrowserSelection* assetBrowserSelection);
+    void DrawLuaFileEditor(const std::filesystem::path& assetPath); 
 public:
     ExInspectorWindow();
     void Draw(int phase) override; //0 == early 1 == late
