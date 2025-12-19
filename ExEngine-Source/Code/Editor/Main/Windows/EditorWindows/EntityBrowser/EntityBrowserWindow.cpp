@@ -22,9 +22,7 @@ void EntityBrowserWindow::Draw(int phase){
     //ToDo include the currently scene name
     if(!ImGui::Begin("World Inspection", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::EndChild();
-        ImGui::PopID();
-        Logger::LogError("unexpected error occurred when opened World Inspection Window");
+        ImGui::End();
         return;
     }
 
@@ -32,8 +30,8 @@ void EntityBrowserWindow::Draw(int phase){
 
     if(!ImGui::BeginChild("World Entities", ImVec2(300, 0), ImGuiChildFlags_ResizeX))
     {
+        ImGui::EndChild();
         ImGui::End();
-        Logger::LogError("unexpected error occurred when opened World Entity Inspection");
         return;
     }
 

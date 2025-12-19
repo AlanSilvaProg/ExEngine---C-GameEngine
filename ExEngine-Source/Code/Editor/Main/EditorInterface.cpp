@@ -80,7 +80,7 @@ void EditorInterface::EarlyUpdate() const{
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui::NewFrame();
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-    ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
     if(!App::isPlaying)
         Time::PermissionForUpdate();
 };

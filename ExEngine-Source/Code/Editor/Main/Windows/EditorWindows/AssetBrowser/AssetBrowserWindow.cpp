@@ -186,7 +186,7 @@ void AssetBrowserWindow::DrawFolderContent(const std::filesystem::path& entry)
       
     static double lastClickTime = 0.0;
 
-    if(ImGui::Selectable(std::string(entry.stem().string() + id).c_str(), selected))
+    if(ImGui::Selectable(std::string(entry.filename().string() + id).c_str(), selected))
     {
         double currentTime = ImGui::GetTime();
         double delta = currentTime - lastClickTime;

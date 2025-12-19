@@ -24,7 +24,7 @@ void GameWindow::Draw(int phase) {
     
     if(!ImGui::Begin("Game", &EditorInterfaceGetters::gameViewEnabled, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse))
     {
-        Logger::LogError("Game editor window openning has been failed");
+        ImGui::End();
         return;
     }
 
@@ -97,6 +97,7 @@ void GameWindow::Draw(int phase) {
     }
 
     if(!ImGui::BeginChild("GameView")){
+        ImGui::EndChild();
         ImGui::End();
         return;
     }
