@@ -19,6 +19,8 @@ void ECSManager::CreateSystemContexts(){
     systemContext.emplace(SystemContext::LATE_UPDATE, std::make_shared<ECSystemContext>(SystemContext::LATE_UPDATE));
     systemContext.emplace(SystemContext::PRE_RENDER, std::make_shared<ECSystemContext>(SystemContext::PRE_RENDER));
     systemContext.emplace(SystemContext::POST_RENDER, std::make_shared<ECSystemContext>(SystemContext::POST_RENDER));
+
+    //ToDo Reload Contexts Content
 };
 
 void ECSManager::LifeCycleCheck(){
