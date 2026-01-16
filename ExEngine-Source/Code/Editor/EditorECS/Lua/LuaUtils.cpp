@@ -24,6 +24,6 @@ void LuaUtils::RegisterLua(const std::filesystem::path& path){
     }
 
     //ToDo Criar componentes através do lua, registrar novo tipo de componente no ecs manager
-    // File Watcher para identificar alterações no arquivo ( revalidar - hot reload )
+    // Usar File Watcher para identificar alterações no arquivo ( revalidar - hot reload ) 
     // Adicionar componentes no inspector 
 };

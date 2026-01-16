@@ -2,6 +2,7 @@
 #include "MainMenuBar/MainMenuBar.h"
 #include "Windows/EditorWindowDrawer.h"
 #include "../Engine/Core/Engine.h"
+#include "../FileWatcher/FileWatcher.h"
 #include <memory>
 #include <filesystem>
 
@@ -13,8 +14,13 @@ class EditorInterface{
 private:
     std::unique_ptr<ExEditor::MainMenuBar> mainMenuBar;
     std::unique_ptr<ExEditor::EditorWindowDrawer> editorWindowDrawer;
+    std::unique_ptr<FileWatcher> fileWatcher;
 
     void InitializeEditor();
+    void InitializeFileWatcher();
+    void OnFileCreated(const FileEvent& event);
+    void OnFileModified(const FileEvent& event);
+    void OnFileDeleted(const FileEvent& event);
     void EarlyUpdate() const;
     void LateUpdate() const;
     void PreRender() const;

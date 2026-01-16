@@ -26,6 +26,7 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& ga
     Logger::Log("Editor initialized with the game located at: " + gamePath);
     
     InitializeEditor();
+    InitializeFileWatcher();
     CreateEditorBase();
     InputEventHandler::Create();
     *InputEventHandler::handler += [this](SDL_Event& sdlEvent){ ImGui_ImplSDL2_ProcessEvent(&sdlEvent); };
@@ -114,6 +115,12 @@ void EditorInterface::PostRender() const{
 };
 
 EditorInterface::~EditorInterface(){
+    // Stop file watcher before shutdown
+    if (fileWatcher) {
+        fileWatcher->SaveConfiguration(); // Save current configuration
+        fileWatcher->Stop();
+    }
+    
     // Save engine configuration (including style settings) before shutdown
     ConfigurationManager::SaveStyleConfig();
     
@@ -137,3 +144,99 @@ EditorInterface::~EditorInterface(){
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 };
+
+void EditorInterface::InitializeFileWatcher() {
+    fileWatcher = std::make_unique<FileWatcher>();
+    
+    // Load configuration if it exists
+    fileWatcher->LoadConfiguration();
+    
+    // Set up default watch paths if none are configured
+    if (!EditorInterfaceGetters::currentProjectPath.empty()) {
+        std::filesystem::path projectPath(EditorInterfaceGetters::currentProjectPath);
+        
+        // Watch the project directory
+        fileWatcher->AddWatchPath(projectPath.string(), true);
+        
+        // Watch common asset directories
+        std::filesystem::path assetsPath = projectPath / "Assets";
+        if (std::filesystem::exists(assetsPath)) {
+            fileWatcher->AddWatchPath(assetsPath.string(), true);
+        }
+        
+        std::filesystem::path scriptsPath = projectPath / "Scripts";
+        if (std::filesystem::exists(scriptsPath)) {
+            fileWatcher->AddWatchPath(scriptsPath.string(), true);
+        }
+    }
+    
+    // Set up file filters for common asset types
+    std::vector<std::string> assetExtensions = {
+        ".png", ".jpg", ".jpeg", ".bmp", ".tga",  // Images
+        ".wav", ".mp3", ".ogg",                   // Audio
+        ".obj", ".fbx", ".dae",                   // 3D Models
+        ".lua", ".cpp", ".h", ".hpp",             // Scripts
+        ".json", ".xml", ".txt"                   // Data files
+    };
+    fileWatcher->SetFileFilter(assetExtensions);
+    
+    // Exclude temporary and system files
+    std::vector<std::string> excludePatterns = {
+        ".*\\.tmp$",        // Temporary files
+        ".*\\.temp$",       // Temporary files
+        ".*~$",             // Backup files
+        ".*\\.DS_Store$",   // macOS system files
+        ".*Thumbs\\.db$"    // Windows thumbnail cache
+    };
+    fileWatcher->SetExcludePatterns(excludePatterns);
+    
+    // Register event callbacks
+    fileWatcher->OnFileCreated += [this](const FileEvent& event) {
+        this->OnFileCreated(event);
+    };
+    
+    fileWatcher->OnFileChanged += [this](const FileEvent& event) {
+        this->OnFileModified(event);
+    };
+    
+    fileWatcher->OnFileDeleted += [this](const FileEvent& event) {
+        this->OnFileDeleted(event);
+    };
+    
+    // Start monitoring
+    if (!fileWatcher->Start()) {
+        Logger::LogError("Failed to start FileWatcher");
+    } else {
+        Logger::Log("FileWatcher started successfully");
+    }
+}
+
+void EditorInterface::OnFileCreated(const FileEvent& event) {
+    Logger::Log("File created: " + event.filePath);
+    
+    // Notify asset browser to refresh
+    // This would trigger a refresh of the asset browser window
+    // The actual implementation would depend on how the asset browser is structured
+}
+
+void EditorInterface::OnFileModified(const FileEvent& event) {
+    Logger::Log("File modified: " + event.filePath);
+    
+    // Handle different file types
+    std::string extension = event.GetExtension();
+    
+    if (extension == ".lua") {
+        // Script file changed - might need to reload
+        Logger::Log("Script file modified, consider reloading: " + event.filePath);
+    } else if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") {
+        // Image file changed - might need to reload texture
+        Logger::Log("Image file modified, consider reloading texture: " + event.filePath);
+    }
+}
+
+void EditorInterface::OnFileDeleted(const FileEvent& event) {
+    Logger::Log("File deleted: " + event.filePath);
+    
+    // Notify asset browser to refresh and remove references
+    // Clean up any loaded resources that reference this file
+}
