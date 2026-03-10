@@ -1,8 +1,7 @@
 #pragma once
 #include "IPlatformWatcher.h"
 
-// GCC doesn't support Objective-C blocks, so disable MacOSFileWatcher when using GCC
-#if defined(EXENGINE_MACOS) && !defined(EXENGINE_DISABLE_MACOS_FILEWATCHER)
+#ifdef EXENGINE_MACOS
 #include <CoreServices/CoreServices.h>
 #include <vector>
 #include <atomic>
@@ -38,4 +37,4 @@ private:
     std::thread m_runLoopThread;
 };
 
-#endif // EXENGINE_MACOS && !EXENGINE_DISABLE_MACOS_FILEWATCHER
+#endif // EXENGINE_MACOS

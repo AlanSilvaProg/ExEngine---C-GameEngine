@@ -2191,9 +2191,7 @@ namespace sol {
 			static_assert(std::is_constructible<T, Args&&...>::value, "T must be constructible with Args");
 
 			*this = nullopt;
-			// C++26 fix: optional<T&> doesn't have construct() method, use direct assignment
-			m_value = std::addressof(args...);
-			return *m_value;
+			this->construct(std::forward<Args>(args)...);
 		}
 
 		/// Swaps this optional with the other.

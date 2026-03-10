@@ -1,12 +1,8 @@
-cmake_minimum_required(VERSION 4.2)
+cmake_minimum_required(VERSION 3.11)
 
-# Force GCC for C++26 support
-set(CMAKE_C_COMPILER gcc-15)
-set(CMAKE_CXX_COMPILER g++-15)
+project(ExEngine-Source)
 
-project(ExEngine-Source LANGUAGES C CXX OBJCXX)
-
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Configure debug symbols for stack traces
@@ -29,14 +25,6 @@ endif()
 if(APPLE)
     add_compile_definitions("EXENGINE_MACOS")
     set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
-    # Fix for C++26 compatibility with macOS SDK - force include compatibility header
-    add_compile_options(-include ${CMAKE_SOURCE_DIR}/ThirdParty/compat_fixes.h)
-    
-    # GCC doesn't support Objective-C blocks syntax, so disable native macOS file watcher
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        add_compile_definitions("EXENGINE_DISABLE_MACOS_FILEWATCHER")
-        message(STATUS "Using GCC on macOS - MacOSFileWatcher disabled, will use PollingFileWatcher")
-    endif()
 elseif(WIN32)
     add_compile_definitions("EXENGINE_WINDOWS")
     set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)

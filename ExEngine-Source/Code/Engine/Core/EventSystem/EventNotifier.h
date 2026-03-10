@@ -1,8 +1,6 @@
 #pragma once
 #include "IEvent.h"
 #include <vector>
-#include <functional>
-#include <algorithm>
 
 class EventNotifier : public IEvent{
 private:

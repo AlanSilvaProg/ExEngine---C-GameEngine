@@ -2,7 +2,6 @@
 #include "LogEntry.h"
 #include <string>
 #include <vector>
-#include <memory>
 
 class Logger{
 private:

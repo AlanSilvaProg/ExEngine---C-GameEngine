@@ -388,7 +388,7 @@ std::shared_ptr<TComponent> EntityCS::GetComponent() const{
 
 template<typename TComponent>
 bool EntityCS::HasComponent() const{    
-    return ecsManager->HasComponent<TComponent>(*this);
+    ecsManager->HasComponent<TComponent>(*this);
 };
 
 template<typename TComponent>

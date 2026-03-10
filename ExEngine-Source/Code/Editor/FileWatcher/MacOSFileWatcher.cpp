@@ -1,6 +1,6 @@
 #include "MacOSFileWatcher.h"
 
-#if defined(EXENGINE_MACOS) && !defined(EXENGINE_DISABLE_MACOS_FILEWATCHER)
+#ifdef EXENGINE_MACOS
 #include "FileWatcherError.h"
 #include "../../Engine/Logger/Logger.h"
 #include <filesystem>
@@ -222,4 +222,4 @@ FileEventType MacOSFileWatcher::DetermineEventType(FSEventStreamEventFlags flags
     return FileEventType::Modified; // Default fallback
 }
 
-#endif // EXENGINE_MACOS && !EXENGINE_DISABLE_MACOS_FILEWATCHER
+#endif // EXENGINE_MACOS
