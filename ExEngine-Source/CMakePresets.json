@@ -2,8 +2,16 @@
   "version": 4,
   "configurePresets": [
     {
-      "name": "engine-debug",
+      "name": "base",
+      "hidden": true,
       "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-Wno-deprecated-declarations"
+      }
+    },
+    {
+      "name": "engine-debug",
+      "inherits": "base",
       "binaryDir": "build/engine-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -13,7 +21,7 @@
     },
     {
       "name": "engine-dev",
-      "generator": "Ninja",
+      "inherits": "base",
       "binaryDir": "build/engine-dev",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -23,7 +31,7 @@
     },
     {
       "name": "engine-release",
-      "generator": "Ninja",
+      "inherits": "base",
       "binaryDir": "build/engine-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -33,7 +41,7 @@
     },
     {
       "name": "game-dev",
-      "generator": "Ninja",
+      "inherits": "base",
       "binaryDir": "build/game-dev",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -43,7 +51,7 @@
     },
     {
       "name": "game-release",
-      "generator": "Ninja",
+      "inherits": "base",
       "binaryDir": "build/game-release",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",

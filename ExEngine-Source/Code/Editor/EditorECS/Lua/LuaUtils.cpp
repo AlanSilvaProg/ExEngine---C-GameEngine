@@ -26,4 +26,8 @@ void LuaUtils::RegisterLua(const std::filesystem::path& path){
     //ToDo Criar componentes através do lua, registrar novo tipo de componente no ecs manager
     // Usar File Watcher para identificar alterações no arquivo ( revalidar - hot reload ) 
     // Adicionar componentes no inspector 
+    // Componentes Lua tem que ter um método para desenhar no editor
+    // Camada C++ tem que ter métodos para desenhos especificos, tipo, draw field, draw object, etc...
+    // ECS Admin ao criar um novo System tem que criar o componente Lua já com o shape inicial do system
+    // System lua tem que ter comunicação com o C++ para registros
 };

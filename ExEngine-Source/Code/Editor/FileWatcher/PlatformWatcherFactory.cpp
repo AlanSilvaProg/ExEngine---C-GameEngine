@@ -4,7 +4,7 @@
 
 #ifdef EXENGINE_WINDOWS
 #include "WindowsFileWatcher.h"
-#elif defined(EXENGINE_MACOS)
+#elif defined(EXENGINE_MACOS) && !defined(EXENGINE_DISABLE_MACOS_FILEWATCHER)
 #include "MacOSFileWatcher.h"
 #elif defined(EXENGINE_LINUX)
 #include "LinuxFileWatcher.h"
@@ -16,7 +16,7 @@ std::unique_ptr<IPlatformWatcher> PlatformWatcherFactory::Create() {
 #ifdef EXENGINE_WINDOWS
     Logger::Log("FileWatcher: Creating Windows file watcher");
     watcher = CreateWindowsWatcher();
-#elif defined(EXENGINE_MACOS)
+#elif defined(EXENGINE_MACOS) && !defined(EXENGINE_DISABLE_MACOS_FILEWATCHER)
     Logger::Log("FileWatcher: Creating macOS file watcher");
     watcher = CreateMacOSWatcher();
 #elif defined(EXENGINE_LINUX)
@@ -47,7 +47,7 @@ std::unique_ptr<IPlatformWatcher> PlatformWatcherFactory::CreateWindowsWatcher()
 }
 
 std::unique_ptr<IPlatformWatcher> PlatformWatcherFactory::CreateMacOSWatcher() {
-#ifdef EXENGINE_MACOS
+#if defined(EXENGINE_MACOS) && !defined(EXENGINE_DISABLE_MACOS_FILEWATCHER)
     try {
         return std::make_unique<MacOSFileWatcher>();
     } catch (const std::exception& e) {
