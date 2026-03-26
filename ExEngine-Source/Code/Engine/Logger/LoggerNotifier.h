@@ -5,5 +5,7 @@
 
 class LoggerNotifier : public Event<std::shared_ptr<LogEntry>&>{
 public:
-    static inline std::unique_ptr<LoggerNotifier> newLogEntryHandler = std::make_unique<LoggerNotifier>();
+    static std::unique_ptr<LoggerNotifier> newLogEntryHandler;
 };
+
+inline std::unique_ptr<LoggerNotifier> LoggerNotifier::newLogEntryHandler = std::make_unique<LoggerNotifier>();

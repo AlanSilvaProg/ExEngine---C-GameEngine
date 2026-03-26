@@ -1,6 +1,7 @@
 #include "App.h"
 #include "AppEvents/AppEventsHandler.h"
 #include <fstream>
+#include <filesystem>
 
 #ifdef GAME_BUILD
 bool App::isPlaying = true;

@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <vector>
+#include <algorithm>
 #include "IEvent.h"
 
 template<typename ...TArgs>
