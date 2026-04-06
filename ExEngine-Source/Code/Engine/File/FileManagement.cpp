@@ -43,7 +43,7 @@ bool FileManagement::LoadFile(std::string key, std::string& result){
 
     ValidateExtension(path);
 
-    if (std::filesystem::exists(path.parent_path())) {
+    if (std::filesystem::exists(path)) {
         std::ifstream in(path, std::ios::in);
         if (in.is_open()) {
             std::stringstream buffer;
@@ -68,7 +68,7 @@ bool FileManagement::LoadFile(std::string key, std::string& result){
 bool FileManagement::LoadFile(std::filesystem::path path, std::string& result){
     ValidateExtension(path);
 
-    if (std::filesystem::exists(path.parent_path())) {
+    if (std::filesystem::exists(path)) {
         std::ifstream in(path, std::ios::in);
         if (in.is_open()) {
             std::stringstream buffer;
@@ -80,7 +80,7 @@ bool FileManagement::LoadFile(std::filesystem::path path, std::string& result){
 
             return true;
         } else {
-            Logger::LogError("File opening failed");
+            Logger::LogError("File opening failed: " + path.string());
         }
     }
     else{

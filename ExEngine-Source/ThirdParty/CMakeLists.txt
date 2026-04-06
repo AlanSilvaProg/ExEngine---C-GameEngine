@@ -26,7 +26,16 @@ add_library(ThirdParty STATIC ${LUA_SOURCE} ${EDITOR_UI_SOURCE})
 # Configure Lua library
 target_include_directories(ThirdParty_Lua PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} 
     lua-5.4.8/src 
-    sol2-3.3.0/include)
+    sol2-3.5.0/include)
+
+# Ensure Lua is compiled with proper C standard and long long support
+# Force include limits.h to ensure LLONG_MAX is defined for C++26 compatibility
+if(APPLE OR UNIX)
+    target_compile_definitions(ThirdParty_Lua PUBLIC LUA_USE_MACOSX)
+    target_compile_definitions(ThirdParty_Lua PUBLIC LLONG_MAX)
+elseif(WIN32)
+    target_compile_definitions(ThirdParty_Lua PUBLIC LUA_USE_WINDOWS)
+endif()
 
 # Configure UI library
 target_include_directories(ThirdParty_UI PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} imgui)
@@ -35,5 +44,13 @@ target_link_libraries(ThirdParty_UI PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf 
 # Configure main ThirdParty library (backward compatibility)
 target_include_directories(ThirdParty PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} imgui 
     lua-5.4.8/src 
-    sol2-3.3.0/include)
+    sol2-3.5.0/include)
+
 target_link_libraries(ThirdParty PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
+
+# Apply Lua platform definitions to main ThirdParty library too
+if(APPLE OR UNIX)
+    target_compile_definitions(ThirdParty PUBLIC LUA_USE_MACOSX)
+elseif(WIN32)
+    target_compile_definitions(ThirdParty PUBLIC LUA_USE_WINDOWS)
+endif()

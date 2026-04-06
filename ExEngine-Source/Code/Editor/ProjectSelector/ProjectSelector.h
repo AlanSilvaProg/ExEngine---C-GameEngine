@@ -5,7 +5,11 @@
 #include <SDL2/SDL.h>
 
 #ifndef PROJECT_SELECTOR_PATH
-#define PROJECT_SELECTOR_PATH Engine::GetEnginePath()/"Library/ProjectSelector/"
+    #ifdef EXENGINE_DEBUG_MODE
+        #define PROJECT_SELECTOR_PATH Engine::GetEnginePath()
+    #else
+        #define PROJECT_SELECTOR_PATH Engine::GetEnginePath()/"Library/ProjectSelector/"
+    #endif
 #endif
 
 class ProjectSelector{
