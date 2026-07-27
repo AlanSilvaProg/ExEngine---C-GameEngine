@@ -1,20 +1,16 @@
 #pragma once
 #include "../GameCore/Runtime/Gameloop.h"
-#include "Core/ScriptingRoutine/ScriptingExecutor.h"
 #include "Runtime/Settings/RuntimeSettings.h"
 #include "ECS/ECSManager.h"
 #include <memory>
 #include <string>
 #include <filesystem>
 #include <SDL.h>
-#include <sol/sol.hpp>
 
 class Engine{
 private:
     std::shared_ptr<ECSManager> ecsManager;
     std::unique_ptr<Gameloop> gameLoop;
-    std::unique_ptr<ScriptingExecutor> scriptingExecutor;
-    std::shared_ptr<sol::state> solState;
 
     bool running;
 
@@ -30,7 +26,6 @@ public:
     void RunLoop();
 
     std::shared_ptr<ECSManager> GetECSManagerPtr();
-    std::shared_ptr<sol::state> GetSolState();
 
     inline static std::filesystem::path GetEnginePath(){
         auto basePath = SDL_GetBasePath();

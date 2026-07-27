@@ -280,6 +280,7 @@ std::shared_ptr<TComponent> ECSManager::AddComponent(std::shared_ptr<EntityCS> e
 
     SetToValidation(entityId);
     entitiesSignature[entityId][componentId] = true;
+    Logger::Log("Component Id: " + std::to_string(componentId) + "Added To Entity ID: " + std::to_string(entityId));
     return component;
 };
 

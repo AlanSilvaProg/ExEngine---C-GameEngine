@@ -20,14 +20,6 @@ Engine::Engine(){
     
     ecsManager = std::make_shared<ECSManager>();
     gameLoop = std::make_unique<Gameloop>(ecsManager);
-    scriptingExecutor = std::make_unique<ScriptingExecutor>();
-    solState = std::make_shared<sol::state>();
-
-    solState->open_libraries(
-    sol::lib::base,
-    sol::lib::math,
-    sol::lib::table
-    );
 
     *AppEventsHandler::onApplicationQuitHandler += [this](){
         StopEngine();
@@ -71,8 +63,4 @@ void Engine::StopEngine(){
 
 std::shared_ptr<ECSManager> Engine::GetECSManagerPtr(){
     return ecsManager;
-};
-
-std::shared_ptr<sol::state> Engine::GetSolState(){
-    return solState;
 };

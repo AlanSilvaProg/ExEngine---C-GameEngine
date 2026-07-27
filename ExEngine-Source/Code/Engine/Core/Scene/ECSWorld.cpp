@@ -15,12 +15,63 @@ void ECSWorld::Unload(){
     Destroy();
 };
 
+std::shared_ptr<EntityCS>& ECSWorld::CreateEntity(EntityContainer& entityInfo){ 
+    auto entity = ecsManager->CreateEntity(entityInfo.name, entityInfo.internal);
+    entity->RegenerateGuid(&entityInfo.guid);
+    return entity;
+};
+
+void ECSWorld::ConfigureEntityByData(std::shared_ptr<EntityCS>& entity, EntityContainer& entityInfo){
+    const auto& componentsPool = ecsManager->GetEntityComponentPools();
+    const auto entityId = entity->GetId();
+
+    for (const auto& componentEntry : entityInfo.components)
+    {
+        const int id = componentEntry["id"];
+        const auto& data = componentEntry["data"];
+
+        if (!ComponentRegistry::components.contains(id))
+        {
+            Logger::LogError("Component ID not registered: " + std::to_string(id));\
+        }
+
+        if (ComponentRegistry::components[id])
+        {
+            ComponentRegistry::components[id](entity);
+        }
+
+        auto pool = componentsPool[id];
+        
+        if(pool == nullptr)
+        {
+            continue;
+        }
+
+        auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(pool);
+
+        if(castedPoolManager == nullptr) 
+        {
+            continue;
+        }
+        
+        auto component = castedPoolManager->GetComponent(entityId);
+
+        if(component == nullptr) 
+        {
+            ComponentRegistry::componentFactory[id](component);
+            castedPoolManager->ComponentAddedToEntity(entityId, component);
+        }
+        
+        component->FromJson(data);
+    }
+};
+
 void ECSWorld::GenerateWorldEntities(){
     worldEntities.clear();
     for(auto entityInfo : worldInformation.entityContainer)
     {
-        std::shared_ptr<EntityCS> entity = nullptr;
-        CREATE_ENTITY(entity, entityInfo)
+        std::shared_ptr<EntityCS> entity = CreateEntity(entityInfo);
+        ConfigureEntityByData(entity, entityInfo);
         AttachEntity(entity);
     }
 };
@@ -87,8 +138,8 @@ void ECSWorld::DetachEntity(std::shared_ptr<EntityCS> entity){
 };
 
 void ECSWorld::Destroy(){
-    for(auto entityContainer :worldEntities)
+    for(auto entity :worldEntities)
     {
-        entityContainer->KillImmediately();
+        entity->KillImmediately();
     }
 };

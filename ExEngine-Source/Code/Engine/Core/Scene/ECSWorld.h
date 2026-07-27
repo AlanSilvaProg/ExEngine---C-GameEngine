@@ -8,48 +8,6 @@
 #include <filesystem>
 #include <vector>
 
-#ifndef CREATE_ENTITY
-#define CREATE_ENTITY(entity, entityInfo)  \
-    entity = ecsManager->CreateEntity(entityInfo.name, entityInfo.internal); \
-    entity->RegenerateGuid(&entityInfo.guid);\
-    const auto componentsPool = ecsManager->GetEntityComponentPools();\
-\
-    for (const auto& componentEntry : entityInfo.components)\
-    {\
-        int id = componentEntry["id"];\
-        const auto& data = componentEntry["data"];\
-\
-        if (!ComponentRegistry::components.contains(id))\
-        {\
-            Logger::LogError("Component ID not registered: " + std::to_string(id));\
-        }\
-\
-        if (ComponentRegistry::components[id])\
-        {\
-            ComponentRegistry::components[id](entity);\
-        }\
-\
-        auto pool = componentsPool[id];\
-\
-        if(pool == nullptr)\
-        {\
-            continue;\
-        }\
-\
-        auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(pool);\
-\
-        if(castedPoolManager == nullptr) continue;\
-\
-        const auto entityId = entity->GetId();\
-        const auto component = castedPoolManager->GetComponent(entityId);\
-\
-        if(component == nullptr) continue;\
-        \
-        if(!ecsManager->HasComponent(entityId, component->GetComponentId())) continue;\
-        component->FromJson(componentEntry["data"]);\
-    }
-#endif
-
 class ECSWorld{
 private:
     ECSWorldInfo worldInformation; //serializable 
@@ -58,6 +16,8 @@ private:
     std::filesystem::path worldFilePath;
     bool isIncremental;
 
+    std::shared_ptr<EntityCS>& CreateEntity(EntityContainer& entityInfo);
+    void ConfigureEntityByData(std::shared_ptr<EntityCS>& entity, EntityContainer& entityInfo);
     void GenerateWorldEntities();
     void LoadData();
     bool CreateOrSave();

@@ -1,5 +1,6 @@
 #pragma once
 #include "string"
+#include "functional"
 
 struct ISerializable;
 
@@ -9,4 +10,5 @@ struct ExSerializedField{
     void* field_ptr;
     ISerializable* serializable_ptr;
     bool editable;
+    std::function<void()> onFieldChanged = nullptr;
 };

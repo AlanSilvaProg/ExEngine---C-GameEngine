@@ -15,9 +15,10 @@
 class ExInspectorWindow : public EditorWindow{
 private:
     std::shared_ptr<ECSManager> ecsManager;
+    std::shared_ptr<AssetManager> assetManager;
     std::vector<std::shared_ptr<SpriteInformation>> spriteInformations;
     
-    // Lua file editing state
+    // Lua file editing state ToDo make it h and/or cpp
     std::map<std::string, std::string> luaFileContents;
     std::map<std::string, std::string> originalLuaContents;
     std::map<std::string, bool> luaFileModified;

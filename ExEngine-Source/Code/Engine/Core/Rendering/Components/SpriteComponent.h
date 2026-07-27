@@ -2,14 +2,17 @@
 #include <string>
 #include <SDL2/SDL.h>
 #include <memory>
+#include <filesystem>
+#include "../../SpecialFields/SpriteReferenceField/SpriteReference.h"
 #include "../../AssetManager/AssetManager.h"
 #include "../../ECS/ECSManager.h"
 #include "../Layer/LayerAttributes.h"
 #include "../../ECS/InternalRegistry/ComponentRegistry.h"
 
 struct SpriteComponent : public EComponentS<SpriteComponent>{
-private: 
+private:
     std::shared_ptr<AssetManager> assetManager;
+    std::string loadedTextureId;
 
     inline void GetTextureInformation(){
         SDL_Point point;
@@ -18,8 +21,7 @@ private:
     };
 
 public:
-    std::string id;
-    std::string path;
+    SpriteReference spriteReference;
     LayerAttributes layerAttributes;
     SDL_Texture* texture;
     SDL_Rect* srcRect;
@@ -32,25 +34,27 @@ public:
         assetManager = AssetManager::GetInstance();
     };
 
-    SpriteComponent(std::string id, std::string path, int layerIndex, int layerOrderIndex, bool flipX, bool flipY) : id(id), path(path), flipX(flipX), flipY(flipY)
+    SpriteComponent(std::string id, std::filesystem::path path, int layerIndex, int layerOrderIndex, bool flipX, bool flipY) : flipX(flipX), flipY(flipY)
     {
         layerAttributes.layerIndex = layerIndex;
         layerAttributes.layerOrderIndex = layerOrderIndex;
 
         assetManager = AssetManager::GetInstance();
-        texture = assetManager->GetTextureAsset(id, path);
-
-        GetTextureInformation();
+        SetSprite(id, path);
     };
 
     ~SpriteComponent() {
-        assetManager->FreeAsset(id);
+        assetManager->FreeAsset(loadedTextureId);
     };
 
-    inline SpriteComponent& SetSprite(std::string spriteId, std::string spritePath){
-        id = spriteId;
-        path = spritePath;
-        texture = assetManager->GetTextureAsset(id, path);
+    inline SpriteComponent& SetSprite(std::string spriteId, std::filesystem::path spritePath){
+        if(!loadedTextureId.empty() && loadedTextureId != spriteId)
+            assetManager->FreeAsset(loadedTextureId);
+
+        spriteReference.id = spriteId;
+        spriteReference.path = spritePath;
+        texture = assetManager->GetTextureAsset(spriteReference.id, spriteReference.path);
+        loadedTextureId = spriteId;
         GetTextureInformation();
 
         return *this;
@@ -60,8 +64,7 @@ public:
         return ExSerializedClass{
             Demangle(typeid(*this).name()),
             {
-                EX_SERIALIZER((*this), id, false),
-                EX_SERIALIZER((*this), path, false),
+                EX_SERIALIZER_CB((*this), spriteReference, true, ([this](){ SetSprite(spriteReference.id, spriteReference.path); })),
                 EX_SERIALIZER((*this), layerAttributes, true)
             }
         };
@@ -69,21 +72,15 @@ public:
 
     virtual nlohmann::json ToJson() override {
         return {
-            {"id", id},
-            {"path", path},
+            {"spriteReference", spriteReference.ToJson()},
             {"layerAttributes", layerAttributes.ToJson()},
             {"flipX", flipX},
         };
     };
 
     virtual void FromJson(const nlohmann::json& json) override {
-        std::string loadedId;
-        std::string loadedPath;
-        if (json.contains("id"))
-            loadedId = json["id"];
-
-        if (json.contains("path"))
-            loadedPath = json["path"];
+        if (json.contains("spriteReference"))
+            spriteReference.FromJson(json["spriteReference"]);
 
         if (json.contains("layerAttributes"))
             layerAttributes.FromJson(json["layerAttributes"]);
@@ -91,7 +88,7 @@ public:
         if (json.contains("flipX"))
             flipX = json["flipX"];
 
-        SetSprite(loadedId, loadedPath);
+        SetSprite(spriteReference.id, spriteReference.path);
     };
 };
 

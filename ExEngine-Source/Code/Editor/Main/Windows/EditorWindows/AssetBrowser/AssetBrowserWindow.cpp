@@ -1,7 +1,8 @@
 #include "AssetBrowserWindow.h"
-#include "../../../EditorInterfaceGetters.h"
 #include "../EngineConfig/WindowSizeManager.h"
-#include "../../../../EditorECS/Lua/LuaUtils.h"
+#include "../WindowsUtility/ElementTypeId.h"
+#include "../../../EditorInterfaceGetters.h"
+#include "../../../../Utils/FileSystemOpener.h"
 #include "../../../../../Engine/File/FileManagement.h"
 #include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../../../Engine/Core/Runtime/Time/Time.h"
@@ -9,7 +10,7 @@
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/Utils/Path/PathUtils.h"
 #include "../../../../../Engine/Logger/Logger.h"
-#include "../../../../Utils/FileSystemOpener.h"
+#include "../../../../../Engine/Core/SpecialFields/SpriteReferenceField/SpriteReference.h"
 #include <imgui.h>
 #include <SDL.h>
 #include <fstream>
@@ -166,7 +167,6 @@ void AssetBrowserWindow::DrawFolderTree(const std::filesystem::path& path)
                     UpdateSelection(treeNodeId, subElementPath, true);
                     ImGui::OpenPopup("TreeNodeContextMenu");
                 }
-
                 DrawRightClickContextMenu("TreeNodeContextMenu");
             }
         }
@@ -211,6 +211,21 @@ void AssetBrowserWindow::DrawFolderContent(const std::filesystem::path& entry)
     }
 
     DrawRightClickContextMenu("ItemContextMenu");
+    StartAssetDragAndDrop(entry);
+};
+
+void AssetBrowserWindow::StartAssetDragAndDrop(const std::filesystem::path& entry){
+    static nlohmann::json s_currentMovingData;
+    if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+    {
+        auto elementName = entry.stem().string();
+        auto elementType = std::to_string(ElementTypeId::SPRITE);
+        s_currentMovingData = SpriteReference(elementName, entry).ToJson();
+        ImGui::SetDragDropPayload(elementType.c_str(), &s_currentMovingData, sizeof(nlohmann::json));
+
+        ImGui::Text("Moving %s", elementName.c_str());
+        ImGui::EndDragDropSource();
+    }
 };
 
 void AssetBrowserWindow::UpdatePositionTarget(float& targetPosition, float& currentPosition, int& h)
@@ -255,6 +270,7 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
     {
         if (ImGui::BeginMenu("Create..."))
         {
+            /* ToDo, make it h and/or cpp
             if(ImGui::BeginMenu("LUA Script"))
             {
                 if(ImGui::MenuItem("ECSystem"))
@@ -299,7 +315,7 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
                 }
                 ImGui::EndMenu();
             }
-
+            */
             ImGui::Separator();
 
             if (ImGui::MenuItem("File"))
@@ -419,7 +435,7 @@ void AssetBrowserWindow::InteractCurrentSelection() const{
         ECSWorldManager::LoadWorld(path);
         EditorInterfaceGetters::worldWithoutPath = false;
     }
-    else if(extension == ".lua")
+    else if(extension == ".h" || extension == ".cpp")
     {
         FileSystemOpener::OpenFileInSystemEditor(path);
     }

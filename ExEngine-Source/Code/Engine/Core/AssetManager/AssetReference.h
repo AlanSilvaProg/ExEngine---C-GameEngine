@@ -9,7 +9,7 @@ public:
     std::string path;
     int refCount;
 
-    AssetReference(std::string path) : path(path){};
+    AssetReference(std::string path) : texture(nullptr), path(path), refCount(0){};
     ~AssetReference();
 
     SDL_Texture* GetNewReference();

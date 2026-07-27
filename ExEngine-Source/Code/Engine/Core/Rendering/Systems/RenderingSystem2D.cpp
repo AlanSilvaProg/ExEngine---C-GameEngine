@@ -37,7 +37,7 @@ void RenderingSystem2D::UpdateSystem() {
         auto texture = spriteComponent->texture;
 
         //ToDo draw a white rect or similiar by default
-        if(texture == nullptr) return;
+        if(texture == nullptr) continue;
 
         //render texture
         SDL_Rect dstRect = {

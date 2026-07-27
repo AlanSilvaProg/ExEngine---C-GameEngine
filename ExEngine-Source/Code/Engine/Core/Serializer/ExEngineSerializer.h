@@ -10,6 +10,11 @@
 ExSerializedField{ #fieldName, typeid(decltype(obj.fieldName)), &obj.fieldName, GetSerializablePtr(&obj.fieldName), editable }
 #endif
 
+#ifndef EX_SERIALIZER_CB
+#define EX_SERIALIZER_CB(obj, fieldName, editable, callback) \
+ExSerializedField{ #fieldName, typeid(decltype(obj.fieldName)), &obj.fieldName, GetSerializablePtr(&obj.fieldName), editable, callback }
+#endif
+
 template<typename T>
 ISerializable* GetSerializablePtr(T* ptr) {
     if constexpr (std::is_base_of<ISerializable, T>::value) {

@@ -22,6 +22,7 @@ private:
     void DrawFolderTree(const std::filesystem::path& path);
     void DrawRightClickContextMenu(const std::string id);
     void DrawFolderContent(const std::filesystem::path& entry);
+    void StartAssetDragAndDrop(const std::filesystem::path& entry);
     void DrawFolderInspection();
     void UpdateSelection(const std::string& id, const std::filesystem::path& path, const bool isDirectory = false);
     bool IsSelected(const std::string& id, const std::filesystem::path& path) const;

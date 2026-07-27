@@ -1,6 +1,8 @@
 #include "ExInspectorWindow.h"
 #include "../ElementSelectionController.h"
+#include "../WindowsUtility/ElementTypeId.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../../../../Utils/FileSystemOpener.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Serializer/ISerializable.h"
 #include "../../../../../Engine/Core/Rendering/Layer/LayerAttributes.h"
@@ -9,7 +11,7 @@
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
-#include "../../../../Utils/FileSystemOpener.h"
+#include "../../../../../Engine/Core/SpecialFields/SpriteReferenceField/SpriteReference.h"
 #include <imgui.h>
 #include <filesystem>
 #include <fstream>
@@ -20,6 +22,7 @@
 
 ExInspectorWindow::ExInspectorWindow(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    assetManager = AssetManager::GetInstance();
     showSaveConfirmDialog = false;
     lastSelectedAssetPath = "";
     pendingSelectionPath = "";
@@ -202,6 +205,34 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
         glm::vec3* v = static_cast<glm::vec3*>(exSerializedField.field_ptr);
         ImGui::InputFloat3(label, &(*v)[0]);
     }
+    else if (exSerializedField.fieldType == typeid(SpriteReference)){
+        auto spriteReference = static_cast<SpriteReference*>(exSerializedField.field_ptr);
+        bool spriteReferenceBtn = false;
+        auto buttonSize = ImVec2(150,150);
+        
+        if(std::filesystem::exists(spriteReference->path)) {
+            auto texture = assetManager->GetTextureAsset(spriteReference->id, spriteReference->path);
+        
+            ImTextureID textureId = (ImTextureID)(intptr_t)texture;
+            spriteReferenceBtn = ImGui::ImageButton(spriteReference->id.c_str(), textureId, buttonSize);
+
+            assetManager->FreeAsset(spriteReference->id);
+        }
+        else{
+            spriteReferenceBtn = ImGui::Button("empty ( Drag or Select file )", buttonSize);
+        }
+
+        if(ImGui::BeginDragDropTarget()){
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(std::to_string(ElementTypeId::SPRITE).c_str())){
+                auto spritePayload = *(const nlohmann::json*)payload->Data;
+                spriteReference->FromJson(spritePayload);
+
+                if(exSerializedField.onFieldChanged)
+                    exSerializedField.onFieldChanged();
+            }
+            ImGui::EndDragDropTarget();
+        }
+    }
     else
     {
         ImGui::Text("Unsupported type: %s", exSerializedField.fieldName.c_str());
@@ -278,11 +309,11 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
             return;
         }
 
-        if(assetExtension == ".lua")
-        {
-            DrawLuaFileEditor(assetPath);
-            return;
-        }
+        // if(assetExtension == ".lua")
+        // {
+        //     DrawLuaFileEditor(assetPath);
+        //     return;
+        // }
 
         if(assetExtension == ".exfile")
         {
@@ -343,6 +374,7 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
     ImGui::Text("%s", assetPath.stem().c_str());
 };
 
+//ToDo change it to h and/or cpp files
 void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath) {
     std::string pathStr = assetPath.string();
     

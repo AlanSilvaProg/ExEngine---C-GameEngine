@@ -53,6 +53,7 @@ void ExRenderer::RenderSequence(){
     PreRenderEventHandler::preRenderHandler->Invoke();
 
     //ECS System Context runs throughout the events, ECSManager do the registry
+    renderingSystem2D->UpdateSystem();
 
     PreRenderEventHandler::postRenderHandler->Invoke();
 };
