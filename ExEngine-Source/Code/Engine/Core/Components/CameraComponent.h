@@ -4,6 +4,8 @@
 
 struct CameraComponent : public EComponentS<CameraComponent>{
 public:
+    static constexpr unsigned int ComponentId = 0;
+
     int display;
 
     CameraComponent() = default;

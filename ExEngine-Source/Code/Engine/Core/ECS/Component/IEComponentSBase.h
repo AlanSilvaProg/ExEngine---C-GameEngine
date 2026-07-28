@@ -4,8 +4,6 @@
 
 struct IEComponentSBase : public ISerializable
 {
-protected:
-    static unsigned int previousId;
 public:
     virtual int GetComponentId() = 0;
     virtual std::string GetComponentName() = 0;

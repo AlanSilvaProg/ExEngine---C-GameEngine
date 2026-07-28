@@ -21,6 +21,8 @@ private:
     };
 
 public:
+    static constexpr unsigned int ComponentId = 2;
+    
     SpriteReference spriteReference;
     LayerAttributes layerAttributes;
     SDL_Texture* texture;

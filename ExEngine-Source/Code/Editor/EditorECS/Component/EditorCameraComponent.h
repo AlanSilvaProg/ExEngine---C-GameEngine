@@ -3,6 +3,7 @@
 
 struct EditorCameraComponent : public EComponentS<EditorCameraComponent>{
 public:
+    static constexpr unsigned int ComponentId = 3;
 
     virtual ExSerializedClass Serialize() override{
         return ExSerializedClass{

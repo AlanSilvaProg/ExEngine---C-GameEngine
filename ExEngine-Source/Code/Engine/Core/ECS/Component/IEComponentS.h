@@ -6,8 +6,6 @@
 #include <vector>
 
 struct IEComponentS : public IEComponentSBase, public IJsonConvertable{
-protected:
-    static unsigned int previousId;
 public:
     virtual ~IEComponentS() = default;
     virtual ExSerializedClass Serialize() override { return ExSerializedClass{}; };
