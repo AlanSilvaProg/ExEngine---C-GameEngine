@@ -13,6 +13,9 @@ private:
     bool selectionDetected;
 
     void CheckContextWindowWithoutSelection();
+    void Duplicate();
+    void Delete();
+    bool IsValidSelection();
 public:
     EntityBrowserWindow();
 

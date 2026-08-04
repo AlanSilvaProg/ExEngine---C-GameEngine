@@ -6,6 +6,7 @@
 #include "../../Engine/Core/Input/InputEvents/InputEventHandler.h"
 #include "../../Engine/Core/Input/Input.h"
 #include "../EditorEvents/EditorUpdateEventHandler.h"
+#include "../EditorEvents/EditorCommandEventHandler.h"
 #include "../../Engine/Core/Runtime/App.h" 
 #include "../../Engine/Logger/Logger.h"
 #include "../../Engine/File/FileManagement.h"
@@ -69,6 +70,7 @@ void EditorInterface::InitializeEditor(){
     EditorInterfaceGetters::defaultIconsInformation["DefaultIcons"] = std::make_unique<SpriteInformation>("Engine-Image-Icon", ICONS_PATH / "AssetIcons.png", glm::vec2(4,2));
     
     EditorUpdateEventHandler::Create();
+    EditorCommandEventHandler::Create();
 };
 
 void EditorInterface::CreateEditorBase(){
@@ -94,9 +96,14 @@ void EditorInterface::LateUpdate() const{
 
     SDL_Keymod mod = SDL_GetModState();
 
-    if (((mod & KMOD_CTRL) || (mod & KMOD_GUI)) && Input::GetButtonDown(SDLK_s))
+    if (((mod & KMOD_CTRL) || (mod & KMOD_GUI)))
     {
-        EditorInterfaceGetters::Save();
+        if(Input::GetButtonDown(SDLK_s))
+            EditorInterfaceGetters::Save();
+        if(Input::GetButtonDown(SDLK_d))
+            EditorCommandEventHandler::duplicate->Invoke();
+        if(Input::GetButtonDown(SDLK_BACKSPACE))
+            EditorCommandEventHandler::deleteCmmd->Invoke();
     }
     
     // Handle global keyboard shortcuts for Engine Config window

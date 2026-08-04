@@ -203,8 +203,10 @@ public:
     //entities
     std::shared_ptr<EntityCS> CreateEntity(const std::string entityName, const bool internal = false);
     std::shared_ptr<EntityCS> GetEntity(const int entityId); 
+    void DuplicateEntity(const int entityId);
     void DestroyEntityImmediately(const int entityId);
-    void DestroyEntity(std::shared_ptr<EntityCS> entity);
+    void DestroyEntity(const int entity);
+    void DestroyEntity(const std::shared_ptr<EntityCS> entity);
     std::unordered_set<int>& GetAliveEntities();
     void DestroyAllEntities();
     void DestroyAllEntitiesImmediately();

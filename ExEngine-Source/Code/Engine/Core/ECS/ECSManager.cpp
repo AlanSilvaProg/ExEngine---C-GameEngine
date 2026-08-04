@@ -135,6 +135,36 @@ std::shared_ptr<EntityCS> ECSManager::GetEntity(const int entityId){
     return entities[entityId];
 };
 
+void ECSManager::DuplicateEntity(const int entityId){
+    auto entityToDuplicate = GetEntity(entityId);
+
+    if(entityToDuplicate != nullptr)
+    {
+        auto entityToDuplicateSignature = GetEntitySignature(entityId);
+
+        auto entity = CreateEntity(entityToDuplicate->GetName() + "_duplicate");
+        auto newEntityId = entity->GetId();
+        auto& newEntitySignature = GetEntitySignature(newEntityId);
+        
+        //duplicating signatures
+        newEntitySignature.resize(entityToDuplicateSignature.size());
+        
+        for(auto i = 0; i < newEntitySignature.size(); i++)
+        {   
+            newEntitySignature[i] = entityToDuplicateSignature[i];
+        }
+        
+        //duplicating component content
+        for(auto componentId = 0; componentId < newEntitySignature.size(); componentId++)
+        {
+            if(newEntitySignature[componentId])
+            {
+                componentPools[componentId]->CopyComponent(entityId, newEntityId);
+            }
+        }
+    }
+};
+
 void ECSManager::DestroyEntityImmediately(int entityId){
     RemoveAllComponents(entities[entityId]);
     aliveEntities.erase(entityId);
@@ -143,8 +173,12 @@ void ECSManager::DestroyEntityImmediately(int entityId){
     Logger::Log("Entity with ID: " + std::to_string(entityId) + " has been killed.");
 };
 
-void ECSManager::DestroyEntity(std::shared_ptr<EntityCS> entity){
-    entitiesToBeKilled.emplace_back(entity->GetId());
+void ECSManager::DestroyEntity(const int entity){
+    entitiesToBeKilled.emplace_back(entity);
+};
+
+void ECSManager::DestroyEntity(const std::shared_ptr<EntityCS> entity){
+    DestroyEntity(entity->GetId());
 };
 
 void ECSManager::RemoveAllComponents(std::shared_ptr<EntityCS> entity){

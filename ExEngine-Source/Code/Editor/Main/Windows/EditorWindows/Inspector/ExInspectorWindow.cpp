@@ -89,8 +89,7 @@ void ExInspectorWindow::DrawEntity(const EntityBrowserSelection* entityBrowserSe
 
     //generating uniqueId per field
     std::string uniqueId = "entityName###" 
-    + std::to_string(entity->GetId()) + "_" 
-    + std::to_string(reinterpret_cast<uintptr_t>(std::to_string(entity->GetId()).c_str()));
+    + std::to_string(entity->GetId()) + "_Inspector";
     ImGui::PushID(uniqueId.c_str());
 
     static const char* entityNameLabel = "";
@@ -102,12 +101,11 @@ void ExInspectorWindow::DrawEntity(const EntityBrowserSelection* entityBrowserSe
 
     ImGui::PopID();
 
-    ImGui::SameLine();
     ImGui::Text("%s", "Entity Id: ");
     ImGui::SameLine();
     ImGui::Text("%s", std::to_string(entity->GetId()).c_str());
     ImGui::SeparatorText("Components");
-
+    
     for(const auto pool : componentsPool)
     {
         DrawEntityComponent(pool, entityId);
@@ -309,11 +307,11 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
             return;
         }
 
-        // if(assetExtension == ".lua")
-        // {
-        //     DrawLuaFileEditor(assetPath);
-        //     return;
-        // }
+        if(assetExtension == ".hpp")
+        {
+            DrawHppFileEditor(assetPath);
+            return;
+        }
 
         if(assetExtension == ".exfile")
         {
@@ -375,11 +373,11 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
 };
 
 //ToDo change it to h and/or cpp files
-void ExInspectorWindow::DrawLuaFileEditor(const std::filesystem::path& assetPath) {
+void ExInspectorWindow::DrawHppFileEditor(const std::filesystem::path& assetPath) {
     std::string pathStr = assetPath.string();
     
     // Header with double-click to open in IDE
-    auto textContent = "Lua Script - " + assetPath.filename().string();
+    auto textContent = "Hpp Script - " + assetPath.filename().string();
     auto textSize = ImGui::CalcTextSize(textContent.c_str());
     auto availableSize = ImGui::GetContentRegionAvail().x;
     ImGui::SetCursorPosX((availableSize / 2) - (textSize.x / 2));

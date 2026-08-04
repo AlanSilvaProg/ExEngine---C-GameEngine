@@ -17,4 +17,6 @@ public:
     std::shared_ptr<IEComponentS> GetComponent(const unsigned int entityId) const;
 
     int GetInternalVectorSize() { return componentInstanceByEntity.size();};
+
+    virtual void CopyComponent(const int fromEntityId, const int toEntityId) override;
 };

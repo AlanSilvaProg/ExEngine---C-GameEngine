@@ -10,6 +10,9 @@ public:
 
     CameraComponent() = default;
     CameraComponent(int display) : display(display) {};
+    CameraComponent(const CameraComponent& camera){
+        display = camera.display;
+    };
 
     virtual ExSerializedClass Serialize() override{
         return ExSerializedClass{

@@ -1,4 +1,5 @@
 #include "EComponentSPoolManager.h"
+#include "../InternalRegistry/ComponentRegistry.h"
 
 std::shared_ptr<IEComponentS> EComponentSPoolManager::GetComponent(const unsigned int entityId) const{
     if(entityId >= componentInstanceByEntity.size()) return nullptr;
@@ -17,4 +18,12 @@ void EComponentSPoolManager::ComponentRemovedFromEntity(const unsigned int entit
 {
     if(componentInstanceByEntity.size() <= entityId) return;
     componentInstanceByEntity[entityId] = nullptr;
+};
+
+void EComponentSPoolManager::CopyComponent(const int fromEntityId, const int toEntityId){
+    auto componentToClone = componentInstanceByEntity[fromEntityId];
+    std::shared_ptr<IEComponentS> componentClone = nullptr;
+
+    ComponentRegistry::componentCloneFactory[componentToClone->GetComponentId()](componentToClone, componentClone);
+    ComponentAddedToEntity(toEntityId, componentClone);
 };

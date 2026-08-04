@@ -35,7 +35,7 @@ private:
     void DrawAddComponentButton(const int entityId);
 
     void DrawAsset(AssetBrowserSelection* assetBrowserSelection);
-    void DrawLuaFileEditor(const std::filesystem::path& assetPath);
+    void DrawHppFileEditor(const std::filesystem::path& assetPath);
     void CheckForUnsavedChanges(const std::string& newAssetPath);
     void DrawSaveConfirmDialog();
     bool HasUnsavedLuaChanges() const; 

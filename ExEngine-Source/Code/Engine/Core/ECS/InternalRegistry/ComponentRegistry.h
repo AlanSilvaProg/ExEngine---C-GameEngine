@@ -11,6 +11,7 @@ public:
     static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<CustomECSystem>, const bool)>> ecsystemRequirement;
     static inline std::unordered_map<unsigned int, std::string> componentsNameById;
     static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<IEComponentS>&)>> componentFactory;
+    static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<IEComponentS>&, std::shared_ptr<IEComponentS>&)>> componentCloneFactory;
 };
 
 #ifndef REGISTER_COMPONENT
@@ -25,6 +26,7 @@ struct type##AutoRegister{\
             ComponentRegistry::ecsystemRequirement.insert({type::GetId(), [](std::shared_ptr<CustomECSystem> ecsystem, const bool isOptional){ ecsystem->AddRequire<type>(isOptional); }});\
             ComponentRegistry::componentsNameById.insert({type::GetId(), Demangle(typeid(type).name())});\
             ComponentRegistry::componentFactory.insert({type::GetId(), [](std::shared_ptr<IEComponentS>& component){ component = std::make_shared<type>(); }});\
+            ComponentRegistry::componentCloneFactory.insert({type::GetId(), [](std::shared_ptr<IEComponentS>& component, std::shared_ptr<IEComponentS>& cloneComponent){ cloneComponent = std::make_shared<type>(*std::static_pointer_cast<type>(component)); }});\
             registered = true;\
         }\
     }    \

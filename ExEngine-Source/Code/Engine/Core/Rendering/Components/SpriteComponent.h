@@ -45,6 +45,18 @@ public:
         SetSprite(id, path);
     };
 
+    SpriteComponent(const SpriteComponent& sprite){
+        spriteReference = sprite.spriteReference;
+        layerAttributes = sprite.layerAttributes;
+        texture = nullptr;
+        srcRect = nullptr;
+        flipX = sprite.flipX;
+        flipY = sprite.flipY;
+        assetManager = AssetManager::GetInstance();
+
+        SetSprite(spriteReference.id, spriteReference.path);
+    };
+
     ~SpriteComponent() {
         assetManager->FreeAsset(loadedTextureId);
     };

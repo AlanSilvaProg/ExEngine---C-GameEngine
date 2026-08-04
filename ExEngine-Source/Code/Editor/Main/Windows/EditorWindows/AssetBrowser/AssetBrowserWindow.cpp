@@ -270,8 +270,7 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
     {
         if (ImGui::BeginMenu("Create..."))
         {
-            /* ToDo, make it h and/or cpp
-            if(ImGui::BeginMenu("LUA Script"))
+            if(ImGui::BeginMenu("Hpp Script"))
             {
                 if(ImGui::MenuItem("ECSystem"))
                 {
@@ -291,7 +290,8 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
                         }
                     }
                     
-                    LuaUtils::CreateLuaECSystem(targetFolder/ "NewECSystem.lua");
+                    //ToDo create Hpp creation tool for systems
+                    //LuaUtils::CreateLuaECSystem(targetFolder/ "NewECSystem.lua");
                 }
 
                 if(ImGui::MenuItem("EComponenteS"))
@@ -311,11 +311,12 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
                             targetFolder = currentSelectionPath;
                         }
                     }
-                    LuaUtils::CreateLuaEComponenteS(targetFolder/ "NewEComponentS.lua");
+                    //ToDo create Hpp creation tool for Component
+                    //LuaUtils::CreateLuaEComponenteS(targetFolder/ "NewEComponentS.lua");
                 }
                 ImGui::EndMenu();
             }
-            */
+            
             ImGui::Separator();
 
             if (ImGui::MenuItem("File"))

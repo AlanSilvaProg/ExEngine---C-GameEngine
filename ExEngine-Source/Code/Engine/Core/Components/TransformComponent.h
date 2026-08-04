@@ -15,9 +15,22 @@ public:
 
     TransformComponent() = default;
     TransformComponent(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale) : position(position), rotation(rotation), scale(scale){};
+    TransformComponent(const TransformComponent& transform){
+        position = transform.position;
+        rotation = transform.rotation;
+        scale = transform.scale;
+    };
 
-    void Move(const glm::vec3 movement){
-        position += movement;
+    inline void Move(const glm::vec3 position){
+        this->position += position;
+    };
+
+    inline void Scale(const glm::vec3 scale){
+        this->scale += scale;
+    };
+
+    inline void Rotate(const glm::vec3 rotation){
+        this->rotation += rotation;
     };
 
     virtual ExSerializedClass Serialize() override{

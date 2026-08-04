@@ -1,10 +1,42 @@
 #include "EntityBrowserWindow.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../../../../EditorEvents/EditorCommandEventHandler.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 
 EntityBrowserWindow::EntityBrowserWindow(){
     entityBrowserSelection = std::make_unique<EntityBrowserSelection>();
+    *EditorCommandEventHandler::duplicate += [this](){ this->Duplicate(); };
+    *EditorCommandEventHandler::deleteCmmd += [this](){ this->Delete(); };
+};
+
+void EntityBrowserWindow::Duplicate(){
+    if (EntityBrowserWindow::IsValidSelection())
+    {
+        EditorInterfaceGetters::engine->GetECSManagerPtr()->DuplicateEntity(entityBrowserSelection->GetSelectedEntityId());
+    }
+};
+
+void EntityBrowserWindow::Delete(){
+    if (EntityBrowserWindow::IsValidSelection())
+    {
+        EditorInterfaceGetters::engine->GetECSManagerPtr()->DestroyEntity(entityBrowserSelection->GetSelectedEntityId());
+    }
+};
+
+bool EntityBrowserWindow::IsValidSelection(){
+    if(selectionDetected)
+    {
+        auto currentElementSelected = ElementSelectionController::GetCurrentSelection();
+        if(currentElementSelected != nullptr)
+        {
+            if(currentElementSelected == entityBrowserSelection.get())
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 };
 
 void EntityBrowserWindow::Draw(int phase){
@@ -35,7 +67,6 @@ void EntityBrowserWindow::Draw(int phase){
         return;
     }
 
-
     if (ImGui::BeginTable("##bg", 1, ImGuiTableFlags_RowBg))
     {
         for(auto entityId : aliveEntities)
@@ -43,15 +74,14 @@ void EntityBrowserWindow::Draw(int phase){
             DrawEntity(entityId);
         }
          
-        if (selectionDetected && ImGui::IsWindowHovered() && ImGui::IsAnyMouseDown())
+        if (selectionDetected)
         {
-            if (!ImGui::IsAnyItemHovered())
+            if (ImGui::IsWindowHovered() && ImGui::IsAnyMouseDown() && !ImGui::IsAnyItemHovered())
             {
                 selectionDetected = false;
                 ElementSelectionController::SetSelected(nullptr);//null selection
             }
         }
-
         if(!selectionDetected)
         {
             CheckContextWindowWithoutSelection();
