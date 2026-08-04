@@ -29,6 +29,9 @@ private:
 
     void InteractCurrentSelection() const;
 
+    void CreateHppSystemTemplate(const std::filesystem::path& path) const;
+    void CreateHppComponentTemplate(const std::filesystem::path& path) const;
+
     inline bool IsHidden(const std::filesystem::path& p)
     {
         bool isHidden = false;

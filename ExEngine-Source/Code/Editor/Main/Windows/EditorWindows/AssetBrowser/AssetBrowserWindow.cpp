@@ -290,8 +290,7 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
                         }
                     }
                     
-                    //ToDo create Hpp creation tool for systems
-                    //LuaUtils::CreateLuaECSystem(targetFolder/ "NewECSystem.lua");
+                    CreateHppSystemTemplate(targetFolder / "NewECSystem.hpp");
                 }
 
                 if(ImGui::MenuItem("EComponenteS"))
@@ -311,8 +310,7 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
                             targetFolder = currentSelectionPath;
                         }
                     }
-                    //ToDo create Hpp creation tool for Component
-                    //LuaUtils::CreateLuaEComponenteS(targetFolder/ "NewEComponentS.lua");
+                    CreateHppComponentTemplate(targetFolder / "NewEComponentS.hpp");
                 }
                 ImGui::EndMenu();
             }
@@ -436,9 +434,61 @@ void AssetBrowserWindow::InteractCurrentSelection() const{
         ECSWorldManager::LoadWorld(path);
         EditorInterfaceGetters::worldWithoutPath = false;
     }
-    else if(extension == ".h" || extension == ".cpp")
+    else if(extension == ".h" || extension == ".hpp" || extension == ".cpp")
     {
         FileSystemOpener::OpenFileInSystemEditor(path);
     }
+};
+
+void AssetBrowserWindow::CreateHppSystemTemplate(const std::filesystem::path& path) const
+{
+    auto className = path.stem().string();
+
+    std::string content =
+"#pragma once\n"
+"#include \"Code/Engine/Core/ECS/ECSManager.h\"\n"
+"\n"
+"class " + className + " : public CustomECSystem{\n"
+"public:\n"
+"    " + className + "(){\n"
+"        // AddRequire<YourComponent>(false);\n"
+"    };\n"
+"\n"
+"    void UpdateSystem() override{\n"
+"\n"
+"    };\n"
+"};\n";
+
+    FileManagement::CreateFile(path, content);
+};
+
+void AssetBrowserWindow::CreateHppComponentTemplate(const std::filesystem::path& path) const
+{
+    auto className = path.stem().string();
+
+    std::string content =
+"#pragma once\n"
+"#include \"Code/Engine/Core/ECS/Component/EComponentS.h\"\n"
+"#include \"Code/Engine/Core/ECS/InternalRegistry/ComponentRegistry.h\"\n"
+"#include \"Code/Engine/Core/Serializer/Demangle.h\"\n"
+"\n"
+"struct " + className + " : public EComponentS<" + className + ">{\n"
+"public:\n"
+"    static constexpr unsigned int ComponentId = 0; // ToDo assign a unique component id\n"
+"\n"
+"    virtual ExSerializedClass Serialize() override{\n"
+"        return ExSerializedClass{\n"
+"            Demangle(typeid(*this).name()),\n"
+"            {}\n"
+"        };\n"
+"    };\n"
+"\n"
+"    virtual nlohmann::json ToJson() override { return {}; };\n"
+"    virtual void FromJson(const nlohmann::json& json) override {};\n"
+"};\n"
+"\n"
+"REGISTER_COMPONENT(" + className + ")\n";
+
+    FileManagement::CreateFile(path, content);
 };
 

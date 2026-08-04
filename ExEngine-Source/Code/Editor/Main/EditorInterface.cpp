@@ -182,7 +182,7 @@ void EditorInterface::InitializeFileWatcher() {
         ".png", ".jpg", ".jpeg", ".bmp", ".tga",  // Images
         ".wav", ".mp3", ".ogg",                   // Audio
         ".obj", ".fbx", ".dae",                   // 3D Models
-        ".lua", ".cpp", ".h", ".hpp",             // Scripts
+        ".cpp", ".h", ".hpp",                     // Scripts
         ".json", ".xml", ".txt"                   // Data files
     };
     fileWatcher->SetFileFilter(assetExtensions);
@@ -232,7 +232,7 @@ void EditorInterface::OnFileModified(const FileEvent& event) {
     // Handle different file types
     std::string extension = event.GetExtension();
     
-    if (extension == ".lua") {
+    if (extension == ".hpp" || extension == ".h" || extension == ".cpp") {
         // Script file changed - might need to reload
         Logger::Log("Script file modified, consider reloading: " + event.filePath);
     } else if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") {

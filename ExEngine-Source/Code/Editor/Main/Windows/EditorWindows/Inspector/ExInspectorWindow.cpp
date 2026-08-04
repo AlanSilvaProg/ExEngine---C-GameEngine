@@ -18,7 +18,6 @@
 #include <sstream>
 #include <glm/glm.hpp>
 #include <SDL.h>
-#include <sol/sol.hpp>
 
 ExInspectorWindow::ExInspectorWindow(){
     ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
@@ -372,7 +371,6 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
     ImGui::Text("%s", assetPath.stem().c_str());
 };
 
-//ToDo change it to h and/or cpp files
 void ExInspectorWindow::DrawHppFileEditor(const std::filesystem::path& assetPath) {
     std::string pathStr = assetPath.string();
     
@@ -392,86 +390,72 @@ void ExInspectorWindow::DrawHppFileEditor(const std::filesystem::path& assetPath
     }
     
     // Load file content if not already loaded
-    if (luaFileContents.find(pathStr) == luaFileContents.end()) {
+    if (hppFileContents.find(pathStr) == hppFileContents.end()) {
         std::ifstream file(assetPath);
         if (file.is_open()) {
             std::stringstream buffer;
             buffer << file.rdbuf();
-            luaFileContents[pathStr] = buffer.str();
-            originalLuaContents[pathStr] = luaFileContents[pathStr];
-            luaFileModified[pathStr] = false;
+            hppFileContents[pathStr] = buffer.str();
+            originalHppContents[pathStr] = hppFileContents[pathStr];
+            hppFileModified[pathStr] = false;
             file.close();
         } else {
-            luaFileContents[pathStr] = "";
-            originalLuaContents[pathStr] = "";
-            luaFileModified[pathStr] = false;
+            hppFileContents[pathStr] = "";
+            originalHppContents[pathStr] = "";
+            hppFileModified[pathStr] = false;
         }
     }
-    
+
     // Buttons row
     ImGui::Spacing();
-
-    if(ImGui::Button("Run"))
-    {
-        try {
-            sol::state state;
-            state.open_libraries(sol::lib::base);
-            state.script_file(pathStr);
-            Logger::Log("Successfully executed Lua script: " + pathStr);
-        } catch (const sol::error& e) {
-            Logger::Log("Lua execution error: " + std::string(e.what()));
-        }
-    }
-    
-    ImGui::SameLine();
 
     if (ImGui::Button("Open..")) {
         FileSystemOpener::OpenFileInSystemEditor(assetPath);
     }
-    
+
     // Apply button (only show if modified)
-    if (luaFileModified[pathStr]) {
+    if (hppFileModified[pathStr]) {
         ImGui::SameLine();
 
         if (ImGui::Button("Apply")) {
             std::ofstream file(assetPath);
             if (file.is_open()) {
-                file << luaFileContents[pathStr];
+                file << hppFileContents[pathStr];
                 file.close();
-                originalLuaContents[pathStr] = luaFileContents[pathStr];
-                luaFileModified[pathStr] = false;
+                originalHppContents[pathStr] = hppFileContents[pathStr];
+                hppFileModified[pathStr] = false;
                 Logger::Log("Saved changes to: " + pathStr);
             } else {
                 Logger::Log("Failed to save file: " + pathStr);
             }
         }
     }
-    
+
     ImGui::Spacing();
-    
+
     // Text editor
-    ImGui::BeginChild((std::string("##LuaEditor") + pathStr).c_str(), 
-                      ImVec2(0, ImGui::GetContentRegionAvail().y), 
+    ImGui::BeginChild((std::string("##HppEditor") + pathStr).c_str(),
+                      ImVec2(0, ImGui::GetContentRegionAvail().y),
                       ImGuiChildFlags_Borders);
-    
+
     // Create a large text buffer for editing
     static char textBuffer[32768]; // 32KB buffer
-    
+
     // Copy current content to buffer if it fits
-    std::string& currentContent = luaFileContents[pathStr];
+    std::string& currentContent = hppFileContents[pathStr];
     if (currentContent.length() < sizeof(textBuffer) - 1) {
         std::strncpy(textBuffer, currentContent.c_str(), sizeof(textBuffer) - 1);
         textBuffer[sizeof(textBuffer) - 1] = '\0';
     }
-    
+
     // Multi-line text input
     ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput;
-    if (ImGui::InputTextMultiline("##LuaContent", textBuffer, sizeof(textBuffer), 
+    if (ImGui::InputTextMultiline("##HppContent", textBuffer, sizeof(textBuffer),
                                   ImVec2(-1, -1), flags)) {
         std::string newContent(textBuffer);
         if (newContent != currentContent) {
-            luaFileContents[pathStr] = newContent;
-            luaFileModified[pathStr] = (newContent != originalLuaContents[pathStr]);
+            hppFileContents[pathStr] = newContent;
+            hppFileModified[pathStr] = (newContent != originalHppContents[pathStr]);
         }
     }
     
@@ -487,11 +471,11 @@ void ExInspectorWindow::DrawHppFileEditor(const std::filesystem::path& assetPath
 };
 
 void ExInspectorWindow::CheckForUnsavedChanges(const std::string& newAssetPath) {
-    // Check if we have unsaved changes in the current Lua file
-    if (!lastSelectedAssetPath.empty() && 
-        lastSelectedAssetPath.ends_with(".lua") && 
-        luaFileModified.find(lastSelectedAssetPath) != luaFileModified.end() &&
-        luaFileModified[lastSelectedAssetPath]) {
+    // Check if we have unsaved changes in the current Hpp file
+    if (!lastSelectedAssetPath.empty() &&
+        lastSelectedAssetPath.ends_with(".hpp") &&
+        hppFileModified.find(lastSelectedAssetPath) != hppFileModified.end() &&
+        hppFileModified[lastSelectedAssetPath]) {
         
         // We have unsaved changes, show confirmation dialog
         showSaveConfirmDialog = true;
@@ -518,31 +502,30 @@ void ExInspectorWindow::DrawSaveConfirmDialog() {
         
         // Save button
         if (ImGui::Button("Save", ImVec2(120, 0))) {
-            // TODO: Implement save functionality
             std::ofstream file(lastSelectedAssetPath);
             if (file.is_open()) {
-                file << luaFileContents[lastSelectedAssetPath];
+                file << hppFileContents[lastSelectedAssetPath];
                 file.close();
-                originalLuaContents[lastSelectedAssetPath] = luaFileContents[lastSelectedAssetPath];
-                luaFileModified[lastSelectedAssetPath] = false;
+                originalHppContents[lastSelectedAssetPath] = hppFileContents[lastSelectedAssetPath];
+                hppFileModified[lastSelectedAssetPath] = false;
                 Logger::Log("Saved changes to: " + lastSelectedAssetPath);
             } else {
                 Logger::Log("Failed to save file: " + lastSelectedAssetPath);
             }
-            
+
             lastSelectedAssetPath = pendingSelectionPath;
             showSaveConfirmDialog = false;
             ImGui::CloseCurrentPopup();
         }
-        
+
         ImGui::SameLine();
-        
+
         // Don't Save button
         if (ImGui::Button("Don't Save", ImVec2(120, 0))) {
             // Discard changes
-            if (luaFileContents.find(lastSelectedAssetPath) != luaFileContents.end()) {
-                luaFileContents[lastSelectedAssetPath] = originalLuaContents[lastSelectedAssetPath];
-                luaFileModified[lastSelectedAssetPath] = false;
+            if (hppFileContents.find(lastSelectedAssetPath) != hppFileContents.end()) {
+                hppFileContents[lastSelectedAssetPath] = originalHppContents[lastSelectedAssetPath];
+                hppFileModified[lastSelectedAssetPath] = false;
             }
             
             lastSelectedAssetPath = pendingSelectionPath;
@@ -554,8 +537,8 @@ void ExInspectorWindow::DrawSaveConfirmDialog() {
     }
 }
 
-bool ExInspectorWindow::HasUnsavedLuaChanges() const {
-    for (const auto& pair : luaFileModified) {
+bool ExInspectorWindow::HasUnsavedHppChanges() const {
+    for (const auto& pair : hppFileModified) {
         if (pair.second) {
             return true;
         }

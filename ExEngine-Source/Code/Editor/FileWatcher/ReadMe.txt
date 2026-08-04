@@ -19,7 +19,7 @@ auto fileWatcher = std::make_unique<FileWatcher>();
 
 // Configurar caminhos para monitorar
 fileWatcher->AddWatchPath("/caminho/para/projeto", true);
-fileWatcher->SetFileFilter({".cpp", ".h", ".lua", ".png"});
+fileWatcher->SetFileFilter({".cpp", ".h", ".hpp", ".png"});
 
 // Registrar callbacks para eventos
 fileWatcher->OnFileCreated += [](const FileEvent& event) {

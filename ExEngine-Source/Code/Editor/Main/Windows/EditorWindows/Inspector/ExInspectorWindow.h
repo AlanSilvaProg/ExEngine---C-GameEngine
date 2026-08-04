@@ -18,10 +18,10 @@ private:
     std::shared_ptr<AssetManager> assetManager;
     std::vector<std::shared_ptr<SpriteInformation>> spriteInformations;
     
-    // Lua file editing state ToDo make it h and/or cpp
-    std::map<std::string, std::string> luaFileContents;
-    std::map<std::string, std::string> originalLuaContents;
-    std::map<std::string, bool> luaFileModified;
+    // Hpp file editing state
+    std::map<std::string, std::string> hppFileContents;
+    std::map<std::string, std::string> originalHppContents;
+    std::map<std::string, bool> hppFileModified;
     
     // Selection tracking for unsaved changes
     std::string lastSelectedAssetPath;
@@ -38,7 +38,7 @@ private:
     void DrawHppFileEditor(const std::filesystem::path& assetPath);
     void CheckForUnsavedChanges(const std::string& newAssetPath);
     void DrawSaveConfirmDialog();
-    bool HasUnsavedLuaChanges() const; 
+    bool HasUnsavedHppChanges() const;
 public:
     ExInspectorWindow();
     void Draw(int phase) override; //0 == early 1 == late
