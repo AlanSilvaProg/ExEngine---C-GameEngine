@@ -74,15 +74,25 @@ private:
     std::thread workerThread;
     std::atomic<bool> running{true};
 
-    std::mutex pendingMutex;
+    mutable std::mutex pendingMutex;
     std::condition_variable pendingCondition;
     std::deque<std::string> pendingJobs;
 
     std::mutex completedMutex;
     std::vector<CompileOutcome> completedOutcomes;
 
+    // Set by WorkerThreadFunction right before/after CompileOne runs, so the main thread can see
+    // which job (if any) is currently being compiled - pendingJobs alone only holds the ones still
+    // waiting, since the in-flight one has already been popped off of it.
+    mutable std::mutex currentJobMutex;
+    std::string currentlyCompilingPath;
+
     std::unordered_map<std::string, LoadedModule> loadedModules;
     std::unordered_map<std::string, int> revisionByScript;
+
+    // ProcessTracker ids for scripts currently queued or compiling, keyed by scriptPathKey.
+    // Main-thread only (populated/drained from Poll()), unlike everything above it.
+    std::unordered_map<std::string, int> processIdsByScript;
 
     // Modules for deleted Component scripts, kept alive (never unloaded) for the rest of the editor
     // session so any pre-existing component instances of that type remain valid. See OnScriptFileDeleted.
@@ -91,6 +101,15 @@ private:
     void WorkerThreadFunction();
     CompileOutcome CompileOne(const std::string& scriptPathKey);
     void ApplyOutcome(const CompileOutcome& outcome);
+
+    // Thread-safe: reads pendingJobs and currentlyCompilingPath, both guarded by their own mutex.
+    std::vector<std::string> GetPendingAndActiveScriptPaths() const;
+
+    // Main-thread only. Starts a ProcessTracker entry for every queued/in-flight script Poll() hasn't
+    // seen yet, so the editor's progress window reflects compilation as soon as it's discovered
+    // (usually within a frame of being enqueued), not just once it finishes.
+    void UpdateProcessTracking();
+    void EndScriptProcess(const std::string& scriptPathKey);
 
     // Removes module's entry from ComponentRegistry/SystemRegistry and dlclose's it. Must run
     // before the module is ever unloaded - the registry entries are closures pointing at code from

@@ -3,6 +3,7 @@
 #include "../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include "../../Engine/Core/ECS/InternalRegistry/SystemRegistry.h"
 #include "../../Engine/Core/ECS/Pool/EComponentSPoolManager.h"
+#include "../../Engine/Core/Progress/ProcessTracker.h"
 #include "../../Engine/Logger/Logger.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -121,7 +122,17 @@ void ScriptHotReloadManager::WorkerThreadFunction(){
             pendingJobs.pop_front();
         }
 
+        {
+            std::lock_guard<std::mutex> lock(currentJobMutex);
+            currentlyCompilingPath = scriptPathKey;
+        }
+
         auto outcome = CompileOne(scriptPathKey);
+
+        {
+            std::lock_guard<std::mutex> lock(currentJobMutex);
+            currentlyCompilingPath.clear();
+        }
 
         std::lock_guard<std::mutex> lock(completedMutex);
         completedOutcomes.push_back(std::move(outcome));
@@ -170,7 +181,40 @@ ScriptHotReloadManager::CompileOutcome ScriptHotReloadManager::CompileOne(const 
     return outcome;
 };
 
+std::vector<std::string> ScriptHotReloadManager::GetPendingAndActiveScriptPaths() const{
+    std::vector<std::string> paths;
+    {
+        std::lock_guard<std::mutex> lock(pendingMutex);
+        paths.assign(pendingJobs.begin(), pendingJobs.end());
+    }
+    {
+        std::lock_guard<std::mutex> lock(currentJobMutex);
+        if(!currentlyCompilingPath.empty()) paths.push_back(currentlyCompilingPath);
+    }
+    return paths;
+};
+
+void ScriptHotReloadManager::UpdateProcessTracking(){
+    for(const auto& scriptPathKey : GetPendingAndActiveScriptPaths())
+    {
+        if(processIdsByScript.find(scriptPathKey) != processIdsByScript.end()) continue;
+
+        auto description = "Compiling script: " + std::filesystem::path(scriptPathKey).filename().string();
+        processIdsByScript[scriptPathKey] = ProcessTracker::BeginProcess(description);
+    }
+};
+
+void ScriptHotReloadManager::EndScriptProcess(const std::string& scriptPathKey){
+    auto it = processIdsByScript.find(scriptPathKey);
+    if(it == processIdsByScript.end()) return;
+
+    ProcessTracker::EndProcess(it->second);
+    processIdsByScript.erase(it);
+};
+
 void ScriptHotReloadManager::Poll(){
+    UpdateProcessTracking();
+
     std::vector<CompileOutcome> outcomesToApply;
     {
         std::lock_guard<std::mutex> lock(completedMutex);
@@ -179,6 +223,7 @@ void ScriptHotReloadManager::Poll(){
 
     for(const auto& outcome : outcomesToApply)
     {
+        EndScriptProcess(outcome.scriptPathKey);
         ApplyOutcome(outcome);
     }
 };
