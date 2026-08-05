@@ -30,6 +30,7 @@ private:
 
     void DrawEntity(const EntityBrowserSelection* entityBrowserSelection);
     void DrawEntityComponent(const std::shared_ptr<IPool> componentPool, const int entityId);
+    void DrawMissingComponent(const int entityId, const int componentId);
     void DrawSerializedClass(const ExSerializedClass& serializeFields, const int id, bool root)const;
     void DrawComponentField(const ExSerializedField& exSerializedField, const std::string& className) const;
     void DrawAddComponentButton(const int entityId);

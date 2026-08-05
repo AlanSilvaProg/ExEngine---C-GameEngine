@@ -27,6 +27,7 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& ga
     Logger::Log("Editor initialized with the game located at: " + gamePath);
     
     InitializeEditor();
+    InitializeScriptHotReload();
     InitializeFileWatcher();
     CreateEditorBase();
     InputEventHandler::Create();
@@ -86,6 +87,8 @@ void EditorInterface::EarlyUpdate() const{
     //ImGui::ShowDemoWindow();
     if(!App::isPlaying)
         Time::PermissionForUpdate();
+
+    if(scriptHotReloadManager) scriptHotReloadManager->Poll();
 };
 
 void EditorInterface::LateUpdate() const{
@@ -150,6 +153,13 @@ EditorInterface::~EditorInterface(){
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+};
+
+void EditorInterface::InitializeScriptHotReload(){
+    auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    scriptHotReloadManager = std::make_shared<ScriptHotReloadManager>(ecsManager, EditorInterfaceGetters::currentProjectPath);
+    EditorInterfaceGetters::scriptHotReloadManager = scriptHotReloadManager;
+    scriptHotReloadManager->ScanAndCompileExistingScripts();
 };
 
 void EditorInterface::InitializeFileWatcher() {
@@ -220,7 +230,11 @@ void EditorInterface::InitializeFileWatcher() {
 
 void EditorInterface::OnFileCreated(const FileEvent& event) {
     Logger::Log("File created: " + event.filePath);
-    
+
+    if (event.GetExtension() == ".hpp" && scriptHotReloadManager) {
+        scriptHotReloadManager->OnScriptFileEvent(event.filePath);
+    }
+
     // Notify asset browser to refresh
     // This would trigger a refresh of the asset browser window
     // The actual implementation would depend on how the asset browser is structured
@@ -228,12 +242,13 @@ void EditorInterface::OnFileCreated(const FileEvent& event) {
 
 void EditorInterface::OnFileModified(const FileEvent& event) {
     Logger::Log("File modified: " + event.filePath);
-    
+
     // Handle different file types
     std::string extension = event.GetExtension();
-    
-    if (extension == ".hpp" || extension == ".h" || extension == ".cpp") {
-        // Script file changed - might need to reload
+
+    if (extension == ".hpp") {
+        if (scriptHotReloadManager) scriptHotReloadManager->OnScriptFileEvent(event.filePath);
+    } else if (extension == ".h" || extension == ".cpp") {
         Logger::Log("Script file modified, consider reloading: " + event.filePath);
     } else if (extension == ".png" || extension == ".jpg" || extension == ".jpeg") {
         // Image file changed - might need to reload texture
@@ -243,7 +258,11 @@ void EditorInterface::OnFileModified(const FileEvent& event) {
 
 void EditorInterface::OnFileDeleted(const FileEvent& event) {
     Logger::Log("File deleted: " + event.filePath);
-    
+
+    if (event.GetExtension() == ".hpp" && scriptHotReloadManager) {
+        scriptHotReloadManager->OnScriptFileDeleted(event.filePath);
+    }
+
     // Notify asset browser to refresh and remove references
     // Clean up any loaded resources that reference this file
 }

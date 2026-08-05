@@ -12,6 +12,17 @@ public:
     static inline std::unordered_map<unsigned int, std::string> componentsNameById;
     static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<IEComponentS>&)>> componentFactory;
     static inline std::unordered_map<unsigned int, std::function<void(std::shared_ptr<IEComponentS>&, std::shared_ptr<IEComponentS>&)>> componentCloneFactory;
+
+    // Removes every entry registered for a componentId. Required before unloading a hot-reloaded
+    // script module: the factories captured here point at code from that module's translation unit,
+    // and become dangling as soon as the module is dlclose'd/FreeLibrary'd.
+    static inline void Unregister(const unsigned int componentId){
+        components.erase(componentId);
+        ecsystemRequirement.erase(componentId);
+        componentsNameById.erase(componentId);
+        componentFactory.erase(componentId);
+        componentCloneFactory.erase(componentId);
+    };
 };
 
 #ifndef REGISTER_COMPONENT

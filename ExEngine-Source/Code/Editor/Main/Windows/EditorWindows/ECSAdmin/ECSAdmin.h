@@ -12,16 +12,11 @@ private:
     bool showWorldEntities;
     bool showSystems;
     bool includeInternals;
-    bool createNewECSystemTriggered;
     bool editECSystemTriggered;
-    
+
     std::shared_ptr<ECSystem> editingSystem;
     std::shared_ptr<EntityCS> entityToDelete;
     int systemRequirementToRemove = -1;
-    
-    bool creatingSystem;
-    char systemName[256];
-    SystemContext selectedContext;
 
     bool showRenameDialog;
     char renameBuffer[256];
@@ -35,11 +30,11 @@ private:
     
     void DrawSystemWithContextMenu(const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem, SystemContext currentContext);
     void DrawColumnElement(const SystemContext currentContext);
-    void DrawCreateButton(const SystemContext currentContext);
+    void DrawAddSystemButton(const SystemContext currentContext);
+    void AddSystemFromRegistry(const unsigned int systemId, const SystemContext targetContext);
     void DrawMoveToOption(const SystemContext currentContext, const SystemContext targetContext, const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem);
     void DrawEditSystemPanel();
     void DrawRenameDialog();
-    void DrawCreateSystemDialog();
     bool DrawIfCanMoveEntityToSystem(std::shared_ptr<EntityCS> entity, std::shared_ptr<ECSystem> system);
     void ProcessPendingMoveOperation();
     void DrawRequirement(int systemRequirement);

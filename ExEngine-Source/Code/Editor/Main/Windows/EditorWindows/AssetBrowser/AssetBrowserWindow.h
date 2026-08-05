@@ -31,6 +31,7 @@ private:
 
     void CreateHppSystemTemplate(const std::filesystem::path& path) const;
     void CreateHppComponentTemplate(const std::filesystem::path& path) const;
+    unsigned int NextAvailableRegistryId(const std::string& fieldName, unsigned int floor) const;
 
     inline bool IsHidden(const std::filesystem::path& p)
     {

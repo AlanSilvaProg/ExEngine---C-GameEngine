@@ -14,6 +14,8 @@
 #include <imgui.h>
 #include <SDL.h>
 #include <fstream>
+#include <sstream>
+#include <regex>
 
 AssetBrowserWindow::AssetBrowserWindow(){
     assetManager = AssetManager::GetInstance();
@@ -440,24 +442,66 @@ void AssetBrowserWindow::InteractCurrentSelection() const{
     }
 };
 
+// Scans every .hpp already in the project for "fieldName = N" (ComponentId/SystemId) and returns
+// the next free value, never below floor. Built-in engine components already occupy 0/1/2
+// (Camera/Transform/Sprite), hence the high floor for scripted ComponentIds - this is what removes
+// the manual "assign a unique id yourself" step that used to be a silent collision waiting to happen.
+unsigned int AssetBrowserWindow::NextAvailableRegistryId(const std::string& fieldName, unsigned int floor) const
+{
+    auto highest = floor == 0 ? 0u : floor - 1;
+    auto projectPath = EditorInterfaceGetters::currentProjectPath;
+
+    if(!std::filesystem::exists(projectPath)) return floor;
+
+    std::regex pattern(fieldName + R"(\s*=\s*(\d+))");
+
+    for(const auto& entry : std::filesystem::recursive_directory_iterator(projectPath))
+    {
+        if(entry.is_directory() || entry.path().extension() != ".hpp") continue;
+
+        std::ifstream file(entry.path());
+        if(!file.is_open()) continue;
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string source = buffer.str();
+
+        std::smatch match;
+        if(std::regex_search(source, match, pattern))
+        {
+            auto found = static_cast<unsigned int>(std::stoul(match[1].str()));
+            if(found > highest) highest = found;
+        }
+    }
+
+    return highest + 1;
+};
+
 void AssetBrowserWindow::CreateHppSystemTemplate(const std::filesystem::path& path) const
 {
     auto className = path.stem().string();
+    auto systemId = NextAvailableRegistryId("SystemId", 1);
 
     std::string content =
 "#pragma once\n"
 "#include \"Code/Engine/Core/ECS/ECSManager.h\"\n"
+"#include \"Code/Engine/Core/ECS/InternalRegistry/SystemRegistry.h\"\n"
 "\n"
 "class " + className + " : public CustomECSystem{\n"
 "public:\n"
+"    static constexpr unsigned int SystemId = " + std::to_string(systemId) + ";\n"
+"\n"
 "    " + className + "(){\n"
+"        SetSystemName(\"" + className + "\");\n"
 "        // AddRequire<YourComponent>(false);\n"
 "    };\n"
 "\n"
 "    void UpdateSystem() override{\n"
 "\n"
 "    };\n"
-"};\n";
+"};\n"
+"\n"
+"REGISTER_SYSTEM(" + className + ", SystemContext::UPDATE)\n";
 
     FileManagement::CreateFile(path, content);
 };
@@ -465,6 +509,7 @@ void AssetBrowserWindow::CreateHppSystemTemplate(const std::filesystem::path& pa
 void AssetBrowserWindow::CreateHppComponentTemplate(const std::filesystem::path& path) const
 {
     auto className = path.stem().string();
+    auto componentId = NextAvailableRegistryId("ComponentId", 1000);
 
     std::string content =
 "#pragma once\n"
@@ -474,7 +519,7 @@ void AssetBrowserWindow::CreateHppComponentTemplate(const std::filesystem::path&
 "\n"
 "struct " + className + " : public EComponentS<" + className + ">{\n"
 "public:\n"
-"    static constexpr unsigned int ComponentId = 0; // ToDo assign a unique component id\n"
+"    static constexpr unsigned int ComponentId = " + std::to_string(componentId) + ";\n"
 "\n"
 "    virtual ExSerializedClass Serialize() override{\n"
 "        return ExSerializedClass{\n"

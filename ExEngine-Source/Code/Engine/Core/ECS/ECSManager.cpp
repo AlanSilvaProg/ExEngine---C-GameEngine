@@ -257,6 +257,10 @@ const void ECSManager::DestroyCustomECSystem(std::shared_ptr<CustomECSystem> cus
     std::erase_if(customECSystems, [&](const std::shared_ptr<CustomECSystem> ecsystem){ return ecsystem->GetId() == customECSystem->GetId(); });
 };
 
+void ECSManager::DestroySystem(const std::type_index typeIndex){
+    systems.erase(typeIndex);
+};
+
 void ECSManager::DestroyAllEntities(){
     for(auto entityId : aliveEntities)
     {

@@ -125,6 +125,13 @@ void ExInspectorWindow::DrawEntityComponent(const std::shared_ptr<IPool> compone
 
     if(!ecsManager->HasComponent(entityId, component->GetComponentId())) return;
 
+    const auto componentId = component->GetComponentId();
+    if(ComponentRegistry::components.find(componentId) == ComponentRegistry::components.end())
+    {
+        DrawMissingComponent(entityId, componentId);
+        return;
+    }
+
     //getting serialized fields
     const auto fieldsToSerialize = component->Serialize();
 
@@ -136,6 +143,25 @@ void ExInspectorWindow::DrawEntityComponent(const std::shared_ptr<IPool> compone
     if(ImGui::SmallButton("Remove Component"))
     {
         ecsManager->GetEntity(entityId)->RemoveComponent(component->GetComponentId());
+    }
+    ImGui::PopID();
+
+    ImGui::Separator();
+    ImGui::EndGroup();
+};
+
+void ExInspectorWindow::DrawMissingComponent(const int entityId, const int componentId){
+    ImGui::BeginGroup();
+
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+    ImGui::Text("Missing Component (Id: %d)", componentId);
+    ImGui::PopStyleColor();
+    ImGui::TextWrapped("The script that defined this component no longer exists.");
+
+    ImGui::PushID(("missing_component_" + std::to_string(componentId)).c_str());
+    if(ImGui::SmallButton("Remove Component"))
+    {
+        ecsManager->GetEntity(entityId)->RemoveComponent(componentId);
     }
     ImGui::PopID();
 

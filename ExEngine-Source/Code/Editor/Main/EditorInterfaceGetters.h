@@ -2,6 +2,7 @@
 #include "Windows/EditorWindows/BuildSettings/BuildType.h"
 #include "../Engine/Core/Engine.h"
 #include "../Engine/Core/AssetManager/SpriteInformation.h"
+#include "../Scripting/ScriptHotReloadManager.h"
 #include <memory>
 #include <filesystem>
 #include <map>
@@ -10,6 +11,7 @@ class EditorInterfaceGetters
 {
 public:
     static std::shared_ptr<Engine> engine;
+    static std::shared_ptr<ScriptHotReloadManager> scriptHotReloadManager;
     static bool sceneViewEnabled;
     static bool gameViewEnabled;
     static bool projectSettingsEnabled;

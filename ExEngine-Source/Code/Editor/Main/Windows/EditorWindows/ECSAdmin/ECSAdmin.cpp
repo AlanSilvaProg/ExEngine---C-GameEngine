@@ -1,6 +1,8 @@
 #include "ECSAdmin.h"
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
+#include "../../../../../Engine/Core/ECS/InternalRegistry/SystemRegistry.h"
+#include "../../../../Utils/FileSystemOpener.h"
 #include <imgui.h>
 #include <string>
 #include <cstring>
@@ -11,7 +13,7 @@ ECSAdmin::ECSAdmin(){
     showRenameDialog = false;
     memset(renameBuffer, 0, sizeof(renameBuffer));
     systemToRename = nullptr;
-    
+
     // Initialize deferred move operation variables
     pendingMoveOperation = false;
     pendingMoveFromContext = SystemContext::UPDATE;
@@ -32,7 +34,6 @@ void ECSAdmin::Draw(int phase){
     
     if(ImGui::Begin("Entity Component System Administrator", &EditorInterfaceGetters::ecsAdministratorEnabled, windowFlags)) // 0
     {
-        createNewECSystemTriggered = false;
         editECSystemTriggered = false;
 
         if(!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
@@ -124,12 +125,6 @@ void ECSAdmin::Draw(int phase){
             //ToDo Add existing world entities display code here if needed
         }
 
-        if(createNewECSystemTriggered)
-        {
-            creatingSystem = true;
-            ImGui::OpenPopup("Create System");
-        }
-
         if(editECSystemTriggered && editingSystem != nullptr)
         {
             ImGui::OpenPopup("Edit System");
@@ -145,8 +140,6 @@ void ECSAdmin::Draw(int phase){
         DrawEditSystemPanel();
         // Draw rename dialog if needed
         DrawRenameDialog();
-        // Draw creating system dialog if needed
-        DrawCreateSystemDialog();
     }
     ImGui::End(); // 0
     
@@ -170,22 +163,33 @@ void ECSAdmin::DrawColumnElement(const SystemContext currentContext)
             if(!includeInternals && ecsystemContext->IsInternal()) continue;
             DrawSystemWithContextMenu(nullptr, systemEntry, currentContext);
         }
-        DrawCreateButton(currentContext);
+        DrawAddSystemButton(currentContext);
     }
 };
 
 void ECSAdmin::DrawSystemWithContextMenu(const std::type_index* systemTypeId, std::shared_ptr<ECSystem> ecsystem, SystemContext currentContext){
     auto systemName = ecsystem->SystemName();
     std::string uniqueId = std::string(systemName) + "##" + std::to_string((uintptr_t)ecsystem.get());
-    
+
     ImGui::Selectable((std::string(systemName)).c_str(), false);
-    
+
     if(ImGui::BeginPopupContextItem(uniqueId.c_str()))
     {
         if(ImGui::MenuItem("Edit"))
         {
             editingSystem = ecsystem;
             editECSystemTriggered = true;
+        }
+
+        // Internal engine systems (and ad-hoc CustomECSystems created without a script) have no
+        // backing .hpp file, so there's nothing to open in the IDE for them.
+        std::string scriptPath = EditorInterfaceGetters::scriptHotReloadManager
+            ? EditorInterfaceGetters::scriptHotReloadManager->GetScriptPathForSystem(ecsystem)
+            : "";
+
+        if(!scriptPath.empty() && ImGui::MenuItem("Open in IDE"))
+        {
+            FileSystemOpener::OpenFileInSystemEditor(scriptPath);
         }
 
         if(ImGui::BeginMenu("Move To"))
@@ -222,12 +226,54 @@ void ECSAdmin::DrawSystemWithContextMenu(const std::type_index* systemTypeId, st
     }
 };
 
-void ECSAdmin::DrawCreateButton(const SystemContext currentContext){
-    auto id = "Create new ECSystem##" + std::to_string(currentContext);
-    if(ImGui::Button(id.c_str()))
+void ECSAdmin::DrawAddSystemButton(const SystemContext currentContext){
+    auto buttonId = "Add System##" + std::to_string(currentContext);
+    auto popupId = "AddSystemContext##" + std::to_string(currentContext);
+
+    if(ImGui::Button(buttonId.c_str()))
     {
-        selectedContext = currentContext;
-        createNewECSystemTriggered = true;
+        ImGui::OpenPopup(popupId.c_str());
+    }
+
+    if(ImGui::BeginPopup(popupId.c_str()))
+    {
+        if(SystemRegistry::systemFactories.empty())
+        {
+            ImGui::TextDisabled("No system scripts available");
+        }
+
+        for(const auto& systemFactoryPair : SystemRegistry::systemFactories)
+        {
+            auto systemId = systemFactoryPair.first;
+            auto nameIt = SystemRegistry::systemsNameById.find(systemId);
+            std::string systemLabel = nameIt != SystemRegistry::systemsNameById.end() ? nameIt->second : ("System Id: " + std::to_string(systemId));
+            std::string menuLabel = systemLabel + "###addsystem_id_" + std::to_string(systemId);
+
+            if(ImGui::MenuItem(menuLabel.c_str()))
+            {
+                AddSystemFromRegistry(systemId, currentContext);
+            }
+        }
+        ImGui::EndPopup();
+    }
+};
+
+void ECSAdmin::AddSystemFromRegistry(const unsigned int systemId, const SystemContext targetContext){
+    auto factoryIt = SystemRegistry::systemFactories.find(systemId);
+    if(factoryIt == SystemRegistry::systemFactories.end()) return;
+
+    auto [typeIndex, systemInstance] = factoryIt->second(ecsManager);
+    if(systemInstance == nullptr) return; // already instantiated elsewhere
+
+    // The factory registers into the context the script declared itself with (REGISTER_SYSTEM's 2nd
+    // argument) - move it into whichever step's "Add System" button was actually clicked.
+    auto contextIt = SystemRegistry::systemContextById.find(systemId);
+    SystemContext defaultContext = contextIt != SystemRegistry::systemContextById.end() ? contextIt->second : targetContext;
+
+    if(defaultContext != targetContext)
+    {
+        ecsManager->GetECSystemContext(defaultContext)->Unregister(typeIndex, systemInstance);
+        ecsManager->GetECSystemContext(targetContext)->Register(typeIndex, systemInstance);
     }
 };
 
@@ -243,42 +289,6 @@ void ECSAdmin::DrawMoveToOption(const SystemContext currentContext, const System
             pendingMoveSystemTypeId = const_cast<std::type_index*>(systemTypeId);
             pendingMoveSystem = ecsystem;
         }
-    }
-};
-
-void ECSAdmin::DrawCreateSystemDialog(){
-    if(!creatingSystem) return;
-
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(300, 120), ImGuiCond_Appearing);
-
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
-    if(ImGui::BeginPopup("Create System", flags)){
-        ImGui::Text("Enter system name:");
-        ImGui::Separator();
-
-        bool enterPressed = ImGui::InputText("##set_system_name_input", systemName, sizeof(systemName), ImGuiInputTextFlags_EnterReturnsTrue);
-
-        ImGui::Separator();
-
-        if(ImGui::Button("Apply") || enterPressed)
-        {
-            auto ecsystemCreated = ecsManager->CreateCustomSystem(systemName);
-            ecsManager->GetECSystemContext(selectedContext)->RegisterCustom(ecsystemCreated);
-            creatingSystem = false;
-            ImGui::CloseCurrentPopup();
-        }
-        
-        ImGui::SameLine();
-        
-        if(ImGui::Button("Cancel"))
-        {
-            creatingSystem = false;
-            ImGui::CloseCurrentPopup();
-        }
-        
-        ImGui::EndPopup();
     }
 };
 

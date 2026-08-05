@@ -6,6 +6,7 @@
 #include <filesystem>
 
 std::shared_ptr<Engine> EditorInterfaceGetters::engine = nullptr;
+std::shared_ptr<ScriptHotReloadManager> EditorInterfaceGetters::scriptHotReloadManager = nullptr;
 bool EditorInterfaceGetters::sceneViewEnabled = false;
 bool EditorInterfaceGetters::gameViewEnabled = false;
 bool EditorInterfaceGetters::consoleEnabled = false;

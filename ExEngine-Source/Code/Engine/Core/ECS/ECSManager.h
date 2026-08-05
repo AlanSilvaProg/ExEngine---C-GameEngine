@@ -232,6 +232,7 @@ public:
     const std::shared_ptr<ECSystemContext> GetECSystemContext(const SystemContext context) const;
     const void RevalidateSystem(std::shared_ptr<ECSystem> ecsystem);
     const void DestroyCustomECSystem(std::shared_ptr<CustomECSystem> customECSystem);
+    void DestroySystem(const std::type_index typeIndex);
 
     template<typename TSystem, typename ...TArgs>
     std::shared_ptr<TSystem> CreateSystem(TArgs&& ...args);
