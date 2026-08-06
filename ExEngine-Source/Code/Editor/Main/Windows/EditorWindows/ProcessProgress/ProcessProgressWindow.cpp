@@ -98,7 +98,7 @@ void ProcessProgressWindow::Draw(int phase){
 
             // Spinner sits beside the bar (to its right) rather than above it, at 25% of its
             // original size (40 -> 10). The bar gets an explicit width so there's room left for it.
-            const float spinnerDiameter = 10.0f;
+            const float spinnerDiameter = 20.0f;
             const float barHeight = ImGui::GetFrameHeight();
             const float lineStartY = ImGui::GetCursorPosY();
             const float barWidth = kContentWidth - spinnerDiameter - ImGui::GetStyle().ItemSpacing.x;

@@ -23,6 +23,8 @@ public:
     static std::filesystem::path currentProjectPath;
     static BuildType buildTarget;
 
+    static inline std::filesystem::path GetAssetsPath() { return currentProjectPath / "Assets"; };
+
     //don't need to be saved
     static bool worldWithoutPath;
     static bool buildWindowEnabled;

@@ -41,8 +41,11 @@ bool ProjectManager::CreateBaseProjectAt(const std::filesystem::path path, std::
     projectInfo = ProjectInfo(name, path);
     auto result = FileManagement::SaveFile(finalPath, projectInfo.ToJson().dump());
 
-    if(result) 
+    if(result)
+    {
+        std::filesystem::create_directories(path / name / "Assets");
         Logger::Log("New project created at: " + (path / name).string());
+    }
 
     return result;
 };

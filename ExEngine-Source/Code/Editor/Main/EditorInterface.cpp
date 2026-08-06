@@ -14,6 +14,7 @@
 #include "EditorInterfaceGetters.h"
 #include "Windows/EditorWindows/EngineConfig/ConfigurationManager.h"
 #include "Windows/EditorWindows/EngineConfig/EngineConfigWindow.h"
+#include "../Scripting/ScriptCompiler.h"
 #include <imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
@@ -23,6 +24,15 @@
 EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& gamePath){
     EditorInterfaceGetters::engine = engine;
     EditorInterfaceGetters::currentProjectPath = gamePath;
+
+    auto assetsPath = EditorInterfaceGetters::GetAssetsPath();
+    if(!std::filesystem::exists(assetsPath))
+    {
+        std::filesystem::create_directories(assetsPath);
+    }
+
+    // Lets an external editor opened on a project script (under Assets/) resolve engine headers.
+    ScriptCompiler::WriteIntelliSenseConfig(EditorInterfaceGetters::currentProjectPath);
 
     Logger::Log("Editor initialized with the game located at: " + gamePath);
     

@@ -7,6 +7,14 @@
 #include <memory>
 #include <string>
 
+enum class AssetCreationKind{
+    File,
+    Directory,
+    HppSystem,
+    HppComponent,
+    HppScript
+};
+
 class AssetBrowserWindow : public EditorWindow{
 private:
     std::shared_ptr<AssetManager> assetManager;
@@ -18,6 +26,25 @@ private:
     float currentPosition;
     float windowVelocity = 1000;
 
+    double lastClickTime = 0.0;
+
+    double OpenClickMaxDelta() const;
+    double RenameClickMaxDelta() const;
+
+    bool showRenamePopup = false;
+    std::filesystem::path renameTargetPath;
+    std::string renameExtension;
+    char renameBuffer[256] = {};
+
+    bool showCreatePopup = false;
+    std::filesystem::path createTargetFolder;
+    std::string createExtension;
+    AssetCreationKind createKind = AssetCreationKind::File;
+    char createBuffer[256] = {};
+
+    bool showNameErrorPopup = false;
+    std::string nameErrorMessage;
+
     void UpdatePositionTarget(float& targetPosition, float& currentPosition, int& h);
     void DrawFolderTree(const std::filesystem::path& path);
     void DrawRightClickContextMenu(const std::string id);
@@ -27,10 +54,27 @@ private:
     void UpdateSelection(const std::string& id, const std::filesystem::path& path, const bool isDirectory = false);
     bool IsSelected(const std::string& id, const std::filesystem::path& path) const;
 
+    std::filesystem::path ResolveCreateTargetFolder() const;
+    bool DrawNameInput(const char* label, char* buffer, size_t bufferSize, const std::string& extension);
+
+    void HandleRenameClick(const std::string& id, const std::filesystem::path& path);
+    void BeginRename(const std::filesystem::path& path);
+    void CommitRename();
+    void CancelRename();
+    void DrawRenamePopup();
+
+    void BeginCreate(AssetCreationKind kind, const std::filesystem::path& targetFolder, const std::string& extension);
+    void CommitCreate();
+    void CancelCreate();
+    void DrawCreatePopup();
+
+    void DrawNameErrorPopup();
+
     void InteractCurrentSelection() const;
 
     void CreateHppSystemTemplate(const std::filesystem::path& path) const;
     void CreateHppComponentTemplate(const std::filesystem::path& path) const;
+    void CreateHppScriptTemplate(const std::filesystem::path& path) const;
     unsigned int NextAvailableRegistryId(const std::string& fieldName, unsigned int floor) const;
 
     inline bool IsHidden(const std::filesystem::path& p)

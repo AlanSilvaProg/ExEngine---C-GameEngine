@@ -2,8 +2,9 @@
 #include <filesystem>
 
 /**
- * Utility class for opening files in the system's default editor/application.
- * 
+ * Utility class for opening files in the system's default editor/application,
+ * or in the program configured via RuntimeSettings::SetExternalTextEditorPath (Project Settings).
+ *
  * This class provides cross-platform support for opening files:
  * - Windows: Uses ShellExecuteW API for Unicode support
  * - macOS: Uses system() call with "open" command
@@ -12,11 +13,12 @@
 class FileSystemOpener {
 public:
     /**
-     * Opens a file in the system's default editor/application.
-     * 
+     * Opens a file in the configured external editor if one is set, otherwise in the
+     * system's default editor/application for that file type.
+     *
      * The function validates the file path, converts relative paths to absolute,
      * checks file existence, and provides comprehensive error logging.
-     * 
+     *
      * @param filePath The path to the file to open (can be relative or absolute)
      * @return true if the file was successfully opened, false otherwise
      */

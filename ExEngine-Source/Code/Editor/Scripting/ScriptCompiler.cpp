@@ -1,5 +1,6 @@
 #include "ScriptCompiler.h"
 #include "ProcessRunner.h"
+#include "../../Engine/Logger/Logger.h"
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -119,4 +120,24 @@ ScriptCompileResult ScriptCompiler::Compile(const std::filesystem::path& scriptP
     if(result.success) result.outputLibraryPath = outputLibraryPath;
 
     return result;
+};
+
+void ScriptCompiler::WriteIntelliSenseConfig(const std::filesystem::path& projectRootPath)
+{
+    auto includeDirs = SplitPipeList(SCRIPT_INCLUDE_DIRS);
+    auto defines = SplitPipeList(SCRIPT_DEFINES);
+
+    std::ofstream file(projectRootPath / "compile_flags.txt");
+    if(!file.is_open())
+    {
+        Logger::LogError("Failed to write IntelliSense config at: " + projectRootPath.string());
+        return;
+    }
+
+    // Forces clangd to parse .hpp/.h as C++ rather than guessing (and possibly picking C).
+    file << "-xc++\n";
+    file << "-std=c++" << SCRIPT_CXX_STANDARD << "\n";
+
+    for(const auto& dir : includeDirs) file << "-I" << dir << "\n";
+    for(const auto& define : defines) file << "-D" << define << "\n";
 };

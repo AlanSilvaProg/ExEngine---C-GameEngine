@@ -3,6 +3,8 @@
 #include "../../../../EditorEvents/EditorCommandEventHandler.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
+#include <algorithm>
+#include <vector>
 
 EntityBrowserWindow::EntityBrowserWindow(){
     entityBrowserSelection = std::make_unique<EntityBrowserSelection>();
@@ -58,7 +60,17 @@ void EntityBrowserWindow::Draw(int phase){
         return;
     }
 
-    auto aliveEntities = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetAliveEntities();
+    auto& aliveEntities = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetAliveEntities();
+
+    std::vector<int> visibleEntities;
+    visibleEntities.reserve(aliveEntities.size());
+    for(auto entityId : aliveEntities)
+    {
+        auto entity = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetEntity(entityId);
+        if(entity->IsInternal()) continue;
+        visibleEntities.push_back(entityId);
+    }
+    std::sort(visibleEntities.begin(), visibleEntities.end());
 
     if(!ImGui::BeginChild("World Entities", ImVec2(300, 0), ImGuiChildFlags_ResizeX))
     {
@@ -67,13 +79,15 @@ void EntityBrowserWindow::Draw(int phase){
         return;
     }
 
+    NavigateSelectionWithArrows(visibleEntities);
+
     if (ImGui::BeginTable("##bg", 1, ImGuiTableFlags_RowBg))
     {
-        for(auto entityId : aliveEntities)
+        for(auto entityId : visibleEntities)
         {
             DrawEntity(entityId);
         }
-         
+
         if (selectionDetected)
         {
             if (ImGui::IsWindowHovered() && ImGui::IsAnyMouseDown() && !ImGui::IsAnyItemHovered())
@@ -93,6 +107,26 @@ void EntityBrowserWindow::Draw(int phase){
     ImGui::EndChild();
 
     ImGui::End();
+};
+
+void EntityBrowserWindow::NavigateSelectionWithArrows(const std::vector<int>& visibleEntities){
+    if(visibleEntities.empty()) return;
+    if(!ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) return;
+
+    bool down = ImGui::IsKeyPressed(ImGuiKey_DownArrow);
+    bool up = ImGui::IsKeyPressed(ImGuiKey_UpArrow);
+    if(!down && !up) return;
+
+    int newIndex = 0;
+    if(IsValidSelection())
+    {
+        auto it = std::find(visibleEntities.begin(), visibleEntities.end(), entityBrowserSelection->GetSelectedEntityId());
+        int currentIndex = (it != visibleEntities.end()) ? (int)std::distance(visibleEntities.begin(), it) : 0;
+        newIndex = std::clamp(currentIndex + (down ? 1 : -1), 0, (int)visibleEntities.size() - 1);
+    }
+
+    entityBrowserSelection->SetEntitySelected(visibleEntities[newIndex]);
+    selectionDetected = true;
 };
 
 void EntityBrowserWindow::DrawEntity(int entityId){

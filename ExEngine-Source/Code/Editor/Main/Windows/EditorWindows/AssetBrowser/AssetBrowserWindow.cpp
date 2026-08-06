@@ -16,6 +16,7 @@
 #include <fstream>
 #include <sstream>
 #include <regex>
+#include <cstring>
 
 AssetBrowserWindow::AssetBrowserWindow(){
     assetManager = AssetManager::GetInstance();
@@ -89,7 +90,17 @@ void AssetBrowserWindow::Draw(int phase){
         ElementSelectionController::SetSelected(nullptr);
     }
     
-    DrawFolderTree(EditorInterfaceGetters::currentProjectPath);
+    auto assetsPath = EditorInterfaceGetters::GetAssetsPath();
+    if(!std::filesystem::exists(assetsPath))
+    {
+        std::filesystem::create_directories(assetsPath);
+    }
+
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Assets");
+    ImGui::Separator();
+
+    DrawFolderTree(assetsPath);
 
     // Right-click context menu for empty space
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -127,6 +138,27 @@ void AssetBrowserWindow::Draw(int phase){
 
     ImGui::EndChild();
 
+    if(showRenamePopup)
+    {
+        ImGui::OpenPopup("Rename");
+        showRenamePopup = false;
+    }
+    DrawRenamePopup();
+
+    if(showCreatePopup)
+    {
+        ImGui::OpenPopup("Create");
+        showCreatePopup = false;
+    }
+    DrawCreatePopup();
+
+    if(showNameErrorPopup)
+    {
+        ImGui::OpenPopup("Name Error");
+        showNameErrorPopup = false;
+    }
+    DrawNameErrorPopup();
+
     ImGui::End();
 };
 
@@ -141,6 +173,8 @@ void AssetBrowserWindow::DrawFolderTree(const std::filesystem::path& path)
 
             if(ImGui::TreeNode((subElementPath.stem().string() + treeNodeId).c_str()))
             {
+                HandleRenameClick(treeNodeId, subElementPath);
+
                 if(ImGui::IsItemFocused())
                 {
                     if(!IsSelected(treeNodeId, subElementPath))
@@ -163,6 +197,8 @@ void AssetBrowserWindow::DrawFolderTree(const std::filesystem::path& path)
             }
             else
             {
+                HandleRenameClick(treeNodeId, subElementPath);
+
                 // Handle right-click on collapsed tree nodes
                 if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
                 {
@@ -185,8 +221,6 @@ void AssetBrowserWindow::DrawFolderContent(const std::filesystem::path& entry)
 
     auto id = "###" + entry.string();
     auto selected = IsSelected(id, entry);
-      
-    static double lastClickTime = 0.0;
 
     if(ImGui::Selectable(std::string(entry.filename().string() + id).c_str(), selected))
     {
@@ -194,9 +228,13 @@ void AssetBrowserWindow::DrawFolderContent(const std::filesystem::path& entry)
         double delta = currentTime - lastClickTime;
         lastClickTime = currentTime;
 
-        if (assetBrowserSelection->GetID() == id && delta < 0.30)
+        if(selected && delta < OpenClickMaxDelta())
         {
             InteractCurrentSelection();
+        }
+        else if(selected && delta <= RenameClickMaxDelta())
+        {
+            BeginRename(entry);
         }
 
         if(!selected)
@@ -276,101 +314,53 @@ void AssetBrowserWindow::DrawRightClickContextMenu(const std::string id)
             {
                 if(ImGui::MenuItem("ECSystem"))
                 {
-                    auto targetFolder = EditorInterfaceGetters::currentProjectPath;
-                    auto currentSelectionPath = assetBrowserSelection->GetPath();
-
-                    if(currentSelectionPath != "")
-                    {
-                        if(currentSelectionPath.has_extension())
-                        {
-                            currentSelectionPath = currentSelectionPath.parent_path();
-                        }
-
-                        if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
-                        {
-                            targetFolder = currentSelectionPath;
-                        }
-                    }
-                    
-                    CreateHppSystemTemplate(targetFolder / "NewECSystem.hpp");
+                    BeginCreate(AssetCreationKind::HppSystem, ResolveCreateTargetFolder(), ".hpp");
+                    ImGui::CloseCurrentPopup();
                 }
 
                 if(ImGui::MenuItem("EComponenteS"))
                 {
-                    auto targetFolder = EditorInterfaceGetters::currentProjectPath;
-                    auto currentSelectionPath = assetBrowserSelection->GetPath();
+                    BeginCreate(AssetCreationKind::HppComponent, ResolveCreateTargetFolder(), ".hpp");
+                    ImGui::CloseCurrentPopup();
+                }
 
-                    if(currentSelectionPath != "")
-                    {
-                        if(currentSelectionPath.has_extension())
-                        {
-                            currentSelectionPath = currentSelectionPath.parent_path();
-                        }
-
-                        if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
-                        {
-                            targetFolder = currentSelectionPath;
-                        }
-                    }
-                    CreateHppComponentTemplate(targetFolder / "NewEComponentS.hpp");
+                if(ImGui::MenuItem("Script"))
+                {
+                    BeginCreate(AssetCreationKind::HppScript, ResolveCreateTargetFolder(), ".hpp");
+                    ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndMenu();
             }
-            
+
             ImGui::Separator();
 
             if (ImGui::MenuItem("File"))
             {
-                auto targetFolder = EditorInterfaceGetters::currentProjectPath;
-                auto currentSelectionPath = assetBrowserSelection->GetPath();
-
-                if(currentSelectionPath != "")
-                {
-                    if(currentSelectionPath.has_extension())
-                    {
-                        currentSelectionPath = currentSelectionPath.parent_path();
-                    }
-
-                    if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
-                    {
-                        targetFolder = currentSelectionPath;
-                    }
-                }
-                
-                FileManagement::CreateFile(targetFolder/ "NewFile", "");
+                BeginCreate(AssetCreationKind::File, ResolveCreateTargetFolder(), "");
                 ImGui::CloseCurrentPopup();
             }
 
             if(ImGui::MenuItem("Directory"))
             {
-                auto targetFolder = EditorInterfaceGetters::currentProjectPath;
-                auto currentSelectionPath = assetBrowserSelection->GetPath();
-
-                if(currentSelectionPath != "")
-                {
-                    if(currentSelectionPath.has_extension())
-                    {
-                        currentSelectionPath = currentSelectionPath.parent_path();
-                    }
-
-                    if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
-                    {
-                        targetFolder = currentSelectionPath;
-                    }
-                }
-
-                FileManagement::CreateDirectory(targetFolder / "NewDirectory");
+                BeginCreate(AssetCreationKind::Directory, ResolveCreateTargetFolder(), "");
+                ImGui::CloseCurrentPopup();
             }
-            
+
             ImGui::EndMenu();
         }
 
-        // Delete option - only show if something is selected
+        // Rename / Delete options - only show if something is selected
         auto currentSelectionPath = assetBrowserSelection->GetPath();
         if(currentSelectionPath != "" && std::filesystem::exists(currentSelectionPath))
         {
             ImGui::Separator();
-            
+
+            if(ImGui::MenuItem("Rename"))
+            {
+                BeginRename(currentSelectionPath);
+                ImGui::CloseCurrentPopup();
+            }
+
             if (ImGui::MenuItem("Delete"))
             {
                 try
@@ -418,6 +408,305 @@ bool AssetBrowserWindow::IsSelected(const std::string& id, const std::filesystem
     return selected;
 };
 
+// Blocks '/' and '\\' always, and blocks '.' when UserData points at a non-empty extension -
+// callers use this to stop users from typing an extension the system assigns automatically.
+static int NameInputTextFilter(ImGuiInputTextCallbackData* data)
+{
+    if(data->EventChar == '/' || data->EventChar == '\\') return 1;
+
+    auto* extension = static_cast<const std::string*>(data->UserData);
+    if(extension != nullptr && !extension->empty() && data->EventChar == '.') return 1;
+
+    return 0;
+};
+
+std::filesystem::path AssetBrowserWindow::ResolveCreateTargetFolder() const
+{
+    auto targetFolder = EditorInterfaceGetters::GetAssetsPath();
+    auto currentSelectionPath = assetBrowserSelection->GetPath();
+
+    if(currentSelectionPath != "")
+    {
+        if(currentSelectionPath.has_extension())
+        {
+            currentSelectionPath = currentSelectionPath.parent_path();
+        }
+
+        if(PathUtils::IsParentPath(targetFolder, currentSelectionPath))
+        {
+            targetFolder = currentSelectionPath;
+        }
+    }
+
+    return targetFolder;
+};
+
+// Draws a name input; when extension isn't empty it's shown as a fixed, non-editable suffix.
+bool AssetBrowserWindow::DrawNameInput(const char* label, char* buffer, size_t bufferSize, const std::string& extension)
+{
+    ImGuiInputTextFlags inputFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCharFilter;
+
+    if(extension.empty())
+    {
+        return ImGui::InputText(label, buffer, bufferSize, inputFlags, NameInputTextFilter, const_cast<std::string*>(&extension));
+    }
+
+    float extensionWidth = ImGui::CalcTextSize(extension.c_str()).x;
+    float inputWidth = std::max(40.0f, ImGui::GetContentRegionAvail().x - extensionWidth - ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::SetNextItemWidth(inputWidth);
+
+    bool enterPressed = ImGui::InputText(label, buffer, bufferSize, inputFlags, NameInputTextFilter, const_cast<std::string*>(&extension));
+    ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+    ImGui::TextUnformatted(extension.c_str());
+
+    return enterPressed;
+};
+
+// The OS/ImGui-configured double-click speed - anything faster is the open/toggle gesture.
+double AssetBrowserWindow::OpenClickMaxDelta() const
+{
+    return ImGui::GetIO().MouseDoubleClickTime;
+};
+
+// Rename gets a window right after the double-click speed, so a slow re-click reads as
+// intentional rather than a fresh, unrelated click much later.
+double AssetBrowserWindow::RenameClickMaxDelta() const
+{
+    return OpenClickMaxDelta() * 3.0;
+};
+
+// Clicking an already-selected item again starts a rename only within the [OpenClickMaxDelta, RenameClickMaxDelta]
+// window - faster clicks are treated as the toggle ImGui's TreeNode already performs, slower ones as a fresh click.
+void AssetBrowserWindow::HandleRenameClick(const std::string& id, const std::filesystem::path& path)
+{
+    if(!ImGui::IsItemClicked(ImGuiMouseButton_Left)) return;
+
+    double currentTime = ImGui::GetTime();
+    double delta = currentTime - lastClickTime;
+    lastClickTime = currentTime;
+
+    if(delta < OpenClickMaxDelta() || delta > RenameClickMaxDelta()) return;
+
+    if(IsSelected(id, path))
+    {
+        BeginRename(path);
+    }
+};
+
+void AssetBrowserWindow::BeginRename(const std::filesystem::path& path)
+{
+    renameTargetPath = path;
+
+    bool isDirectory = std::filesystem::is_directory(path);
+    renameExtension = (!isDirectory && path.has_extension()) ? path.extension().string() : "";
+
+    auto name = renameExtension.empty() ? path.filename().string() : path.stem().string();
+    strncpy(renameBuffer, name.c_str(), sizeof(renameBuffer) - 1);
+    renameBuffer[sizeof(renameBuffer) - 1] = '\0';
+
+    showRenamePopup = true;
+};
+
+void AssetBrowserWindow::CommitRename()
+{
+    auto newStem = std::string(renameBuffer);
+    auto originalStem = renameExtension.empty() ? renameTargetPath.filename().string() : renameTargetPath.stem().string();
+
+    if(newStem.empty() || newStem == originalStem)
+    {
+        CancelRename();
+        return;
+    }
+
+    auto newPath = renameTargetPath.parent_path() / (newStem + renameExtension);
+
+    if(std::filesystem::exists(newPath))
+    {
+        nameErrorMessage = "A file or folder named \"" + (newStem + renameExtension) + "\" already exists.";
+        showNameErrorPopup = true;
+        renameTargetPath.clear();
+        ImGui::CloseCurrentPopup();
+        return;
+    }
+
+    try
+    {
+        std::filesystem::rename(renameTargetPath, newPath);
+
+        if(assetBrowserSelection->GetPath() == renameTargetPath)
+        {
+            auto newId = "###" + newPath.string();
+            UpdateSelection(newId, newPath, std::filesystem::is_directory(newPath));
+        }
+    }
+    catch(const std::filesystem::filesystem_error& e)
+    {
+        Logger::LogError("Failed to rename: " + std::string(e.what()));
+    }
+
+    renameTargetPath.clear();
+    ImGui::CloseCurrentPopup();
+};
+
+void AssetBrowserWindow::CancelRename()
+{
+    renameTargetPath.clear();
+    ImGui::CloseCurrentPopup();
+};
+
+void AssetBrowserWindow::DrawRenamePopup()
+{
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(300, 100), ImGuiCond_Appearing);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+
+    if(ImGui::BeginPopup("Rename", flags))
+    {
+        ImGui::Text("Enter new name:");
+        ImGui::Separator();
+
+        if(ImGui::IsWindowAppearing())
+        {
+            ImGui::SetKeyboardFocusHere();
+        }
+
+        bool enterPressed = DrawNameInput("##rename_input", renameBuffer, sizeof(renameBuffer), renameExtension);
+
+        ImGui::Separator();
+
+        if(ImGui::Button("Apply") || enterPressed)
+        {
+            CommitRename();
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Cancel"))
+        {
+            CancelRename();
+        }
+
+        ImGui::EndPopup();
+    }
+};
+
+void AssetBrowserWindow::BeginCreate(AssetCreationKind kind, const std::filesystem::path& targetFolder, const std::string& extension)
+{
+    createKind = kind;
+    createTargetFolder = targetFolder;
+    createExtension = extension;
+    createBuffer[0] = '\0';
+
+    showCreatePopup = true;
+};
+
+void AssetBrowserWindow::CommitCreate()
+{
+    auto name = std::string(createBuffer);
+
+    if(name.empty())
+    {
+        CancelCreate();
+        return;
+    }
+
+    auto newPath = createTargetFolder / (name + createExtension);
+
+    if(std::filesystem::exists(newPath))
+    {
+        nameErrorMessage = "A file or folder named \"" + (name + createExtension) + "\" already exists.";
+        showNameErrorPopup = true;
+        ImGui::CloseCurrentPopup();
+        return;
+    }
+
+    switch(createKind)
+    {
+        case AssetCreationKind::File:
+            FileManagement::CreateFile(newPath, "");
+            break;
+        case AssetCreationKind::Directory:
+            FileManagement::CreateDirectory(newPath);
+            break;
+        case AssetCreationKind::HppSystem:
+            CreateHppSystemTemplate(newPath);
+            break;
+        case AssetCreationKind::HppComponent:
+            CreateHppComponentTemplate(newPath);
+            break;
+        case AssetCreationKind::HppScript:
+            CreateHppScriptTemplate(newPath);
+            break;
+    }
+
+    ImGui::CloseCurrentPopup();
+};
+
+void AssetBrowserWindow::CancelCreate()
+{
+    ImGui::CloseCurrentPopup();
+};
+
+void AssetBrowserWindow::DrawCreatePopup()
+{
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(300, 100), ImGuiCond_Appearing);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+
+    if(ImGui::BeginPopup("Create", flags))
+    {
+        ImGui::Text("Enter name:");
+        ImGui::Separator();
+
+        if(ImGui::IsWindowAppearing())
+        {
+            ImGui::SetKeyboardFocusHere();
+        }
+
+        bool enterPressed = DrawNameInput("##create_input", createBuffer, sizeof(createBuffer), createExtension);
+
+        ImGui::Separator();
+
+        if(ImGui::Button("Create") || enterPressed)
+        {
+            CommitCreate();
+        }
+
+        ImGui::SameLine();
+
+        if(ImGui::Button("Cancel"))
+        {
+            CancelCreate();
+        }
+
+        ImGui::EndPopup();
+    }
+};
+
+void AssetBrowserWindow::DrawNameErrorPopup()
+{
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(320, 0), ImGuiCond_Appearing);
+
+    if(ImGui::BeginPopup("Name Error", ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse))
+    {
+        ImGui::TextWrapped("%s", nameErrorMessage.c_str());
+        ImGui::Separator();
+
+        if(ImGui::Button("OK"))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+};
+
 void AssetBrowserWindow::InteractCurrentSelection() const{
     auto currentSelection = ElementSelectionController::GetCurrentSelection();
 
@@ -449,7 +738,7 @@ void AssetBrowserWindow::InteractCurrentSelection() const{
 unsigned int AssetBrowserWindow::NextAvailableRegistryId(const std::string& fieldName, unsigned int floor) const
 {
     auto highest = floor == 0 ? 0u : floor - 1;
-    auto projectPath = EditorInterfaceGetters::currentProjectPath;
+    auto projectPath = EditorInterfaceGetters::GetAssetsPath();
 
     if(!std::filesystem::exists(projectPath)) return floor;
 
@@ -484,8 +773,7 @@ void AssetBrowserWindow::CreateHppSystemTemplate(const std::filesystem::path& pa
 
     std::string content =
 "#pragma once\n"
-"#include \"Code/Engine/Core/ECS/ECSManager.h\"\n"
-"#include \"Code/Engine/Core/ECS/InternalRegistry/SystemRegistry.h\"\n"
+"#include \"Code/Engine/ExEngine.h\"\n"
 "\n"
 "class " + className + " : public CustomECSystem{\n"
 "public:\n"
@@ -513,9 +801,7 @@ void AssetBrowserWindow::CreateHppComponentTemplate(const std::filesystem::path&
 
     std::string content =
 "#pragma once\n"
-"#include \"Code/Engine/Core/ECS/Component/EComponentS.h\"\n"
-"#include \"Code/Engine/Core/ECS/InternalRegistry/ComponentRegistry.h\"\n"
-"#include \"Code/Engine/Core/Serializer/Demangle.h\"\n"
+"#include \"Code/Engine/ExEngine.h\"\n"
 "\n"
 "struct " + className + " : public EComponentS<" + className + ">{\n"
 "public:\n"
@@ -533,6 +819,25 @@ void AssetBrowserWindow::CreateHppComponentTemplate(const std::filesystem::path&
 "};\n"
 "\n"
 "REGISTER_COMPONENT(" + className + ")\n";
+
+    FileManagement::CreateFile(path, content);
+};
+
+// Plain script: neither a System nor a Component, so it's never picked up by ScriptHotReloadManager's
+// DetectScriptKind (which only matches "public EComponentS<"/"public CustomECSystem") - just a regular
+// class other scripts can #include, e.g. for shared helpers/enums/data structs.
+void AssetBrowserWindow::CreateHppScriptTemplate(const std::filesystem::path& path) const
+{
+    auto className = path.stem().string();
+
+    std::string content =
+"#pragma once\n"
+"#include \"Code/Engine/ExEngine.h\"\n"
+"\n"
+"class " + className + "{\n"
+"public:\n"
+"\n"
+"};\n";
 
     FileManagement::CreateFile(path, content);
 };

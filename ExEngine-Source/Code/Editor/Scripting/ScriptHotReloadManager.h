@@ -31,6 +31,10 @@ public:
     // that already had the component still hold live instances whose vtable/destructor lives in that
     // module, so dlclose'ing it immediately would leave those instances dangling. The Inspector is
     // expected to show those as a "missing component" with a button to remove them.
+    // If a System script still #includes the deleted Component (a compile-time reference embedded
+    // in the System's own module - see systemDependencies), that System is immediately re-queued for
+    // compilation so the now-missing header surfaces as a loud compile error right away, instead of
+    // the System silently running with a stale reference until some unrelated future edit trips it.
     void OnScriptFileDeleted(const std::string& filePath);
 
     // Main-thread only. Applies every compile result finished since the last call.
@@ -65,6 +69,7 @@ private:
         ScriptKind kind = ScriptKind::Unknown;
         unsigned int registryId = 0;
         SystemContext systemContext = SystemContext::UPDATE;
+        std::vector<std::string> includedScriptPaths; // System scripts only - see systemDependencies
     };
 
     std::shared_ptr<ECSManager> ecsManager;
@@ -89,6 +94,14 @@ private:
 
     std::unordered_map<std::string, LoadedModule> loadedModules;
     std::unordered_map<std::string, int> revisionByScript;
+
+    // System script path -> lexically-normalized paths of every project .hpp it #includes (as found
+    // in its last successful compile). A System that #includes a Component's .hpp gets that
+    // Component's full definition (and its REGISTER_COMPONENT) baked into the System's own compiled
+    // module, so the reference survives independently of the Component's own module/script. This map
+    // is what lets OnScriptFileDeleted notice "this System still embeds the Component you just
+    // deleted" and react instead of leaving a silently-stale reference.
+    std::unordered_map<std::string, std::vector<std::string>> systemDependencies;
 
     // ProcessTracker ids for scripts currently queued or compiling, keyed by scriptPathKey.
     // Main-thread only (populated/drained from Poll()), unlike everything above it.
@@ -120,4 +133,10 @@ private:
     static ScriptKind DetectScriptKind(const std::string& source);
     static bool ExtractUnsignedIntField(const std::string& source, const std::string& fieldName, unsigned int& outValue);
     static SystemContext ExtractSystemContext(const std::string& source);
+
+    // Resolves every #include "..." in a System's source relative to the System's own directory
+    // (matching how the compiler's quote-include lookup actually resolves them) and keeps the ones
+    // pointing at another project .hpp - i.e. a Component or System script, as opposed to an engine
+    // header like "Code/Engine/ExEngine.h" (.h, not .hpp, so it's filtered out naturally).
+    static std::vector<std::string> ExtractIncludedScriptPaths(const std::filesystem::path& scriptPath, const std::string& source);
 };

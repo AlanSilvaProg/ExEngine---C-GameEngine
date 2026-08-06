@@ -6,6 +6,7 @@
 #include "../../Engine/Core/Progress/ProcessTracker.h"
 #include "../../Engine/Logger/Logger.h"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <regex>
@@ -78,10 +79,28 @@ void ScriptHotReloadManager::OnScriptFileDeleted(const std::string& filePath){
     {
         ComponentRegistry::Unregister(module.registryId);
         orphanedModules.push_back(std::move(module));
+
+        // Any System that #included this Component's .hpp got its full definition (and
+        // REGISTER_COMPONENT) compiled into the System's own module, so that System keeps running
+        // with a fully functional but now-orphaned copy of the type - the deletion above only ever
+        // touches the Component's own module/registry entry, never the System's. Force those Systems
+        // to recompile right now so the missing header fails loudly at the moment of deletion,
+        // instead of lingering until some unrelated future edit trips over it.
+        auto deletedPath = std::filesystem::path(filePath).lexically_normal().string();
+        for(const auto& [systemPath, dependencies] : systemDependencies)
+        {
+            if(std::find(dependencies.begin(), dependencies.end(), deletedPath) == dependencies.end()) continue;
+
+            Logger::LogError("Component '" + std::filesystem::path(filePath).filename().string() +
+                "' was deleted but is still #included by system '" + std::filesystem::path(systemPath).filename().string() +
+                "' - recompiling that system now to surface the dangling reference.");
+            OnScriptFileEvent(systemPath);
+        }
     }
     else if(module.kind == ScriptKind::System)
     {
         UnregisterAndUnload(module);
+        systemDependencies.erase(filePath);
     }
 
     loadedModules.erase(it);
@@ -168,7 +187,11 @@ ScriptHotReloadManager::CompileOutcome ScriptHotReloadManager::CompileOne(const 
         return outcome;
     }
 
-    if(outcome.kind == ScriptKind::System) outcome.systemContext = ExtractSystemContext(source);
+    if(outcome.kind == ScriptKind::System)
+    {
+        outcome.systemContext = ExtractSystemContext(source);
+        outcome.includedScriptPaths = ExtractIncludedScriptPaths(scriptPathKey, source);
+    }
 
     int revision = ++revisionByScript[scriptPathKey];
     std::string moduleName = std::filesystem::path(scriptPathKey).stem().string() + "_r" + std::to_string(revision);
@@ -318,6 +341,8 @@ void ScriptHotReloadManager::ApplyOutcome(const CompileOutcome& outcome){
             module.systemTypeIndex = typeIndex;
             module.systemInstance = systemInstance;
         }
+
+        systemDependencies[outcome.scriptPathKey] = outcome.includedScriptPaths;
     }
 
     loadedModules.emplace(outcome.scriptPathKey, std::move(module));
@@ -337,6 +362,23 @@ bool ScriptHotReloadManager::ExtractUnsignedIntField(const std::string& source, 
 
     outValue = static_cast<unsigned int>(std::stoul(match[1].str()));
     return true;
+};
+
+std::vector<std::string> ScriptHotReloadManager::ExtractIncludedScriptPaths(const std::filesystem::path& scriptPath, const std::string& source){
+    std::vector<std::string> result;
+    std::regex includePattern(R"reg(#include\s*"([^"]+)")reg");
+
+    for(std::sregex_iterator it(source.begin(), source.end(), includePattern), end; it != end; ++it)
+    {
+        std::filesystem::path includedPath((*it)[1].str());
+        auto resolved = includedPath.is_absolute() ? includedPath : scriptPath.parent_path() / includedPath;
+
+        if(resolved.extension() != ".hpp") continue; // engine headers are .h; only project scripts matter here
+
+        result.push_back(resolved.lexically_normal().string());
+    }
+
+    return result;
 };
 
 SystemContext ScriptHotReloadManager::ExtractSystemContext(const std::string& source){

@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 class EntityBrowserWindow : public EditorWindow{
 private:
@@ -13,6 +14,7 @@ private:
     bool selectionDetected;
 
     void CheckContextWindowWithoutSelection();
+    void NavigateSelectionWithArrows(const std::vector<int>& visibleEntities);
     void Duplicate();
     void Delete();
     bool IsValidSelection();
