@@ -17,6 +17,7 @@ public:
     static inline void ReloadCurrentWorldState() { if(currentWorld != nullptr) currentWorld->LoadState(); };
     static void LoadWorld(std::filesystem::path worldFilePath);
     static void GenerateWorld();
+    static void OnWorldFileRenamed(const std::filesystem::path& oldPath, const std::filesystem::path& newPath);
     static inline const std::shared_ptr<ECSWorld> GetCurrentWorld() { return currentWorld; };
 
     //Incremental Worlds 

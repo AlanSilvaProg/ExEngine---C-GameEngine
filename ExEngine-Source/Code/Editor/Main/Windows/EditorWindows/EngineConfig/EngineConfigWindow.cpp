@@ -2,10 +2,15 @@
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../../Engine/Core/Utils/Color.h"
 #include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
+#include "../../../../../Engine/Core/Configuration/ConfigurationFileManager.h"
+#include "../../../../../Engine/Core/Runtime/Settings/RuntimeSettings.h"
+#include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
+#include <imgui/misc/cpp/imgui_stdlib.h>
 #include <algorithm>
 #include <cmath>
 #include <cfloat>
+#include <string>
 
 EngineConfigWindow::EngineConfigWindow() {
     selectedSection = ConfigSection::RenderSettings;
@@ -127,9 +132,36 @@ void EngineConfigWindow::DrawSideMenu() {
     if (isEditorStyleSelected) {
         ImGui::PopStyleColor(2);
     }
-    
+
     ImGui::Spacing();
-    
+
+    bool isPreferencesSelected = (selectedSection == ConfigSection::Preferences);
+
+    if (isPreferencesSelected) {
+        ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]);
+        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]);
+    }
+
+    if (ImGui::Selectable("Preferences", isPreferencesSelected, ImGuiSelectableFlags_SpanAllColumns)) {
+        selectedSection = ConfigSection::Preferences;
+    }
+
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Configure editor preferences such as the external text/script editor");
+    }
+
+    if (ImGui::IsItemFocused()) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            selectedSection = ConfigSection::Preferences;
+        }
+    }
+
+    if (isPreferencesSelected) {
+        ImGui::PopStyleColor(2);
+    }
+
+    ImGui::Spacing();
+
     ImGui::TextDisabled("Keyboard Shortcuts:");
     ImGui::TextDisabled("Ctrl+Shift+E: Toggle window");
 }
@@ -141,6 +173,9 @@ void EngineConfigWindow::DrawDetailsPanel() {
             break;
         case ConfigSection::EditorStyle:
             DrawEditorStyleSection();
+            break;
+        case ConfigSection::Preferences:
+            DrawPreferencesSection();
             break;
         default:
             ImGui::Text("Select a configuration section from the side menu.");
@@ -829,6 +864,53 @@ void EngineConfigWindow::DrawRenderSettingsSection() {
         
         ImGui::TextColored(feedbackColor, "Resolution applied successfully!");
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, alpha), "All camera systems and windows have been updated.");
+    }
+}
+
+void EngineConfigWindow::DrawPreferencesSection() {
+    ImGui::Text("Editor Preferences");
+    ImGui::Separator();
+
+    ImGui::Text("External Text/Script Editor");
+    ImGui::TextWrapped("Program used to open scripts and text files (.h, .hpp, .cpp, etc). Leave empty to use the machine's default program for the file type.");
+
+    static std::string externalEditorPath = RuntimeSettings::GetExternalTextEditorPath();
+    bool externalEditorChanged = false;
+
+    ImGui::PushItemWidth(-140);
+    ImGui::InputText("##ExternalTextEditorPath", &externalEditorPath);
+    ImGui::PopItemWidth();
+    if(ImGui::IsItemDeactivatedAfterEdit())
+    {
+        externalEditorChanged = true;
+    }
+
+    ImGui::SameLine();
+    if(ImGui::Button("Browse..."))
+    {
+        const char* selected = tinyfd_openFileDialog("Select external editor", "", 0, nullptr, nullptr, 0);
+        if(selected != nullptr)
+        {
+            externalEditorPath = selected;
+            externalEditorChanged = true;
+        }
+    }
+
+    if(!externalEditorPath.empty())
+    {
+        ImGui::SameLine();
+        if(ImGui::Button("Use System Default"))
+        {
+            externalEditorPath.clear();
+            externalEditorChanged = true;
+        }
+    }
+
+    if(externalEditorChanged)
+    {
+        RuntimeSettings::SetExternalTextEditorPath(externalEditorPath);
+        ConfigurationFileManager::SaveCurrentState();
+        lastChangeTime = ImGui::GetTime();
     }
 }
 

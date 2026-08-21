@@ -5,6 +5,7 @@ const int MILLI = 1000;
 int RuntimeSettings::targetFramesPerSeconds = 120; // -1 to unlimited fps
 float RuntimeSettings::timePerFrame = 0;
 std::string RuntimeSettings::externalTextEditorPath = "";
+bool RuntimeSettings::physicsEnabled = true;
 
 void RuntimeSettings::SetTargetFps(int targetFps){
     targetFramesPerSeconds = targetFps;
@@ -27,4 +28,12 @@ void RuntimeSettings::SetExternalTextEditorPath(const std::string& path){
 
 const std::string& RuntimeSettings::GetExternalTextEditorPath(){
     return externalTextEditorPath;
+};
+
+void RuntimeSettings::SetPhysicsEnabled(bool enabled){
+    physicsEnabled = enabled;
+};
+
+bool RuntimeSettings::GetPhysicsEnabled(){
+    return physicsEnabled;
 };

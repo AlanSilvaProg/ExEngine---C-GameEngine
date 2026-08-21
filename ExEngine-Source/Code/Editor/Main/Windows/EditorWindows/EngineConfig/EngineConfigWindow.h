@@ -8,7 +8,8 @@ class EngineConfigWindow : public EditorWindow {
 private:
     enum class ConfigSection {
         EditorStyle,
-        RenderSettings
+        RenderSettings,
+        Preferences
     };
     
     ConfigSection selectedSection;
@@ -24,6 +25,7 @@ private:
     void DrawDetailsPanel();
     void DrawEditorStyleSection();
     void DrawRenderSettingsSection();
+    void DrawPreferencesSection();
     void DrawStyleChangeIndicator();
     void DrawErrorFeedback();
     void DrawErrorPopup();

@@ -70,6 +70,11 @@ void ScriptHotReloadManager::OnScriptFileEvent(const std::string& filePath){
 void ScriptHotReloadManager::OnScriptFileDeleted(const std::string& filePath){
     if(std::filesystem::path(filePath).extension() != ".hpp") return;
 
+    std::lock_guard<std::mutex> lock(pendingDeletionsMutex);
+    pendingDeletions.push_back(filePath);
+};
+
+void ScriptHotReloadManager::ApplyDeletion(const std::string& filePath){
     auto it = loadedModules.find(filePath);
     if(it == loadedModules.end()) return;
 
@@ -204,6 +209,13 @@ ScriptHotReloadManager::CompileOutcome ScriptHotReloadManager::CompileOne(const 
     return outcome;
 };
 
+bool ScriptHotReloadManager::IsCompiling() const{
+    if(!GetPendingAndActiveScriptPaths().empty()) return true;
+
+    std::lock_guard<std::mutex> lock(completedMutex);
+    return !completedOutcomes.empty();
+};
+
 std::vector<std::string> ScriptHotReloadManager::GetPendingAndActiveScriptPaths() const{
     std::vector<std::string> paths;
     {
@@ -237,6 +249,17 @@ void ScriptHotReloadManager::EndScriptProcess(const std::string& scriptPathKey){
 
 void ScriptHotReloadManager::Poll(){
     UpdateProcessTracking();
+
+    std::vector<std::string> deletionsToApply;
+    {
+        std::lock_guard<std::mutex> lock(pendingDeletionsMutex);
+        deletionsToApply.swap(pendingDeletions);
+    }
+
+    for(const auto& filePath : deletionsToApply)
+    {
+        ApplyDeletion(filePath);
+    }
 
     std::vector<CompileOutcome> outcomesToApply;
     {

@@ -44,10 +44,20 @@ bool EntityBrowserWindow::IsValidSelection(){
 void EntityBrowserWindow::Draw(int phase){
     if(phase != 1) return;
 
-    if(!ECSWorldManager::HasCurrentWorld())
+    bool scriptsStillCompiling = EditorInterfaceGetters::scriptHotReloadManager != nullptr
+        && EditorInterfaceGetters::scriptHotReloadManager->IsCompiling();
+
+    if(!ECSWorldManager::HasCurrentWorld() && !scriptsStillCompiling)
     {
-        ECSWorldManager::GenerateWorld();
-        EditorInterfaceGetters::worldWithoutPath = true;
+        if(EditorInterfaceGetters::currentWorldPath != "")
+        {
+            ECSWorldManager::LoadWorld(EditorInterfaceGetters::currentWorldPath);
+        }
+        else
+        {
+            ECSWorldManager::GenerateWorld();
+            EditorInterfaceGetters::worldWithoutPath = true;
+        }
     }
 
     // Apply minimum size constraint using WindowSizeManager

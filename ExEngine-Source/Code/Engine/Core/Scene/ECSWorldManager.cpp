@@ -26,6 +26,19 @@ void ECSWorldManager::GenerateWorld(){
     currentWorld = std::make_shared<ECSWorld>();
 };
 
+void ECSWorldManager::OnWorldFileRenamed(const std::filesystem::path& oldPath, const std::filesystem::path& newPath){
+    auto loadedWorld = loadedECSWorlds.find(oldPath);
+    if(loadedWorld == loadedECSWorlds.end()) return;
+
+    auto world = loadedWorld->second;
+    loadedECSWorlds.erase(loadedWorld);
+
+    world->GetWorldPath() = newPath;
+    world->GetWorldInfo().name = newPath.stem().string();
+
+    loadedECSWorlds.emplace(newPath, world);
+};
+
 //Incremental Worlds 
 void ECSWorldManager::LoadIncrementalWorld(std::filesystem::path worldFilePath){
 

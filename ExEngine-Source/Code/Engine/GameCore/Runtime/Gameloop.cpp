@@ -4,6 +4,7 @@
 #include "../../Core/Rendering/Renderer/ExRenderer.h"
 #include "../../Core/Input/Input.h"
 #include "../../Core/Runtime/App.h"
+#include "../../Core/CollisionSystem/ExPhysicsEngine.h"
 #include <SDL.h>
 
 void Gameloop::ExecuteGameLoop(){
@@ -63,4 +64,6 @@ void Gameloop::ProcessInputPhase(){
 
 void Gameloop::ProcessCollisionPhase(){
     if(!App::isPlaying) return;
+
+    ExPhysicsEngine::RunCollisionRoutine();
 };

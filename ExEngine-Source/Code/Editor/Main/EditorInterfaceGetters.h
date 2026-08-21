@@ -21,6 +21,7 @@ public:
     static bool assetBrowserIsOpened;
     static bool engineConfigEnabled;
     static std::filesystem::path currentProjectPath;
+    static std::filesystem::path currentWorldPath;
     static BuildType buildTarget;
 
     static inline std::filesystem::path GetAssetsPath() { return currentProjectPath / "Assets"; };

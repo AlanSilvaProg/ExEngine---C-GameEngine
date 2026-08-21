@@ -94,6 +94,8 @@ void ECSWorld::LoadData(){
         }
     }
 
+    worldInformation.name = worldFilePath.stem().string();
+
     Logger::Log("Scene " + worldInformation.name + " loaded successfully");
 };
 
@@ -123,6 +125,7 @@ bool ECSWorld::CreateOrSave(){
     );
 
     auto exFilePath = worldFilePath.replace_extension(".exworld");
+    worldInformation.name = worldFilePath.stem().string();
     return FileManagement::SaveFile(exFilePath, worldInformation.ToJson().dump());
 };
 

@@ -11,6 +11,10 @@
 #define ICONS_PATH EditorInterfaceGetters::engine->GetEngineAssetsPath() / "Editor"
 #endif
 
+#ifndef EDITOR_LAYOUT_FILE_NAME
+#define EDITOR_LAYOUT_FILE_NAME std::string("engine_editor_layout")
+#endif
+
 class EditorInterface{
 private:
     std::unique_ptr<ExEditor::MainMenuBar> mainMenuBar;
@@ -28,6 +32,7 @@ private:
     void LateUpdate() const;
     void PreRender() const;
     void PostRender() const;
+    void UpdateWindowTitle() const;
 
     void CreateEditorBase();
 public:

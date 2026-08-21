@@ -16,6 +16,7 @@ bool EditorInterfaceGetters::ecsAdministratorEnabled = false;
 bool EditorInterfaceGetters::assetBrowserIsOpened = false;
 bool EditorInterfaceGetters::engineConfigEnabled = false;
 std::filesystem::path EditorInterfaceGetters::currentProjectPath;
+std::filesystem::path EditorInterfaceGetters::currentWorldPath;
 BuildType EditorInterfaceGetters::buildTarget;
 
 std::map<std::string, std::unique_ptr<SpriteInformation>> EditorInterfaceGetters::defaultIconsInformation;
@@ -28,7 +29,7 @@ void EditorInterfaceGetters::Save(){
 
     if(EditorInterfaceGetters::worldWithoutPath)
     {
-        std::filesystem::path targetPath = EditorInterfaceGetters::currentProjectPath/"Worlds";
+        std::filesystem::path targetPath = EditorInterfaceGetters::currentProjectPath/"Assets/Worlds";
 
         if(!std::filesystem::exists(targetPath))
             std::filesystem::create_directory(targetPath);
@@ -49,6 +50,7 @@ void EditorInterfaceGetters::Save(){
         currentWorldPath = std::filesystem::path(folder);
         worldWithoutPath = false;
     }
+
     ECSWorldManager::SaveCurrentWorld();
 };
 

@@ -25,16 +25,10 @@ public:
     // Thread-safe: safe to call directly from FileWatcher's callback thread.
     void OnScriptFileEvent(const std::string& filePath);
 
-    // Main-thread only. Unregisters a deleted script's componentId/systemId so it stops showing up
-    // as an option (e.g. in the Inspector's Add Component list). For a Component, the compiled
-    // module is intentionally kept loaded (see orphanedModules) rather than unloaded here: entities
-    // that already had the component still hold live instances whose vtable/destructor lives in that
-    // module, so dlclose'ing it immediately would leave those instances dangling. The Inspector is
-    // expected to show those as a "missing component" with a button to remove them.
-    // If a System script still #includes the deleted Component (a compile-time reference embedded
-    // in the System's own module - see systemDependencies), that System is immediately re-queued for
-    // compilation so the now-missing header surfaces as a loud compile error right away, instead of
-    // the System silently running with a stale reference until some unrelated future edit trips it.
+    // Thread-safe: safe to call directly from FileWatcher's callback thread. Only queues the path;
+    // the actual unregister runs on the main thread from Poll() (see ApplyDeletion) so it can never
+    // race the Inspector/ECSAdmin reading ComponentRegistry, or Poll()/ApplyOutcome mutating
+    // loadedModules, on the main thread at the same time.
     void OnScriptFileDeleted(const std::string& filePath);
 
     // Main-thread only. Applies every compile result finished since the last call.
@@ -47,6 +41,12 @@ public:
     // Compiles every .hpp script already present in the project tree. Call once after a project
     // is opened, so scripts written in a previous session are usable immediately.
     void ScanAndCompileExistingScripts();
+
+    // Thread-safe. True while any script is queued, actively compiling, or has finished compiling
+    // but hasn't been applied to the live ECS by Poll() yet. Callers that need every project script
+    // registered before proceeding (e.g. loading the last session's world only after
+    // ScanAndCompileExistingScripts has fully landed) should hold off while this is true.
+    bool IsCompiling() const;
 
 private:
     enum class ScriptKind { Unknown, Component, System };
@@ -83,7 +83,7 @@ private:
     std::condition_variable pendingCondition;
     std::deque<std::string> pendingJobs;
 
-    std::mutex completedMutex;
+    mutable std::mutex completedMutex;
     std::vector<CompileOutcome> completedOutcomes;
 
     // Set by WorkerThreadFunction right before/after CompileOne runs, so the main thread can see
@@ -94,6 +94,11 @@ private:
 
     std::unordered_map<std::string, LoadedModule> loadedModules;
     std::unordered_map<std::string, int> revisionByScript;
+
+    // Paths queued by OnScriptFileDeleted from whatever thread the FileWatcher calls back on;
+    // drained on the main thread by Poll() -> ApplyDeletion.
+    std::mutex pendingDeletionsMutex;
+    std::vector<std::string> pendingDeletions;
 
     // System script path -> lexically-normalized paths of every project .hpp it #includes (as found
     // in its last successful compile). A System that #includes a Component's .hpp gets that
@@ -114,6 +119,10 @@ private:
     void WorkerThreadFunction();
     CompileOutcome CompileOne(const std::string& scriptPathKey);
     void ApplyOutcome(const CompileOutcome& outcome);
+
+    // Main-thread only (called from Poll()). Actual body of what used to run synchronously inside
+    // OnScriptFileDeleted - see that method's comment for why it now only enqueues instead.
+    void ApplyDeletion(const std::string& filePath);
 
     // Thread-safe: reads pendingJobs and currentlyCompilingPath, both guarded by their own mutex.
     std::vector<std::string> GetPendingAndActiveScriptPaths() const;

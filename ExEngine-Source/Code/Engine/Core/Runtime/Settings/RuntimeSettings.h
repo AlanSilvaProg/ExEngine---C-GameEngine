@@ -6,6 +6,7 @@ class RuntimeSettings{
         static int targetFramesPerSeconds;
         static float timePerFrame;
         static std::string externalTextEditorPath;
+        static bool physicsEnabled;
     public:
         static void SetTargetFps(int targetFps);
         static int GetTargetFps();
@@ -14,4 +15,7 @@ class RuntimeSettings{
         //empty means the machine's default program for the file type should be used
         static void SetExternalTextEditorPath(const std::string& path);
         static const std::string& GetExternalTextEditorPath();
+
+        static void SetPhysicsEnabled(bool enabled);
+        static bool GetPhysicsEnabled();
 };

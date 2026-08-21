@@ -7,7 +7,9 @@
 #include "../../Engine/Core/Input/Input.h"
 #include "../EditorEvents/EditorUpdateEventHandler.h"
 #include "../EditorEvents/EditorCommandEventHandler.h"
-#include "../../Engine/Core/Runtime/App.h" 
+#include "../../Engine/Core/Scene/ECSWorldManager.h"
+#include "../../Engine/Core/Settings/EngineSettings.h"
+#include "../../Engine/Core/Runtime/App.h"
 #include "../../Engine/Logger/Logger.h"
 #include "../../Engine/File/FileManagement.h"
 #include "../../Engine/Core/Runtime/Time/Time.h"
@@ -59,9 +61,12 @@ void EditorInterface::InitializeEditor(){
 
     ConfigurationManager::Initialize();
 
-    //Editor loading presets
+    auto path = EditorInterfaceGetters::currentProjectPath;
+    path.append(EDITOR_LAYOUT_FILE_NAME);
+
+    //Editor loading presets - Project based file first then try loading engine based file.
     EditorPresetInfo result;
-    if(FileManagement::LoadFromJson(std::string("engine_editor_layout"), result))
+    if(FileManagement::LoadFromJson(path, result) || FileManagement::LoadFromJson(EDITOR_LAYOUT_FILE_NAME, result))
     {
         EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
         EditorInterfaceGetters::gameViewEnabled = result.gameViewEnabled;
@@ -70,6 +75,7 @@ void EditorInterface::InitializeEditor(){
         EditorInterfaceGetters::ecsMonitoringEnabled = result.ecsMonitoringEnabled;
         EditorInterfaceGetters::ecsAdministratorEnabled = result.ecsAdministratorEnabled;
         EditorInterfaceGetters::assetBrowserIsOpened = result.assetBrowserIsOpened;
+        EditorInterfaceGetters::currentWorldPath = result.currentWorldPath;
         EditorInterfaceGetters::engineConfigEnabled = result.engineConfigEnabled;
         EditorInterfaceGetters::buildTarget = result.buildTarget;
 
@@ -99,6 +105,17 @@ void EditorInterface::EarlyUpdate() const{
         Time::PermissionForUpdate();
 
     if(scriptHotReloadManager) scriptHotReloadManager->Poll();
+
+    UpdateWindowTitle();
+};
+
+void EditorInterface::UpdateWindowTitle() const{
+    std::string sceneName = "Unsaved scene";
+    if(ECSWorldManager::HasCurrentWorld() && !EditorInterfaceGetters::worldWithoutPath)
+        sceneName = ECSWorldManager::GetCurrentWorldInfo().name;
+
+    std::string title = EngineSettings::GetEngineStringId() + " - " + sceneName;
+    SDL_SetWindowTitle(ExRendererGetters::window, title.c_str());
 };
 
 void EditorInterface::LateUpdate() const{
@@ -155,11 +172,19 @@ EditorInterface::~EditorInterface(){
     result.assetBrowserIsOpened = EditorInterfaceGetters::assetBrowserIsOpened;
     result.engineConfigEnabled = EditorInterfaceGetters::engineConfigEnabled;
     result.buildTarget = EditorInterfaceGetters::buildTarget;
+
+    if(!EditorInterfaceGetters::worldWithoutPath){
+        result.currentWorldPath = ECSWorldManager::GetCurrentWorld()->GetWorldPath();
+    }
+
     //layout persistence
     size_t size;
     result.editorLayout = ImGui::SaveIniSettingsToMemory(&size);
 
-    FileManagement::SaveFile(std::string("engine_editor_layout"), result.ToJson().dump());
+    auto path = EditorInterfaceGetters::currentProjectPath;
+    path.append(EDITOR_LAYOUT_FILE_NAME);
+
+    FileManagement::SaveFile(path, result.ToJson().dump());
     ImGui_ImplSDLRenderer2_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();

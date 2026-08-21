@@ -9,6 +9,8 @@
 #include "Runtime/AppEvents/AppEventsHandler.h"
 #include "GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
 #include "Configuration/ConfigurationFileManager.h"
+#include "CollisionSystem/ExPhysicsEngine.h"
+#include "Runtime/Settings/RuntimeSettings.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 
@@ -53,6 +55,9 @@ void Engine::StartEngine(){
 
     gameLoop->Initialize();
     
+    if(RuntimeSettings::GetPhysicsEnabled())
+        ExPhysicsEngine::Initialize(ecsManager);
+
     ExRenderer::Initialize(ecsManager);
 };
 

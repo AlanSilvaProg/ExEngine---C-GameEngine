@@ -10,8 +10,10 @@
 #include "../../../../../Engine/Core/Components/TransformComponent.h"
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
+#include "../../../../../Engine/Core/Utils/ExRect.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/SpecialFields/SpriteReferenceField/SpriteReference.h"
+#include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
 #include <filesystem>
 #include <fstream>
@@ -208,14 +210,14 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
     static const char* label = "";
 
     if (exSerializedField.fieldType == typeid(int)) {
-        ImGui::InputInt(label, static_cast<int*>(exSerializedField.field_ptr));
-    } 
+        ImGui::DragInt(label, static_cast<int*>(exSerializedField.field_ptr));
+    }
     else if (exSerializedField.fieldType == typeid(float)) {
-        ImGui::InputFloat(label, static_cast<float*>(exSerializedField.field_ptr));
-    } 
+        ImGui::DragFloat(label, static_cast<float*>(exSerializedField.field_ptr), 0.1f);
+    }
     else if (exSerializedField.fieldType == typeid(bool)) {
         ImGui::Checkbox(label, static_cast<bool*>(exSerializedField.field_ptr));
-    } 
+    }
     else if (exSerializedField.fieldType == typeid(std::string)) {
         auto* s = static_cast<std::string*>(exSerializedField.field_ptr);
         char buf[256]{};
@@ -226,7 +228,7 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
     }
     else if (exSerializedField.fieldType == typeid(glm::vec3)) {
         glm::vec3* v = static_cast<glm::vec3*>(exSerializedField.field_ptr);
-        ImGui::InputFloat3(label, &(*v)[0]);
+        ImGui::DragFloat3(label, &(*v)[0], 0.1f);
     }
     else if (exSerializedField.fieldType == typeid(SpriteReference)){
         auto spriteReference = static_cast<SpriteReference*>(exSerializedField.field_ptr);
@@ -240,6 +242,16 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
             spriteReferenceBtn = ImGui::ImageButton(spriteReference->id.c_str(), textureId, buttonSize);
 
             assetManager->FreeAsset(spriteReference->id);
+
+            ImGui::SameLine();
+            if(ImGui::SmallButton("Clear"))
+            {
+                spriteReference->id.clear();
+                spriteReference->path.clear();
+
+                if(exSerializedField.onFieldChanged)
+                    exSerializedField.onFieldChanged();
+            }
         }
         else{
             spriteReferenceBtn = ImGui::Button("empty ( Drag or Select file )", buttonSize);
@@ -255,6 +267,56 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
             }
             ImGui::EndDragDropTarget();
         }
+
+        if(spriteReferenceBtn)
+        {
+            auto assetsPath =
+            std::filesystem::exists(spriteReference->path) ?
+                spriteReference->path :
+                EditorInterfaceGetters::currentProjectPath/"Assets/";
+
+            const char* filterPatterns[] = { "*.png", "*.jpg", "*.jpeg" };
+            const char* selectedFile = tinyfd_openFileDialog(
+                "Select Sprite",
+                assetsPath.c_str(),
+                3, filterPatterns, "Image files", 0
+            );
+
+            if(selectedFile != nullptr)
+            {
+                std::filesystem::path selectedPath(selectedFile);
+                auto relativeToAssets = std::filesystem::relative(
+                    std::filesystem::weakly_canonical(selectedPath),
+                    std::filesystem::weakly_canonical(assetsPath)
+                );
+                bool isInsideAssets = !relativeToAssets.empty()
+                    && relativeToAssets.native().rfind(std::filesystem::path("..").native(), 0) != 0;
+
+                if(!isInsideAssets)
+                {
+                    tinyfd_messageBox("Invalid Sprite", "Selected file must be inside the project's Assets folder.", "ok", "error", 1);
+                }
+                else
+                {
+                    spriteReference->id = selectedPath.stem().string();
+                    spriteReference->path = selectedPath;
+
+                    if(exSerializedField.onFieldChanged)
+                        exSerializedField.onFieldChanged();
+                }
+            }
+        }
+    }
+    else if (exSerializedField.fieldType == typeid(ExRect)){
+        ExRect* rect = static_cast<ExRect*>(exSerializedField.field_ptr);
+        ImGui::BeginGroup();
+        ImGui::Text("Begin");
+        ImGui::SameLine();
+        ImGui::DragFloat2("##begin", &rect->beginRect[0], 0.1f);
+        ImGui::Text("End");
+        ImGui::SameLine();
+        ImGui::DragFloat2("##end", &rect->endRect[0], 0.1f);
+        ImGui::EndGroup();
     }
     else
     {

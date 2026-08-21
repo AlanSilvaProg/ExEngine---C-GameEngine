@@ -343,6 +343,7 @@ std::shared_ptr<TSystem> ECSManager::CreateSystem(TArgs&& ...args){
     auto castedNewSystem = static_cast<std::shared_ptr<ECSystem>>(newSystem);
     systems.insert(make_pair(std::type_index(typeid(TSystem)), castedNewSystem));
 
+    RevalidateSystem(newSystem);
     Logger::Log("ECS System Created: " + std::string(castedNewSystem->SystemName()));
 
     return newSystem;
@@ -353,6 +354,7 @@ std::shared_ptr<CustomECSystem> ECSManager::CreateCustomSystem(TArgs&& ...args){
     auto newSystem = std::make_shared<CustomECSystem>(std::forward<TArgs>(args)...);
     customECSystems.push_back(newSystem);
 
+    RevalidateSystem(newSystem);
     Logger::Log("ECS Custom System Created: " + std::string(newSystem->SystemName()));
 
     return newSystem;

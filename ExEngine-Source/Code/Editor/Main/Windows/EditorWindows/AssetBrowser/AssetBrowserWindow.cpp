@@ -533,6 +533,11 @@ void AssetBrowserWindow::CommitRename()
     {
         std::filesystem::rename(renameTargetPath, newPath);
 
+        if(renameTargetPath.extension() == ".exworld")
+        {
+            ECSWorldManager::OnWorldFileRenamed(renameTargetPath, newPath);
+        }
+
         if(assetBrowserSelection->GetPath() == renameTargetPath)
         {
             auto newId = "###" + newPath.string();
