@@ -50,10 +50,8 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
 void ExRenderer::RenderSequence(){
     if(!initialized) return;
     
+    //CameraSystem (registered in the PRE_RENDER context) drives renderingSystem2D per active camera
     PreRenderEventHandler::preRenderHandler->Invoke();
-
-    //ECS System Context runs throughout the events, ECSManager do the registry
-    renderingSystem2D->UpdateSystem();
 
     PreRenderEventHandler::postRenderHandler->Invoke();
 };

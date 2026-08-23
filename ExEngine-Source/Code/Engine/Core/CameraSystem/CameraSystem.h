@@ -4,17 +4,13 @@
 #include <memory>
 
 class CameraSystem : public ECSystem{
-private: 
+private:
     std::shared_ptr<RenderingSystem2D> renderingSystem;
 
-    void UpdateDisplayTexture(int displayIndex);
-    void DisableDisplayTextures(int displayIndex);
-    void DisableAllDisplayTextures();
-    void OnResolutionChanged(int width, int height);
 public:
     CameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem);
 
     void UpdateSystem() override;
 
-    inline const char* SystemName() override { return TYPE_NAME(CameraSystem); }; 
+    inline const char* SystemName() override { return TYPE_NAME(CameraSystem); };
 };

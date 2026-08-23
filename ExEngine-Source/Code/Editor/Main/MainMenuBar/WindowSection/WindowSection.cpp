@@ -7,40 +7,16 @@ void WindowSection::Draw(){
     {
         if(ImGui::BeginMenu("Visualization"))
         {
-            if(ImGui::MenuItem("Scene View"))
-            {
-                EditorInterfaceGetters::sceneViewEnabled = true;
-            }
-
-            if(ImGui::MenuItem("Game View"))
-            {
-                EditorInterfaceGetters::gameViewEnabled = true;
-            }
-
-            if(ImGui::MenuItem("Asset Browser  [ Space ]"))
-            {
-                EditorInterfaceGetters::assetBrowserIsOpened = true;
-            }
-
-            if(ImGui::MenuItem("Console"))
-            {
-                EditorInterfaceGetters::consoleEnabled = true;
-            }
-
-            if(ImGui::MenuItem("ECS Monitoring Panel"))
-            {
-                EditorInterfaceGetters::ecsMonitoringEnabled = true;
-            }
-
-            if(ImGui::MenuItem("ECS Administrator"))
-            {
-                EditorInterfaceGetters::ecsAdministratorEnabled = true;
-            }
-
-            if(ImGui::MenuItem("Engine Config"))
-            {
-                EditorInterfaceGetters::engineConfigEnabled = true;
-            }
+            ImGui::MenuItem("Scene View", nullptr, &EditorInterfaceGetters::sceneViewEnabled);
+            ImGui::MenuItem("Inspector", nullptr, &EditorInterfaceGetters::inspectorEnabled);
+            ImGui::MenuItem("World Inspection", nullptr, &EditorInterfaceGetters::entityBrowserEnabled);
+            ImGui::MenuItem("Asset Browser  [ Space ]", nullptr, &EditorInterfaceGetters::assetBrowserIsOpened);
+            ImGui::MenuItem("Console", nullptr, &EditorInterfaceGetters::consoleEnabled);
+            ImGui::MenuItem("ECS Monitoring Panel", nullptr, &EditorInterfaceGetters::ecsMonitoringEnabled);
+            ImGui::MenuItem("ECS Administrator", nullptr, &EditorInterfaceGetters::ecsAdministratorEnabled);
+            ImGui::MenuItem("Engine Config", nullptr, &EditorInterfaceGetters::engineConfigEnabled);
+            ImGui::MenuItem("Project Settings", nullptr, &EditorInterfaceGetters::projectSettingsEnabled);
+            ImGui::MenuItem("Build Settings", nullptr, &EditorInterfaceGetters::buildWindowEnabled);
             ImGui::EndMenu();
         }
         ImGui::EndMenu();

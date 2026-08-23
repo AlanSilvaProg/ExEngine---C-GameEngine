@@ -6,7 +6,8 @@
 struct EditorPresetInfo : public IJsonConvertable{
 public:
     bool sceneViewEnabled;
-    bool gameViewEnabled;
+    bool inspectorEnabled;
+    bool entityBrowserEnabled;
     bool projectSettingsEnabled;
     bool consoleEnabled;
     bool ecsMonitoringEnabled;
@@ -23,7 +24,8 @@ public:
     virtual nlohmann::json ToJson() override {
         return {
             {"sceneViewEnabled", sceneViewEnabled},
-            {"gameViewEnabled", gameViewEnabled},
+            {"inspectorEnabled", inspectorEnabled},
+            {"entityBrowserEnabled", entityBrowserEnabled},
             {"projectSettingsEnabled", projectSettingsEnabled},
             {"consoleEnabled", consoleEnabled},
             {"ecsMonitoringEnabled", ecsMonitoringEnabled},
@@ -38,7 +40,8 @@ public:
 
     virtual void FromJson(const nlohmann::json& json) override {
         if (json.contains("sceneViewEnabled")) sceneViewEnabled = json["sceneViewEnabled"];
-        if (json.contains("gameViewEnabled")) gameViewEnabled = json["gameViewEnabled"];
+        if (json.contains("inspectorEnabled")) inspectorEnabled = json["inspectorEnabled"];
+        if (json.contains("entityBrowserEnabled")) entityBrowserEnabled = json["entityBrowserEnabled"];
         if (json.contains("projectSettingsEnabled")) projectSettingsEnabled = json["projectSettingsEnabled"];
         if (json.contains("consoleEnabled")) consoleEnabled = json["consoleEnabled"];
         if (json.contains("ecsMonitoringEnabled")) ecsMonitoringEnabled = json["ecsMonitoringEnabled"];

@@ -10,6 +10,7 @@ EntityBrowserWindow::EntityBrowserWindow(){
     entityBrowserSelection = std::make_unique<EntityBrowserSelection>();
     *EditorCommandEventHandler::duplicate += [this](){ this->Duplicate(); };
     *EditorCommandEventHandler::deleteCmmd += [this](){ this->Delete(); };
+    EditorInterfaceGetters::entityBrowserEnabled = true; // ToDo -> control with persistence
 };
 
 void EntityBrowserWindow::Duplicate(){
@@ -60,11 +61,13 @@ void EntityBrowserWindow::Draw(int phase){
         }
     }
 
+    if(!EditorInterfaceGetters::entityBrowserEnabled) return;
+
     // Apply minimum size constraint using WindowSizeManager
     WindowSizeManager::ApplyMinimumSizeConstraint("World Inspection");
-    
+
     //ToDo include the currently scene name
-    if(!ImGui::Begin("World Inspection", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
+    if(!ImGui::Begin("World Inspection", &EditorInterfaceGetters::entityBrowserEnabled, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::End();
         return;

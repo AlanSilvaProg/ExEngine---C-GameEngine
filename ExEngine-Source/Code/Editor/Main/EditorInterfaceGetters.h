@@ -13,7 +13,8 @@ public:
     static std::shared_ptr<Engine> engine;
     static std::shared_ptr<ScriptHotReloadManager> scriptHotReloadManager;
     static bool sceneViewEnabled;
-    static bool gameViewEnabled;
+    static bool inspectorEnabled;
+    static bool entityBrowserEnabled;
     static bool projectSettingsEnabled;
     static bool consoleEnabled;
     static bool ecsMonitoringEnabled;

@@ -69,7 +69,8 @@ void EditorInterface::InitializeEditor(){
     if(FileManagement::LoadFromJson(path, result) || FileManagement::LoadFromJson(EDITOR_LAYOUT_FILE_NAME, result))
     {
         EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
-        EditorInterfaceGetters::gameViewEnabled = result.gameViewEnabled;
+        EditorInterfaceGetters::inspectorEnabled = result.inspectorEnabled;
+        EditorInterfaceGetters::entityBrowserEnabled = result.entityBrowserEnabled;
         EditorInterfaceGetters::projectSettingsEnabled = result.projectSettingsEnabled;
         EditorInterfaceGetters::consoleEnabled = result.consoleEnabled;
         EditorInterfaceGetters::ecsMonitoringEnabled = result.ecsMonitoringEnabled;
@@ -99,7 +100,6 @@ void EditorInterface::EarlyUpdate() const{
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui::NewFrame();
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
     //ImGui::ShowDemoWindow();
     if(!App::isPlaying)
         Time::PermissionForUpdate();
@@ -141,14 +141,15 @@ void EditorInterface::LateUpdate() const{
 };
 
 void EditorInterface::PreRender() const{ 
-    EditorUpdateEventHandler::earlyHandler->Invoke();
 };
 
 void EditorInterface::PostRender() const{ 
+    EditorUpdateEventHandler::earlyHandler->Invoke();
     EditorUpdateEventHandler::lateHandler->Invoke();
 
     ImGui::Render();
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), ExRendererGetters::renderer);
+    SDL_RenderPresent(ExRendererGetters::renderer);
 };
 
 EditorInterface::~EditorInterface(){
@@ -163,8 +164,9 @@ EditorInterface::~EditorInterface(){
     
     //Saving Editor presets
     EditorPresetInfo result;
-    result.gameViewEnabled = EditorInterfaceGetters::gameViewEnabled;
     result.sceneViewEnabled = EditorInterfaceGetters::sceneViewEnabled;
+    result.inspectorEnabled = EditorInterfaceGetters::inspectorEnabled;
+    result.entityBrowserEnabled = EditorInterfaceGetters::entityBrowserEnabled;
     result.projectSettingsEnabled = EditorInterfaceGetters::projectSettingsEnabled;
     result.consoleEnabled = EditorInterfaceGetters::consoleEnabled;
     result.ecsMonitoringEnabled = EditorInterfaceGetters::ecsMonitoringEnabled;

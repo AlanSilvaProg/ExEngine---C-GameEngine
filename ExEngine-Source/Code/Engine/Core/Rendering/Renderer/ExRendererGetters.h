@@ -1,6 +1,5 @@
 #pragma once
 #include <SDL2/SDL.h>
-#include <map>
 #include <vector>
 #include <memory>
 #include "../../Components/CameraComponent.h"
@@ -11,8 +10,6 @@ public:
     static SDL_Window* window;
     static std::shared_ptr<EntityCS> currentRenderCamera;
 
-    static std::map<int, SDL_Texture*> sceneDisplay;
-    
     // Resolution management
     static int renderWidth;
     static int renderHeight;

@@ -39,8 +39,6 @@ void EditorCameraSystem::UpdateSystem(){
 
         DisableDisplayTextures();
     }
-
-    SDL_RenderClear(exRenderer);
 };
 
 void EditorCameraSystem::UpdateDisplayTexture(){

@@ -1,7 +1,6 @@
 #include "EditorWindowDrawer.h"
 #include "../../EditorEvents/EditorUpdateEventHandler.h"
 #include "EditorWindows/SceneView/SceneWindow.h"
-#include "EditorWindows/GameView/GameWindow.h"
 #include "EditorWindows/EntityBrowser/EntityBrowserWindow.h"
 #include "EditorWindows/Inspector/ExInspectorWindow.h"
 #include "EditorWindows/ProjectSettings/ExProjectSettingsWindow.h"
@@ -17,7 +16,6 @@ std::vector<std::shared_ptr<EditorWindow>> ExEditor::EditorWindowDrawer::windows
 
 ExEditor::EditorWindowDrawer::EditorWindowDrawer(){
     AddWindow(std::make_shared<SceneWindow>());
-    AddWindow(std::make_shared<GameWindow>());
     AddWindow(std::make_shared<EntityBrowserWindow>());
     AddWindow(std::make_shared<ExInspectorWindow>());
     AddWindow(std::make_shared<ExProjectSettingsWindow>());
