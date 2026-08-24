@@ -15,8 +15,8 @@ void ECSWorld::Unload(){
     Destroy();
 };
 
-std::shared_ptr<EntityCS>& ECSWorld::CreateEntity(EntityContainer& entityInfo){ 
-    auto entity = ecsManager->CreateEntity(entityInfo.name, entityInfo.internal);
+std::shared_ptr<EntityCS> ECSWorld::CreateEntity(EntityContainer& entityInfo){
+    auto entity = ecsManager->CreateEntity(entityInfo.name);
     entity->RegenerateGuid(&entityInfo.guid);
     return entity;
 };

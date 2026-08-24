@@ -22,7 +22,6 @@
 
 class EntityCS{
 private:
-    bool internal;
     unsigned int id;
     std::string guid;
     std::string name;
@@ -35,7 +34,7 @@ public:
     void RegenerateGuid(std::string* newGuid = nullptr);
 
     EntityCS() = default;
-    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager, const bool internal = false) : id(id), name(name), ecsManager(ecsManager), internal(internal){
+    EntityCS(const unsigned int id, const std::string name, ECSManager* ecsManager) : id(id), name(name), ecsManager(ecsManager){
         RegenerateGuid();
     };
 
@@ -58,8 +57,6 @@ public:
     template<typename TComponent>
     void RemoveComponent() const;
     void RemoveComponent(const int componentId) const;
-
-    inline bool IsInternal() { return internal; }
 
 };
 
@@ -144,7 +141,6 @@ private:
     std::vector<SystemEntry> systemEntries; //strong typed systems
     std::vector<std::shared_ptr<CustomECSystem>> customSystemEntries; //weak typed systems
 
-    bool internal;
     std::function<void()> removeEventHandlerCallback;
 
     void RefreshContext(SystemContext newContext);
@@ -165,7 +161,6 @@ public:
     inline const std::vector<SystemEntry>& GetContextSystems() const { return systemEntries; };
     inline const std::vector<std::shared_ptr<CustomECSystem>>& GetContextCustomSystems() const { return customSystemEntries; };
     inline const SystemContext GetSystemContext() { return systemContext; };
-    inline const bool IsInternal() const { return internal; };
 };
 
 
@@ -201,7 +196,7 @@ public:
     void Update();
 
     //entities
-    std::shared_ptr<EntityCS> CreateEntity(const std::string entityName, const bool internal = false);
+    std::shared_ptr<EntityCS> CreateEntity(const std::string entityName);
     std::shared_ptr<EntityCS> GetEntity(const int entityId); 
     void DuplicateEntity(const int entityId);
     void DestroyEntityImmediately(const int entityId);

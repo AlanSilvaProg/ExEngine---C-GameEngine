@@ -11,6 +11,13 @@ void WindowSizeManager::ApplyMinimumSizeConstraint(const char* windowName) {
     );
 }
 
+void WindowSizeManager::ApplyInspectorMinimumSize() {
+    ImGui::SetNextWindowSizeConstraints(
+        INSPECTOR_MINIMUM_SIZE,
+        ImVec2(FLT_MAX, FLT_MAX)
+    );
+}
+
 void WindowSizeManager::SetEngineConfigWindowProperties() {
     ImGui::SetNextWindowSize(ENGINE_CONFIG_INITIAL_SIZE, ImGuiCond_FirstUseEver);
     ApplyMinimumSizeConstraint("Engine Config");

@@ -56,11 +56,6 @@ void ECSAdmin::Draw(int phase){
             }
 
             ImGui::Separator();
-            if(ImGui::MenuItem("Show Internals", nullptr, &includeInternals))
-            {
-
-            }
-            ImGui::Separator();
 
             ImGui::EndMenuBar(); // 1
         }
@@ -154,13 +149,11 @@ void ECSAdmin::DrawColumnElement(const SystemContext currentContext)
     {
         for(const auto& systemEntry : ecsystemContext->GetContextSystems())
         {
-            if(!includeInternals && ecsystemContext->IsInternal()) continue;
             DrawSystemWithContextMenu(&systemEntry.type, systemEntry.system, currentContext);
         }
 
         for(const auto& systemEntry : ecsystemContext->GetContextCustomSystems())
         {
-            if(!includeInternals && ecsystemContext->IsInternal()) continue;
             DrawSystemWithContextMenu(nullptr, systemEntry, currentContext);
         }
         DrawAddSystemButton(currentContext);

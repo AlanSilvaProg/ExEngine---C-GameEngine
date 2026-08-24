@@ -3,6 +3,7 @@
 #include "Rendering/Renderer/ExRendererGetters.h"
 #include "Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
 #include "Rendering/Renderer/RendererEvent/ResolutionChangeEventHandler.h"
+#include "CameraSystem/NoCameraEventHandler.h"
 #include "Input/Input.h"
 #include "Input/InputEvents/InputEventHandler.h"
 #include "Runtime/App.h"
@@ -39,6 +40,7 @@ void Engine::InitializeEngine(){
 void Engine::CreateEngineBaseEventHandlers(){
     PreRenderEventHandler::Create();
     ResolutionChangeEventHandler::Create();
+    NoCameraEventHandler::Create();
     InputEventHandler::Create();
     GameUpdateEventHandler::Create();
 };

@@ -58,6 +58,13 @@ void ExProjectSettingsWindow::Draw(int phase){
                 ExPhysicsEngine::Stop();
             }
         }
+
+        bool drawAllPhysics = RuntimeSettings::GetDrawAllPhysics();
+        if(ImGui::Checkbox("Draw all Physics", &drawAllPhysics))
+        {
+            RuntimeSettings::SetDrawAllPhysics(drawAllPhysics);
+            ConfigurationFileManager::SaveCurrentState();
+        }
     }
     ImGui::End();
 };

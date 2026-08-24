@@ -9,6 +9,7 @@ public:
     int targetFramesPerSeconds;
     std::string externalTextEditorPath;
     bool physicsEnabled;
+    bool drawAllPhysics;
 
     virtual nlohmann::json ToJson() override {
         //Target FPS
@@ -17,10 +18,13 @@ public:
         externalTextEditorPath = RuntimeSettings::GetExternalTextEditorPath();
         //Physics engine
         physicsEnabled = RuntimeSettings::GetPhysicsEnabled();
+        //Draw all physics colliders in the editor Scene View
+        drawAllPhysics = RuntimeSettings::GetDrawAllPhysics();
         return nlohmann::json{
             {"targetFramesPerSeconds", targetFramesPerSeconds},
             {"externalTextEditorPath", externalTextEditorPath},
-            {"physicsEnabled", physicsEnabled}
+            {"physicsEnabled", physicsEnabled},
+            {"drawAllPhysics", drawAllPhysics}
         };
     }
 
@@ -36,5 +40,9 @@ public:
         //Physics engine - optional for backwards compatibility with older config files
         physicsEnabled = json.value("physicsEnabled", true);
         RuntimeSettings::SetPhysicsEnabled(physicsEnabled);
+
+        //Draw all physics colliders - optional for backwards compatibility with older config files
+        drawAllPhysics = json.value("drawAllPhysics", true);
+        RuntimeSettings::SetDrawAllPhysics(drawAllPhysics);
     }
 };

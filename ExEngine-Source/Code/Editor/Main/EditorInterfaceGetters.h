@@ -7,12 +7,17 @@
 #include <filesystem>
 #include <map>
 
+enum class EditorViewMode{
+    GameView,
+    SceneView
+};
+
 class EditorInterfaceGetters
 {
 public:
     static std::shared_ptr<Engine> engine;
     static std::shared_ptr<ScriptHotReloadManager> scriptHotReloadManager;
-    static bool sceneViewEnabled;
+    static EditorViewMode viewMode;
     static bool inspectorEnabled;
     static bool entityBrowserEnabled;
     static bool projectSettingsEnabled;

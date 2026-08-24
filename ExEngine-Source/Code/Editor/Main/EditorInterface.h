@@ -1,6 +1,9 @@
 #pragma once
 #include "MainMenuBar/MainMenuBar.h"
 #include "Windows/EditorWindowDrawer.h"
+#include "../EditorEngine/EditorCameraController.h"
+#include "../EditorEngine/EditorSelectionController.h"
+#include "../EditorEngine/GizmosController.h"
 #include "../Engine/Core/Engine.h"
 #include "../FileWatcher/FileWatcher.h"
 #include "../Scripting/ScriptHotReloadManager.h"
@@ -19,6 +22,9 @@ class EditorInterface{
 private:
     std::unique_ptr<ExEditor::MainMenuBar> mainMenuBar;
     std::unique_ptr<ExEditor::EditorWindowDrawer> editorWindowDrawer;
+    std::unique_ptr<EditorCameraController> editorCameraController;
+    std::unique_ptr<EditorSelectionController> editorSelectionController;
+    std::unique_ptr<GizmosController> gizmosController;
     std::unique_ptr<FileWatcher> fileWatcher;
     std::shared_ptr<ScriptHotReloadManager> scriptHotReloadManager;
 
@@ -33,6 +39,7 @@ private:
     void PreRender() const;
     void PostRender() const;
     void UpdateWindowTitle() const;
+    void DrawNoCameraOverlay() const;
 
     void CreateEditorBase();
 public:

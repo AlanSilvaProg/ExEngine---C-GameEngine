@@ -2,13 +2,13 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include <memory>
-#include "../../Components/CameraComponent.h"
+#include "../../Components/TransformComponent.h"
 
 class ExRendererGetters{
 public:
     static SDL_Renderer* renderer;
     static SDL_Window* window;
-    static std::shared_ptr<EntityCS> currentRenderCamera;
+    static std::shared_ptr<TransformComponent> currentRenderCameraTransform;
 
     // Resolution management
     static int renderWidth;

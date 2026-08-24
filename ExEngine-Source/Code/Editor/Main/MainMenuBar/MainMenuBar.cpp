@@ -1,6 +1,7 @@
 #include "MainMenuBar.h"
 #include "ProjectSection/ProjectSection.h"
 #include "WindowSection/WindowSection.h"
+#include "FeaturesSection/FeaturesSection.h"
 #include "../../EditorEvents/EditorUpdateEventHandler.h"
 #include "../../../Engine/Logger/Logger.h"
 #include <imgui.h>
@@ -10,6 +11,7 @@ std::vector<std::shared_ptr<Section>> ExEditor::MainMenuBar::sections;
 ExEditor::MainMenuBar::MainMenuBar(){
     AddSection(std::make_shared<ProjectSection>());
     AddSection(std::make_shared<WindowSection>());
+    AddSection(std::make_shared<FeaturesSection>());
     *EditorUpdateEventHandler::earlyHandler += [this](){ this->Draw(); };
 }; 
 

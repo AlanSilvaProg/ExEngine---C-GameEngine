@@ -307,6 +307,7 @@ namespace StackTrace
         signal(SIGABRT, CrashHandler);
         signal(SIGFPE,  CrashHandler);
         signal(SIGILL,  CrashHandler);
+        signal(SIGBUS,  CrashHandler);
         signal(SIGTERM, CrashHandler);
     }
 
@@ -316,6 +317,7 @@ namespace StackTrace
         signal(SIGABRT, SIG_DFL);
         signal(SIGFPE,  SIG_DFL);
         signal(SIGILL,  SIG_DFL);
+        signal(SIGBUS,  SIG_DFL);
         signal(SIGTERM, SIG_DFL);
     }
 

@@ -5,7 +5,6 @@
 
 struct EditorPresetInfo : public IJsonConvertable{
 public:
-    bool sceneViewEnabled;
     bool inspectorEnabled;
     bool entityBrowserEnabled;
     bool projectSettingsEnabled;
@@ -23,7 +22,6 @@ public:
 
     virtual nlohmann::json ToJson() override {
         return {
-            {"sceneViewEnabled", sceneViewEnabled},
             {"inspectorEnabled", inspectorEnabled},
             {"entityBrowserEnabled", entityBrowserEnabled},
             {"projectSettingsEnabled", projectSettingsEnabled},
@@ -39,7 +37,6 @@ public:
     };
 
     virtual void FromJson(const nlohmann::json& json) override {
-        if (json.contains("sceneViewEnabled")) sceneViewEnabled = json["sceneViewEnabled"];
         if (json.contains("inspectorEnabled")) inspectorEnabled = json["inspectorEnabled"];
         if (json.contains("entityBrowserEnabled")) entityBrowserEnabled = json["entityBrowserEnabled"];
         if (json.contains("projectSettingsEnabled")) projectSettingsEnabled = json["projectSettingsEnabled"];

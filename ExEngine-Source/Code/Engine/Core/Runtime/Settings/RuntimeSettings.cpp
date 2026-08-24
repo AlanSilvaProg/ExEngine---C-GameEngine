@@ -6,6 +6,7 @@ int RuntimeSettings::targetFramesPerSeconds = 120; // -1 to unlimited fps
 float RuntimeSettings::timePerFrame = 0;
 std::string RuntimeSettings::externalTextEditorPath = "";
 bool RuntimeSettings::physicsEnabled = true;
+bool RuntimeSettings::drawAllPhysics = true;
 
 void RuntimeSettings::SetTargetFps(int targetFps){
     targetFramesPerSeconds = targetFps;
@@ -36,4 +37,12 @@ void RuntimeSettings::SetPhysicsEnabled(bool enabled){
 
 bool RuntimeSettings::GetPhysicsEnabled(){
     return physicsEnabled;
+};
+
+void RuntimeSettings::SetDrawAllPhysics(bool enabled){
+    drawAllPhysics = enabled;
+};
+
+bool RuntimeSettings::GetDrawAllPhysics(){
+    return drawAllPhysics;
 };

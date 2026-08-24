@@ -27,24 +27,26 @@ ExInspectorWindow::ExInspectorWindow(){
     showSaveConfirmDialog = false;
     lastSelectedAssetPath = "";
     pendingSelectionPath = "";
-    EditorInterfaceGetters::inspectorEnabled = true; // ToDo -> control with persistence
 };
 
 void ExInspectorWindow::Draw(int phase){
     if(phase != 1) return;
+
+    // Opens automatically when something is selected, closes automatically when nothing is.
+    EditorInterfaceGetters::inspectorEnabled = ElementSelectionController::GetCurrentSelection() != nullptr;
     if(!EditorInterfaceGetters::inspectorEnabled) return;
 
     spriteInformations.clear();
 
-    // Apply minimum size constraint using WindowSizeManager
-    WindowSizeManager::ApplyMinimumSizeConstraint("ExInspector");
+    // Apply a larger minimum size so components have room to breathe
+    WindowSizeManager::ApplyInspectorMinimumSize();
 
     // Draw save confirmation dialog if needed
     if (showSaveConfirmDialog) {
         DrawSaveConfirmDialog();
     }
 
-    if(ImGui::Begin("ExInspector", &EditorInterfaceGetters::inspectorEnabled, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
+    if(ImGui::Begin("ExInspector", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysVerticalScrollbar))
     {
         auto selectedElement = ElementSelectionController::GetCurrentSelection();
 

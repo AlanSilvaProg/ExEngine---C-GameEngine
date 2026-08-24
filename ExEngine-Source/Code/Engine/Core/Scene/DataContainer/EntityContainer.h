@@ -5,7 +5,6 @@
 
 struct EntityContainer : public IJsonConvertable{
 public:
-    bool internal;
     std::string name;
     std::string guid;
     nlohmann::json components;
@@ -14,7 +13,6 @@ public:
     EntityContainer() = default;
 
     inline EntityContainer(std::shared_ptr<EntityCS> entityCS) {
-        internal = entityCS->IsInternal();
         name = entityCS->GetName();
         currentId = entityCS->GetId();
         guid = entityCS->GetGuid();
@@ -50,7 +48,6 @@ public:
 
     virtual nlohmann::json ToJson() override {
         return {
-            {"internal", internal},
             {"name", name},
             {"guid", guid},
             {"components", components}
@@ -58,7 +55,6 @@ public:
     }
 
     virtual void FromJson(const nlohmann::json& json) override {
-        if (json.contains("internal")) internal = json["internal"];
         if (json.contains("name")) name = json["name"];
         if (json.contains("guid")) guid = json["guid"];
         if (json.contains("components")) components = json["components"];

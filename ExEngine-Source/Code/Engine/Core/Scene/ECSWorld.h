@@ -16,7 +16,7 @@ private:
     std::filesystem::path worldFilePath;
     bool isIncremental;
 
-    std::shared_ptr<EntityCS>& CreateEntity(EntityContainer& entityInfo);
+    std::shared_ptr<EntityCS> CreateEntity(EntityContainer& entityInfo);
     void ConfigureEntityByData(std::shared_ptr<EntityCS>& entity, EntityContainer& entityInfo);
     void GenerateWorldEntities();
     void LoadData();

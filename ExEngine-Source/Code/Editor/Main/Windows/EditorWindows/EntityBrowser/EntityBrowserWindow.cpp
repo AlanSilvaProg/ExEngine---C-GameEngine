@@ -79,8 +79,6 @@ void EntityBrowserWindow::Draw(int phase){
     visibleEntities.reserve(aliveEntities.size());
     for(auto entityId : aliveEntities)
     {
-        auto entity = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetEntity(entityId);
-        if(entity->IsInternal()) continue;
         visibleEntities.push_back(entityId);
     }
     std::sort(visibleEntities.begin(), visibleEntities.end());
@@ -144,8 +142,6 @@ void EntityBrowserWindow::NavigateSelectionWithArrows(const std::vector<int>& vi
 
 void EntityBrowserWindow::DrawEntity(int entityId){
     auto entity = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetEntity(entityId);
-
-    if(entity->IsInternal()) return;
 
     ImGui::TableNextRow();
     ImGui::TableNextColumn();

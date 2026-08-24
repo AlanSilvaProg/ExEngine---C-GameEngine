@@ -7,6 +7,7 @@ class RuntimeSettings{
         static float timePerFrame;
         static std::string externalTextEditorPath;
         static bool physicsEnabled;
+        static bool drawAllPhysics;
     public:
         static void SetTargetFps(int targetFps);
         static int GetTargetFps();
@@ -18,4 +19,7 @@ class RuntimeSettings{
 
         static void SetPhysicsEnabled(bool enabled);
         static bool GetPhysicsEnabled();
+
+        static void SetDrawAllPhysics(bool enabled);
+        static bool GetDrawAllPhysics();
 };

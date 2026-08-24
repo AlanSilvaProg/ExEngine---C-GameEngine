@@ -7,11 +7,16 @@ void ExPhysicsEngine::Initialize(const std::shared_ptr<ECSManager> ecsManagerIns
     ecsManager = ecsManagerInstance;
     if(ecsManager == nullptr) return;
 
-    clickSystem = ecsManager->CreateSystem<ClickSystem>();
+    clickSystem = ecsManager->CreateSystem<ClickSystem>(ecsManagerInstance);
+    PhysicsEngineEventHandler::Create();
 };
 
 void ExPhysicsEngine::RunCollisionRoutine(){
     if(clickSystem != nullptr) clickSystem->UpdateSystem();
+};
+
+void ExPhysicsEngine::EntityWasClicked(const unsigned int entityId){
+    PhysicsEngineEventHandler::NotifyEntityWasClicked(entityId);
 };
 
 void ExPhysicsEngine::Stop(){

@@ -1,22 +1,23 @@
 #include "EditorInterface.h"
 #include "EditorPresetInfo.h"
+#include "EditorInterfaceGetters.h"
+#include "Windows/EditorWindows/EngineConfig/ConfigurationManager.h"
+#include "Windows/EditorWindows/EngineConfig/EngineConfigWindow.h"
+#include "../Scripting/ScriptCompiler.h"
+#include "../EditorEvents/EditorUpdateEventHandler.h"
+#include "../EditorEvents/EditorCommandEventHandler.h"
 #include "../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../Engine/GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
 #include "../../Engine/Core/Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
+#include "../../Engine/Core/CameraSystem/NoCameraEventHandler.h"
 #include "../../Engine/Core/Input/InputEvents/InputEventHandler.h"
 #include "../../Engine/Core/Input/Input.h"
-#include "../EditorEvents/EditorUpdateEventHandler.h"
-#include "../EditorEvents/EditorCommandEventHandler.h"
 #include "../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../Engine/Core/Settings/EngineSettings.h"
 #include "../../Engine/Core/Runtime/App.h"
 #include "../../Engine/Logger/Logger.h"
 #include "../../Engine/File/FileManagement.h"
 #include "../../Engine/Core/Runtime/Time/Time.h"
-#include "EditorInterfaceGetters.h"
-#include "Windows/EditorWindows/EngineConfig/ConfigurationManager.h"
-#include "Windows/EditorWindows/EngineConfig/EngineConfigWindow.h"
-#include "../Scripting/ScriptCompiler.h"
 #include <imgui.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
@@ -48,7 +49,8 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& ga
     *GameUpdateEventHandler::lateHandler += [this](){ this->LateUpdate(); };
     *PreRenderEventHandler::preRenderHandler += [this](){ this->PreRender(); };
     *PreRenderEventHandler::postRenderHandler += [this](){ this->PostRender(); };
-}; 
+    *NoCameraEventHandler::noCameraHandler += [this](){ this->DrawNoCameraOverlay(); };
+};
 
 void EditorInterface::InitializeEditor(){
     IMGUI_CHECKVERSION();
@@ -68,7 +70,6 @@ void EditorInterface::InitializeEditor(){
     EditorPresetInfo result;
     if(FileManagement::LoadFromJson(path, result) || FileManagement::LoadFromJson(EDITOR_LAYOUT_FILE_NAME, result))
     {
-        EditorInterfaceGetters::sceneViewEnabled = result.sceneViewEnabled;
         EditorInterfaceGetters::inspectorEnabled = result.inspectorEnabled;
         EditorInterfaceGetters::entityBrowserEnabled = result.entityBrowserEnabled;
         EditorInterfaceGetters::projectSettingsEnabled = result.projectSettingsEnabled;
@@ -94,13 +95,16 @@ void EditorInterface::InitializeEditor(){
 void EditorInterface::CreateEditorBase(){
     mainMenuBar = std::make_unique<ExEditor::MainMenuBar>();
     editorWindowDrawer = std::make_unique<ExEditor::EditorWindowDrawer>();
+    editorCameraController = std::make_unique<EditorCameraController>();
+    editorSelectionController = std::make_unique<EditorSelectionController>();
+    gizmosController = std::make_unique<GizmosController>();
 };
 
 void EditorInterface::EarlyUpdate() const{
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui::NewFrame();
-    //ImGui::ShowDemoWindow();
+    ImGui::ShowDemoWindow();
     if(!App::isPlaying)
         Time::PermissionForUpdate();
 
@@ -140,11 +144,29 @@ void EditorInterface::LateUpdate() const{
     EngineConfigWindow::HandleGlobalKeyboardShortcuts();
 };
 
-void EditorInterface::PreRender() const{ 
+void EditorInterface::PreRender() const{
+    EditorUpdateEventHandler::earlyHandler->Invoke();
 };
 
-void EditorInterface::PostRender() const{ 
-    EditorUpdateEventHandler::earlyHandler->Invoke();
+void EditorInterface::DrawNoCameraOverlay() const{
+    // Scene View always has the editor's own camera; the "no game camera" state only
+    // matters while looking through the game's cameras (Game View).
+    if(EditorInterfaceGetters::viewMode == EditorViewMode::SceneView) return;
+
+    SDL_SetRenderDrawColor(ExRendererGetters::renderer, 0, 0, 0, 255);
+    SDL_RenderClear(ExRendererGetters::renderer);
+
+    int windowWidth, windowHeight;
+    SDL_GetWindowSize(ExRendererGetters::window, &windowWidth, &windowHeight);
+
+    const char* message = "No camera has been created yet";
+    const ImVec2 textSize = ImGui::CalcTextSize(message);
+    const ImVec2 textPos((windowWidth - textSize.x) * 0.5f, (windowHeight - textSize.y) * 0.5f);
+
+    ImGui::GetBackgroundDrawList()->AddText(textPos, IM_COL32(255, 255, 255, 255), message);
+};
+
+void EditorInterface::PostRender() const{
     EditorUpdateEventHandler::lateHandler->Invoke();
 
     ImGui::Render();
@@ -164,7 +186,6 @@ EditorInterface::~EditorInterface(){
     
     //Saving Editor presets
     EditorPresetInfo result;
-    result.sceneViewEnabled = EditorInterfaceGetters::sceneViewEnabled;
     result.inspectorEnabled = EditorInterfaceGetters::inspectorEnabled;
     result.entityBrowserEnabled = EditorInterfaceGetters::entityBrowserEnabled;
     result.projectSettingsEnabled = EditorInterfaceGetters::projectSettingsEnabled;

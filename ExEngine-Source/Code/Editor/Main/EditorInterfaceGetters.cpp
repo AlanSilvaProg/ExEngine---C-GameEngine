@@ -7,7 +7,7 @@
 
 std::shared_ptr<Engine> EditorInterfaceGetters::engine = nullptr;
 std::shared_ptr<ScriptHotReloadManager> EditorInterfaceGetters::scriptHotReloadManager = nullptr;
-bool EditorInterfaceGetters::sceneViewEnabled = false;
+EditorViewMode EditorInterfaceGetters::viewMode = EditorViewMode::GameView;
 bool EditorInterfaceGetters::inspectorEnabled = false;
 bool EditorInterfaceGetters::entityBrowserEnabled = false;
 bool EditorInterfaceGetters::consoleEnabled = false;

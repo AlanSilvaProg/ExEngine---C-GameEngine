@@ -21,9 +21,9 @@ void RenderingSystem2D::UpdateSystem() {
               return this->RenderOrderCheck(a, b); 
           });
 
-    auto currentCamera = ExRendererGetters::currentRenderCamera;
+    auto cameraTransformComponent = ExRendererGetters::currentRenderCameraTransform;
 
-    if(currentCamera == nullptr)
+    if(cameraTransformComponent == nullptr)
     {
         Logger::LogWarning("No camera available to render!");
     }
@@ -31,8 +31,6 @@ void RenderingSystem2D::UpdateSystem() {
     for(auto entity : systemEntities){
         auto spriteComponent = entity->GetComponent<SpriteComponent>();
         auto transformComponent = entity->GetComponent<TransformComponent>();
-
-        auto cameraTransformComponent = currentCamera->GetComponent<TransformComponent>();
 
         auto texture = spriteComponent->texture;
 

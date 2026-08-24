@@ -91,9 +91,9 @@ void ECSManager::Update(){
     LifeCycleCheck();
 };
 
-std::shared_ptr<EntityCS> ECSManager::CreateEntity(const std::string entityName, const bool internal){
+std::shared_ptr<EntityCS> ECSManager::CreateEntity(const std::string entityName){
     if(freeEntities.empty()){
-        auto entity = std::make_shared<EntityCS>(EntityCSCounter::GetEntitiesCreated(), entityName, this, internal);
+        auto entity = std::make_shared<EntityCS>(EntityCSCounter::GetEntitiesCreated(), entityName, this);
         auto entityId = entity->GetId();
 
         auto entitiesCreated = EntityCSCounter::IncreaseEntitiesCreated();

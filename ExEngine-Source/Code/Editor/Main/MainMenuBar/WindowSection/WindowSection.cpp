@@ -7,8 +7,6 @@ void WindowSection::Draw(){
     {
         if(ImGui::BeginMenu("Visualization"))
         {
-            ImGui::MenuItem("Scene View", nullptr, &EditorInterfaceGetters::sceneViewEnabled);
-            ImGui::MenuItem("Inspector", nullptr, &EditorInterfaceGetters::inspectorEnabled);
             ImGui::MenuItem("World Inspection", nullptr, &EditorInterfaceGetters::entityBrowserEnabled);
             ImGui::MenuItem("Asset Browser  [ Space ]", nullptr, &EditorInterfaceGetters::assetBrowserIsOpened);
             ImGui::MenuItem("Console", nullptr, &EditorInterfaceGetters::consoleEnabled);

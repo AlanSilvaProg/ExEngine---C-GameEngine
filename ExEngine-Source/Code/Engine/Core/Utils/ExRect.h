@@ -3,7 +3,7 @@
 #include "../../JsonUtility/IJsonConvertable.h"
 #include <glm/glm.hpp>
 
-struct ExRect : public IJsonConvertable{
+class ExRect : public IJsonConvertable{
 public:
     glm::vec2 beginRect;
     glm::vec2 endRect;

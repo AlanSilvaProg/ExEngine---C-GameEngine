@@ -11,7 +11,6 @@ private:
 
     bool showWorldEntities;
     bool showSystems;
-    bool includeInternals;
     bool editECSystemTriggered;
 
     std::shared_ptr<ECSystem> editingSystem;

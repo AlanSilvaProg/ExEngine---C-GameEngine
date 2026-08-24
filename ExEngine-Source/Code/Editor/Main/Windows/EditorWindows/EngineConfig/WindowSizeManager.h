@@ -5,9 +5,11 @@ class WindowSizeManager {
 private:
     static constexpr ImVec2 MINIMUM_WINDOW_SIZE = ImVec2(100.0f, 100.0f);
     static constexpr ImVec2 ENGINE_CONFIG_INITIAL_SIZE = ImVec2(400.0f, 600.0f);
-    
+    static constexpr ImVec2 INSPECTOR_MINIMUM_SIZE = ImVec2(420.0f, 700.0f);
+
 public:
     static void ApplyMinimumSizeConstraint(const char* windowName = nullptr);
+    static void ApplyInspectorMinimumSize();
     static void SetEngineConfigWindowProperties();
     static ImVec2 GetMinimumWindowSize();
     static ImVec2 GetEngineConfigInitialSize();
