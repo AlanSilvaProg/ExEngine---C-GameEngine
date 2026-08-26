@@ -40,6 +40,7 @@ private:
     void PostRender() const;
     void UpdateWindowTitle() const;
     void DrawNoCameraOverlay() const;
+    void ClampWindowsToViewport() const;
 
     void CreateEditorBase();
 public:

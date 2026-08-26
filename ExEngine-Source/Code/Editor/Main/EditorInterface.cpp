@@ -19,6 +19,7 @@
 #include "../../Engine/File/FileManagement.h"
 #include "../../Engine/Core/Runtime/Time/Time.h"
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_sdlrenderer2.h>
 #include <SDL.h>
@@ -104,13 +105,39 @@ void EditorInterface::EarlyUpdate() const{
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplSDLRenderer2_NewFrame();
     ImGui::NewFrame();
-    ImGui::ShowDemoWindow();
+    //ImGui::ShowDemoWindow();
     if(!App::isPlaying)
         Time::PermissionForUpdate();
 
     if(scriptHotReloadManager) scriptHotReloadManager->Poll();
 
     UpdateWindowTitle();
+    ClampWindowsToViewport();
+};
+
+// Keeps floating editor windows reachable after the OS window is resized/shrunk:
+// their last known position (from the previous frame or a loaded layout) can end up
+// outside the new display bounds, so we pull them back in every frame.
+void EditorInterface::ClampWindowsToViewport() const{
+    const ImVec2 displaySize = ImGui::GetIO().DisplaySize;
+    if(displaySize.x <= 0.0f || displaySize.y <= 0.0f) return;
+
+    constexpr float minVisible = 40.0f; // minimum sliver of the window kept on screen
+
+    for(ImGuiWindow* window : ImGui::GetCurrentContext()->Windows)
+    {
+        if(!window->WasActive) continue;
+        if(window->ParentWindow != nullptr) continue; // child/popup/docked windows follow their parent
+        if(window->Flags & ImGuiWindowFlags_ChildWindow) continue;
+
+        const ImVec2 clampedPos(
+            ImClamp(window->Pos.x, minVisible - window->Size.x, displaySize.x - minVisible),
+            ImClamp(window->Pos.y, 0.0f, displaySize.y - minVisible)
+        );
+
+        if(clampedPos.x != window->Pos.x || clampedPos.y != window->Pos.y)
+            ImGui::SetWindowPos(window, clampedPos);
+    }
 };
 
 void EditorInterface::UpdateWindowTitle() const{

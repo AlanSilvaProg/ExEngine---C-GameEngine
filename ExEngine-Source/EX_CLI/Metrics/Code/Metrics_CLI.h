@@ -40,14 +40,25 @@ class Metrics_CLI{
         std::cout << "   .h files:   " << hFiles << "\n";
         std::cout << "   .cpp files: " << cppFiles << "\n";
         std::cout << "   .hpp files: " << hppFiles << "\n";
-        std::cout << "\n📊 Total de arquivos de código: " << (hFiles + cppFiles + hppFiles) << "\n\n";
-        
+        std::cout << "\n📊 Total de arquivos de código geral: " << (hFiles + cppFiles + hppFiles) << "\n\n";
+
         // Count lines
         std::string countLines = "find " + basePath + " -name \"*.h\" -o -name \"*.cpp\" -o -name \"*.hpp\" | while read file; do wc -l \"$file\" 2>/dev/null; done | awk '{sum += $1} END {print sum}'";
         int totalLines = ExecuteAndGetNumber(countLines);
-        
-        std::cout << "📏 Total de linhas de código: " << totalLines << "\n\n";
-        
+
+        std::cout << "📏 Total de linhas de código geral: " << totalLines << "\n\n";
+
+        // Count files/lines restricted to Engine/Editor
+        std::string countEngineEditorFiles = "find " + basePath + "Code/Engine " + basePath + "Code/Editor -name \"*.h\" -o -name \"*.cpp\" -o -name \"*.hpp\" 2>/dev/null | wc -l";
+        int engineEditorFiles = ExecuteAndGetNumber(countEngineEditorFiles);
+
+        std::cout << "📊 Total de arquivos de código Engine/Editor: " << engineEditorFiles << "\n\n";
+
+        std::string countEngineEditorLines = "find " + basePath + "Code/Engine " + basePath + "Code/Editor -name \"*.h\" -o -name \"*.cpp\" -o -name \"*.hpp\" 2>/dev/null | while read file; do wc -l \"$file\" 2>/dev/null; done | awk '{sum += $1} END {print sum}'";
+        int engineEditorLines = ExecuteAndGetNumber(countEngineEditorLines);
+
+        std::cout << "📏 Total de linhas de código Engine/Editor: " << engineEditorLines << "\n\n";
+
         ShowDirectoryBreakdown(basePath);
     }
     
