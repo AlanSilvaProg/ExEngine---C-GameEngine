@@ -10,6 +10,7 @@ public:
     std::string externalTextEditorPath;
     bool physicsEnabled;
     bool drawAllPhysics;
+    bool autoSaveOnPlay;
 
     virtual nlohmann::json ToJson() override {
         //Target FPS
@@ -20,11 +21,14 @@ public:
         physicsEnabled = RuntimeSettings::GetPhysicsEnabled();
         //Draw all physics colliders in the editor Scene View
         drawAllPhysics = RuntimeSettings::GetDrawAllPhysics();
+        //Auto-save the world when pressing Play
+        autoSaveOnPlay = RuntimeSettings::GetAutoSaveOnPlay();
         return nlohmann::json{
             {"targetFramesPerSeconds", targetFramesPerSeconds},
             {"externalTextEditorPath", externalTextEditorPath},
             {"physicsEnabled", physicsEnabled},
-            {"drawAllPhysics", drawAllPhysics}
+            {"drawAllPhysics", drawAllPhysics},
+            {"autoSaveOnPlay", autoSaveOnPlay}
         };
     }
 
@@ -44,5 +48,9 @@ public:
         //Draw all physics colliders - optional for backwards compatibility with older config files
         drawAllPhysics = json.value("drawAllPhysics", true);
         RuntimeSettings::SetDrawAllPhysics(drawAllPhysics);
+
+        //Auto-save on Play - optional for backwards compatibility with older config files
+        autoSaveOnPlay = json.value("autoSaveOnPlay", false);
+        RuntimeSettings::SetAutoSaveOnPlay(autoSaveOnPlay);
     }
 };

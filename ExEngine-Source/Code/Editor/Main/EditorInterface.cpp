@@ -88,6 +88,8 @@ void EditorInterface::InitializeEditor(){
     ConfigurationManager::LoadStyleConfig();
 
     EditorInterfaceGetters::defaultIconsInformation["DefaultIcons"] = std::make_unique<SpriteInformation>("Engine-Image-Icon", ICONS_PATH / "AssetIcons.png", glm::vec2(4,2));
+    EditorInterfaceGetters::defaultIconsInformation["PlayIcon"] = std::make_unique<SpriteInformation>("Engine-Play-Icon", ICONS_PATH / "botao-play-ponta-de-seta.png", glm::vec2(1,1));
+    EditorInterfaceGetters::defaultIconsInformation["PauseIcon"] = std::make_unique<SpriteInformation>("Engine-Pause-Icon", ICONS_PATH / "pausa.png", glm::vec2(1,1));
     
     EditorUpdateEventHandler::Create();
     EditorCommandEventHandler::Create();
@@ -166,7 +168,13 @@ void EditorInterface::LateUpdate() const{
         if(Input::GetButtonDown(SDLK_BACKSPACE))
             EditorCommandEventHandler::deleteCmmd->Invoke();
     }
-    
+
+    if(mod == KMOD_NONE)
+    {
+        if(Input::GetButtonDown(SDLK_f))
+            EditorCommandEventHandler::focusSelected->Invoke();
+    }
+
     // Handle global keyboard shortcuts for Engine Config window
     EngineConfigWindow::HandleGlobalKeyboardShortcuts();
 };

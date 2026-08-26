@@ -7,7 +7,7 @@ void ToolbarWindow::Draw(int phase){
 
     ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
 
-    if(!ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar))
+    if(!ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar))
     {
         ImGui::End();
         return;

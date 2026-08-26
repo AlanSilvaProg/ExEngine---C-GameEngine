@@ -779,6 +779,7 @@ void AssetBrowserWindow::CreateHppSystemTemplate(const std::filesystem::path& pa
     std::string content =
 "#pragma once\n"
 "#include \"Code/Engine/ExEngine.h\"\n"
+"#include \"Code/Engine/Core/Runtime/App.h\"\n"
 "\n"
 "class " + className + " : public CustomECSystem{\n"
 "public:\n"
@@ -790,6 +791,8 @@ void AssetBrowserWindow::CreateHppSystemTemplate(const std::filesystem::path& pa
 "    };\n"
 "\n"
 "    void UpdateSystem() override{\n"
+"        if (!App::isPlaying)\n"
+"          return;\n"
 "\n"
 "    };\n"
 "};\n"

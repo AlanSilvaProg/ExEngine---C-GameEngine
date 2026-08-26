@@ -7,6 +7,7 @@ float RuntimeSettings::timePerFrame = 0;
 std::string RuntimeSettings::externalTextEditorPath = "";
 bool RuntimeSettings::physicsEnabled = true;
 bool RuntimeSettings::drawAllPhysics = true;
+bool RuntimeSettings::autoSaveOnPlay = false;
 
 void RuntimeSettings::SetTargetFps(int targetFps){
     targetFramesPerSeconds = targetFps;
@@ -45,4 +46,12 @@ void RuntimeSettings::SetDrawAllPhysics(bool enabled){
 
 bool RuntimeSettings::GetDrawAllPhysics(){
     return drawAllPhysics;
+};
+
+void RuntimeSettings::SetAutoSaveOnPlay(bool enabled){
+    autoSaveOnPlay = enabled;
+};
+
+bool RuntimeSettings::GetAutoSaveOnPlay(){
+    return autoSaveOnPlay;
 };

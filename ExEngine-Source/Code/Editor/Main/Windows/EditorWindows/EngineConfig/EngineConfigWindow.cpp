@@ -912,6 +912,20 @@ void EngineConfigWindow::DrawPreferencesSection() {
         ConfigurationFileManager::SaveCurrentState();
         lastChangeTime = ImGui::GetTime();
     }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+
+    ImGui::Text("Play Mode");
+    ImGui::TextWrapped("When enabled, pressing Play automatically saves the current world and starts, skipping the confirmation popup.");
+
+    bool autoSaveOnPlay = RuntimeSettings::GetAutoSaveOnPlay();
+    if(ImGui::Checkbox("Auto-save world on Play", &autoSaveOnPlay))
+    {
+        RuntimeSettings::SetAutoSaveOnPlay(autoSaveOnPlay);
+        ConfigurationFileManager::SaveCurrentState();
+        lastChangeTime = ImGui::GetTime();
+    }
 }
 
 void EngineConfigWindow::HandleGlobalKeyboardShortcuts() {

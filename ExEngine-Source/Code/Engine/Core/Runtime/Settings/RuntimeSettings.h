@@ -8,6 +8,7 @@ class RuntimeSettings{
         static std::string externalTextEditorPath;
         static bool physicsEnabled;
         static bool drawAllPhysics;
+        static bool autoSaveOnPlay;
     public:
         static void SetTargetFps(int targetFps);
         static int GetTargetFps();
@@ -22,4 +23,8 @@ class RuntimeSettings{
 
         static void SetDrawAllPhysics(bool enabled);
         static bool GetDrawAllPhysics();
+
+        //when enabled, pressing Play saves the current world and starts immediately, without a confirmation popup
+        static void SetAutoSaveOnPlay(bool enabled);
+        static bool GetAutoSaveOnPlay();
 };

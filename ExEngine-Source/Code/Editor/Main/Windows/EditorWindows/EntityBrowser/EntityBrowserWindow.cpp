@@ -62,12 +62,14 @@ void EntityBrowserWindow::Draw(int phase){
     }
 
     if(!EditorInterfaceGetters::entityBrowserEnabled) return;
+    if(!ECSWorldManager::HasCurrentWorld()) return; // world not ready yet (e.g. scripts still compiling)
+
+    auto inspectionLabel = "World Inspection - " + ECSWorldManager::GetCurrentWorldInfo().name;
 
     // Apply minimum size constraint using WindowSizeManager
-    WindowSizeManager::ApplyMinimumSizeConstraint("World Inspection");
+    WindowSizeManager::ApplyConstraintWithValidatedSize(inspectionLabel.c_str(), ImVec2(400, 500), ImGuiCond_FirstUseEver);
 
-    //ToDo include the currently scene name
-    if(!ImGui::Begin("World Inspection", &EditorInterfaceGetters::entityBrowserEnabled, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize))
+    if(!ImGui::Begin(inspectionLabel.c_str(), &EditorInterfaceGetters::entityBrowserEnabled, ImGuiWindowFlags_NoCollapse))
     {
         ImGui::End();
         return;

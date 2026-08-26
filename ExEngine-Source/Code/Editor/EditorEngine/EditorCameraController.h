@@ -12,6 +12,7 @@ private:
     glm::vec2 lastMousePos;
 
     void HandlePan();
+    void FocusOnSelection();
 public:
     EditorCameraController();
 
