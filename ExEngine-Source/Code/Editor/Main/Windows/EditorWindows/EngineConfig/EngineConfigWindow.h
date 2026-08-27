@@ -40,7 +40,7 @@ private:
 public:
     EngineConfigWindow();
     ~EngineConfigWindow();
-    void Draw(int phase) override;
+    void Draw(const int phase) override;
     bool ShouldClose() const;
     
     // Static method for keyboard shortcut handling

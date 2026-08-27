@@ -11,7 +11,7 @@ BuildSettingsWindow::BuildSettingsWindow(){
     iosIsSelected = EditorInterfaceGetters::buildTarget == BuildType::IOS;
 };
 
-void BuildSettingsWindow::Draw(int phase){
+void BuildSettingsWindow::Draw(const int phase){
     if(phase != 1 || !EditorInterfaceGetters::buildWindowEnabled) return;
 
     // Apply minimum size constraint and validate initial size using WindowSizeManager

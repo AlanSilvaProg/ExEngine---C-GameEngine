@@ -54,7 +54,13 @@ void EditorDrawBoxSystem::UpdateSystem(){
 
     auto fillColor = Color::RED;
 
-    for(auto entity : *GetSystemEntities()){
+    auto entities = systemEntities;
+
+    std::erase_if(entities, [cameraTransform](std::shared_ptr<EntityCS> entity){
+        return cameraTransform->position.z > entity->GetComponent<TransformComponent>()->position.z;
+    });
+
+    for(auto entity : entities){
         const bool isSelected = selectedEntityId >= 0 && static_cast<unsigned int>(selectedEntityId) == entity->GetId();
         if(!drawAllPhysics && !isSelected) continue;
 

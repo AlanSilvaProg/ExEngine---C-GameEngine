@@ -25,6 +25,10 @@ public:
     };
 };
 
+#ifndef SERIALIZE_COMPONENT
+#define SERIALIZE_COMPONENT
+#endif
+
 #ifndef REGISTER_COMPONENT
 #define REGISTER_COMPONENT(type)\
 namespace{\

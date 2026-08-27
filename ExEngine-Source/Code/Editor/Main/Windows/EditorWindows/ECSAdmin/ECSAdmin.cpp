@@ -22,7 +22,7 @@ ECSAdmin::ECSAdmin(){
     pendingMoveSystem = nullptr;
 };
 
-void ECSAdmin::Draw(int phase){
+void ECSAdmin::Draw(const int phase){
     if(phase != 1) return;
 
     if(!EditorInterfaceGetters::ecsAdministratorEnabled) return;

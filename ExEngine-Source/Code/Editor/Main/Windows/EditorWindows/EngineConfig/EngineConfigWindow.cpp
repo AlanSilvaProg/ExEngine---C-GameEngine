@@ -33,7 +33,7 @@ EngineConfigWindow::~EngineConfigWindow() {
     ConfigurationManager::ClearLastError();
 }
 
-void EngineConfigWindow::Draw(int phase) {
+void EngineConfigWindow::Draw(const int phase) {
     if (phase != 1) return;
 
     if (!EditorInterfaceGetters::engineConfigEnabled) return;

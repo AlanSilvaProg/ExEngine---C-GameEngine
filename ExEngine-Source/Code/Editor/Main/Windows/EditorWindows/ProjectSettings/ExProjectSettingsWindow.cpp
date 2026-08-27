@@ -8,7 +8,7 @@
 #include <imgui.h>
 #include <string>
 
-void ExProjectSettingsWindow::Draw(int phase){
+void ExProjectSettingsWindow::Draw(const int phase){
     if(phase != 1) return;
 
     if(!EditorInterfaceGetters::projectSettingsEnabled) return;

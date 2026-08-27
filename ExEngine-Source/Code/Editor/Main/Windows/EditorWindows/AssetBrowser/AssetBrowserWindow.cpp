@@ -23,7 +23,7 @@ AssetBrowserWindow::AssetBrowserWindow(){
     assetBrowserSelection = std::make_unique<AssetBrowserSelection>();
 };
 
-void AssetBrowserWindow::Draw(int phase){
+void AssetBrowserWindow::Draw(const int phase){
     if(phase != 1) return;
 
     if(Input::GetButtonDown(SDL_KeyCode::SDLK_SPACE))

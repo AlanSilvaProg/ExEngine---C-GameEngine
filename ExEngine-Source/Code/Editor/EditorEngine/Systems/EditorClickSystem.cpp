@@ -33,7 +33,11 @@ void EditorClickSystem::UpdateSystem(){
     auto mousePosition = Input::GetMousePosition();
     glm::vec2 worldMousePosition = glm::vec2(mousePosition.x, mousePosition.y) + glm::vec2(cameraTransformComponent->position.x, cameraTransformComponent->position.y);
 
-    const auto& entities = *GetSystemEntities();
+    auto entities = systemEntities;
+
+    std::erase_if(entities, [cameraTransformComponent](std::shared_ptr<EntityCS> entity){
+        return cameraTransformComponent->position.z > entity->GetComponent<TransformComponent>()->position.z;
+    });
 
     if(TrySelectEntity(entities, worldMousePosition)) return;
 

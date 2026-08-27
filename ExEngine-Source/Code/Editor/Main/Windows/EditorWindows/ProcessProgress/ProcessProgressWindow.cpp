@@ -38,7 +38,7 @@ static void DrawLoadingSpinner(const float radius, const int dotCount, const flo
     ImGui::Dummy(ImVec2(radius * 2.0f, radius * 2.0f));
 };
 
-void ProcessProgressWindow::Draw(int phase){
+void ProcessProgressWindow::Draw(const int phase){
     if(phase != 1) return;
 
     const bool hasActiveProcesses = ProcessTracker::HasActiveProcesses();

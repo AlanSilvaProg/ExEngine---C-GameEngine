@@ -40,7 +40,7 @@ ExEditor::EditorWindowDrawer::~EditorWindowDrawer(){
     windows.clear();
 };
 
-void ExEditor::EditorWindowDrawer::Draw(int phase){
+void ExEditor::EditorWindowDrawer::Draw(const int phase){
     for(auto window : windows){
         window->Draw(phase);
     }

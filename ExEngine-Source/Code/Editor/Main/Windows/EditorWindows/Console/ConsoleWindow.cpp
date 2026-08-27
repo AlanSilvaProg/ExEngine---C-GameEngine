@@ -17,7 +17,7 @@ ConsoleWindow::ConsoleWindow(){
     }
 };
 
-void ConsoleWindow::Draw(int phase){
+void ConsoleWindow::Draw(const int phase){
     if(phase != 1) return;
 
     if(!EditorInterfaceGetters::consoleEnabled) return;

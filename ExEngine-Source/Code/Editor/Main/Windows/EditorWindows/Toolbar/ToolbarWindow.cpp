@@ -2,7 +2,7 @@
 #include "../../../EditorInterfaceGetters.h"
 #include <imgui.h>
 
-void ToolbarWindow::Draw(int phase){
+void ToolbarWindow::Draw(const int phase){
     if(phase != 1) return;
 
     ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);

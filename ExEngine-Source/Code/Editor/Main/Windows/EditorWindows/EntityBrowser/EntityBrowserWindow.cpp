@@ -42,7 +42,7 @@ bool EntityBrowserWindow::IsValidSelection(){
     return false;
 };
 
-void EntityBrowserWindow::Draw(int phase){
+void EntityBrowserWindow::Draw(const int phase){
     if(phase != 1) return;
 
     bool scriptsStillCompiling = EditorInterfaceGetters::scriptHotReloadManager != nullptr

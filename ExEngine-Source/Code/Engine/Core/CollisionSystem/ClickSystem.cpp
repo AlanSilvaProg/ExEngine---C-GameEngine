@@ -4,6 +4,7 @@
 #include "../Components/TransformComponent.h"
 #include "../Rendering/Renderer/ExRendererGetters.h"
 #include "../Input/Input.h"
+#include <algorithm>
 
 ClickSystem::ClickSystem(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ecsManager){
     Require<BoxColliderComponent>(false);
@@ -11,12 +12,21 @@ ClickSystem::ClickSystem(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ec
 };
 
 void ClickSystem::UpdateSystem(){
-    const auto& entities = systemEntities;
-
     if(Input::GetMouseButtonDown(SDL_BUTTON_LEFT)){
         auto cameraTransformComponent = ExRendererGetters::currentRenderCameraTransform;
         if(cameraTransformComponent == nullptr)
             return;
+
+        auto entities = systemEntities;
+
+        std::erase_if(entities, [cameraTransformComponent](std::shared_ptr<EntityCS> entity){
+            return cameraTransformComponent->position.z > entity->GetComponent<TransformComponent>()->position.z;
+        });
+        
+        std::sort(entities.begin(), entities.end(), [](std::shared_ptr<EntityCS> firstEntity, std::shared_ptr<EntityCS> secondEntity){
+            return firstEntity->GetComponent<TransformComponent>()->position.z 
+            <= secondEntity->GetComponent<TransformComponent>()->position.z;
+        });
 
         auto mousePosition = Input::GetMousePosition();
         glm::vec2 worldMousePosition = glm::vec2(mousePosition.x, mousePosition.y) + glm::vec2(cameraTransformComponent->position.x, cameraTransformComponent->position.y);

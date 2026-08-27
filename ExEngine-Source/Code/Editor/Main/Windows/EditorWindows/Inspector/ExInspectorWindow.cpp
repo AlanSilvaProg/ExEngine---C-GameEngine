@@ -29,7 +29,7 @@ ExInspectorWindow::ExInspectorWindow(){
     pendingSelectionPath = "";
 };
 
-void ExInspectorWindow::Draw(int phase){
+void ExInspectorWindow::Draw(const int phase){
     if(phase != 1) return;
 
     // Opens automatically when something is selected, closes automatically when nothing is.

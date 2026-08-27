@@ -8,7 +8,7 @@ ECSMonitoring::ECSMonitoring(){
     ecsManagerPtr = enginePtr->GetECSManagerPtr();
 };
 
-void ECSMonitoring::Draw(int phase){
+void ECSMonitoring::Draw(const int phase){
     if(phase != 1 || !EditorInterfaceGetters::ecsMonitoringEnabled) return;
 
     // Apply minimum size constraint and validate initial size using WindowSizeManager

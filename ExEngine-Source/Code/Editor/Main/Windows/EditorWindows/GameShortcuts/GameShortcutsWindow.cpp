@@ -12,8 +12,14 @@ static const char* PlayConfirmationPopupId = "Start Play?##GameShortcutsPlayConf
 // this constant breaks that cycle so the popup shrink-wraps to a comfortably readable width.
 static constexpr float kPlayConfirmationContentWidth = 280.0f;
 
-void GameShortcutsWindow::Draw(int phase){
+void GameShortcutsWindow::Draw(const int phase){
     if(phase != 1) return;
+
+    // Auto-collapse into the thin bar the moment Play starts, regardless of which view is active.
+    if(App::isPlaying && !wasPlaying)
+        collapsed = true;
+    wasPlaying = App::isPlaying;
+
     if(EditorInterfaceGetters::viewMode != EditorViewMode::GameView) return;
 
     // Force a fully opaque background regardless of the current style's window alpha.
@@ -40,42 +46,53 @@ void GameShortcutsWindow::Draw(int phase){
 
     const ImVec2 buttonSize(32, 32);
 
-    // ImageButton adds the style's FramePadding around its image size, while Button uses the
-    // given size as-is - match that here so the Stop button renders at the exact same footprint
-    // as the Play/Pause ImageButtons instead of looking smaller.
-    const ImVec2 framePadding = ImGui::GetStyle().FramePadding;
-    const ImVec2 stopButtonSize(buttonSize.x + framePadding.x * 2.0f, buttonSize.y + framePadding.y * 2.0f);
-
-    if(App::isPlaying)
+    if(!collapsed)
     {
-        // No dedicated "stop" asset exists yet, so the icon is drawn as a plain square glyph
-        // on top of a regular button to keep the same look/feel as the Play/Pause icon buttons.
-        const bool stopPressed = ImGui::Button("##Stop", stopButtonSize);
-        const ImVec2 min = ImGui::GetItemRectMin();
-        const ImVec2 max = ImGui::GetItemRectMax();
-        const float padding = stopButtonSize.x * 0.28f;
-        ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2(min.x + padding, min.y + padding),
-            ImVec2(max.x - padding, max.y - padding),
-            ImGui::GetColorU32(ImGuiCol_Text)
-        );
+        const float rowStartX = ImGui::GetCursorScreenPos().x;
 
-        if(stopPressed) Stop();
+        // ImageButton adds the style's FramePadding around its image size, while Button uses the
+        // given size as-is - match that here so the Stop button renders at the exact same footprint
+        // as the Play/Pause ImageButtons instead of looking smaller.
+        const ImVec2 framePadding = ImGui::GetStyle().FramePadding;
+        const ImVec2 stopButtonSize(buttonSize.x + framePadding.x * 2.0f, buttonSize.y + framePadding.y * 2.0f);
+
+        if(App::isPlaying)
+        {
+            // No dedicated "stop" asset exists yet, so the icon is drawn as a plain square glyph
+            // on top of a regular button to keep the same look/feel as the Play/Pause icon buttons.
+            const bool stopPressed = ImGui::Button("##Stop", stopButtonSize);
+            const ImVec2 min = ImGui::GetItemRectMin();
+            const ImVec2 max = ImGui::GetItemRectMax();
+            const float padding = stopButtonSize.x * 0.28f;
+            ImGui::GetWindowDrawList()->AddRectFilled(
+                ImVec2(min.x + padding, min.y + padding),
+                ImVec2(max.x - padding, max.y - padding),
+                ImGui::GetColorU32(ImGuiCol_Text)
+            );
+
+            if(stopPressed) Stop();
+        }
+        else
+        {
+            ImTextureID playTextureId = (ImTextureID)(intptr_t)EditorInterfaceGetters::defaultIconsInformation["PlayIcon"]->GetTexture();
+            if(ImGui::ImageButton("PlayButton", playTextureId, buttonSize))
+                Play();
+        }
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(!App::isPlaying);
+        ImTextureID pauseTextureId = (ImTextureID)(intptr_t)EditorInterfaceGetters::defaultIconsInformation["PauseIcon"]->GetTexture();
+        if(ImGui::ImageButton("PauseButton", pauseTextureId, buttonSize))
+            Pause();
+        ImGui::EndDisabled();
+
+        lastKnownRowWidth = ImGui::GetItemRectMax().x - rowStartX;
+
+        ImGui::Spacing();
     }
-    else
-    {
-        ImTextureID playTextureId = (ImTextureID)(intptr_t)EditorInterfaceGetters::defaultIconsInformation["PlayIcon"]->GetTexture();
-        if(ImGui::ImageButton("PlayButton", playTextureId, buttonSize))
-            Play();
-    }
 
-    ImGui::SameLine();
-
-    ImGui::BeginDisabled(!App::isPlaying);
-    ImTextureID pauseTextureId = (ImTextureID)(intptr_t)EditorInterfaceGetters::defaultIconsInformation["PauseIcon"]->GetTexture();
-    if(ImGui::ImageButton("PauseButton", pauseTextureId, buttonSize))
-        Pause();
-    ImGui::EndDisabled();
+    DrawCollapseToggleBar(lastKnownRowWidth);
 
     ImGui::End();
     ImGui::PopStyleColor();
@@ -121,6 +138,19 @@ void GameShortcutsWindow::DrawPlayConfirmationPopup(){
 
         ImGui::EndPopup();
     }
+};
+
+void GameShortcutsWindow::DrawCollapseToggleBar(float width){
+    const float barHeight = 6.0f;
+
+    ImGui::InvisibleButton("##GameShortcutsCollapseToggle", ImVec2(width, barHeight));
+    if(ImGui::IsItemClicked())
+        collapsed = !collapsed;
+
+    const ImVec2 barMin = ImGui::GetItemRectMin();
+    const ImVec2 barMax = ImGui::GetItemRectMax();
+    const ImU32 barColor = ImGui::IsItemHovered() ? ImGui::GetColorU32(ImGuiCol_ButtonHovered) : ImGui::GetColorU32(ImGuiCol_Button);
+    ImGui::GetWindowDrawList()->AddRectFilled(barMin, barMax, barColor, barHeight * 0.5f);
 };
 
 void GameShortcutsWindow::StartPlay(){

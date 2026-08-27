@@ -17,18 +17,24 @@ void RenderingSystem2D::UpdateSystem() {
     if(systemEntities.size() == 0)
         return;
 
-    std::sort(systemEntities.begin(), systemEntities.end(), [this](const std::shared_ptr<EntityCS> a, const std::shared_ptr<EntityCS> b) { 
+    auto cameraTransformComponent = ExRendererGetters::currentRenderCameraTransform;
+
+    auto entities = systemEntities;
+
+    std::erase_if(entities, [cameraTransformComponent](std::shared_ptr<EntityCS> entity){
+        return cameraTransformComponent->position.z > entity->GetComponent<TransformComponent>()->position.z;
+    });
+
+    std::sort(entities.begin(), entities.end(), [this](const std::shared_ptr<EntityCS> a, const std::shared_ptr<EntityCS> b) { 
               return this->RenderOrderCheck(a, b); 
           });
-
-    auto cameraTransformComponent = ExRendererGetters::currentRenderCameraTransform;
 
     if(cameraTransformComponent == nullptr)
     {
         Logger::LogWarning("No camera available to render!");
     }
 
-    for(auto entity : systemEntities){
+    for(auto entity : entities){
         auto spriteComponent = entity->GetComponent<SpriteComponent>();
         auto transformComponent = entity->GetComponent<TransformComponent>();
 

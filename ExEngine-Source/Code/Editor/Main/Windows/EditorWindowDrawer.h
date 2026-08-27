@@ -11,7 +11,7 @@ private:
 public:
     EditorWindowDrawer();
     ~EditorWindowDrawer();
-    void Draw(int phase); // 0 == early 1 == late
+    void Draw(const int phase); // 0 == early 1 == late
 
     static void AddWindow(std::shared_ptr<EditorWindow> window);
     static void RemoveWindow(std::shared_ptr<EditorWindow> window);
