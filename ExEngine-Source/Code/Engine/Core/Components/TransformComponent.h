@@ -33,16 +33,11 @@ public:
         this->rotation += rotation;
     };
 
-    virtual ExSerializedClass Serialize() override{
-        return ExSerializedClass{
-            Demangle(typeid(*this).name()),
-            {
-                EX_SERIALIZER((*this), position, true),
-                EX_SERIALIZER((*this), rotation, true),
-                EX_SERIALIZER((*this), scale, true)
-            }
-        };
-    };
+    EX_SERIALIZE_CLASS(
+        EX_SERIALIZER((*this), position, true),
+        EX_SERIALIZER((*this), rotation, true),
+        EX_SERIALIZER((*this), scale, true)
+    )
 
     virtual nlohmann::json ToJson() override {
         return {

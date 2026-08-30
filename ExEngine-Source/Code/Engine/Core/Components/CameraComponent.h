@@ -14,14 +14,9 @@ public:
         display = camera.display;
     };
 
-    virtual ExSerializedClass Serialize() override{
-        return ExSerializedClass{
-            Demangle(typeid(*this).name()),
-            {
-                EX_SERIALIZER((*this), display, true)
-            }
-        };
-    };
+    EX_SERIALIZE_CLASS(
+        EX_SERIALIZER((*this), display, true)
+    )
 
     virtual nlohmann::json ToJson() override {
         return {

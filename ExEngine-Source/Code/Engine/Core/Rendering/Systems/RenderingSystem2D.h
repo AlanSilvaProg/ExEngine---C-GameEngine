@@ -10,7 +10,7 @@ private:
 public:
     RenderingSystem2D();
 
-    void UpdateSystem() override;
+    void UpdateSystem(SystemContext systemContext) override;
     
     inline const char* SystemName() override { return TYPE_NAME(RenderingSystem2D); }; 
 };

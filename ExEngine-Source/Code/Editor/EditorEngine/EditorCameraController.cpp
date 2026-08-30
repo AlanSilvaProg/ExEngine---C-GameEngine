@@ -31,7 +31,7 @@ void EditorCameraController::Update(){
     SDL_SetRenderDrawColor(ExRendererGetters::renderer, color->r, color->g, color->b, color->a);
     SDL_RenderClear(ExRendererGetters::renderer);
 
-    renderingSystem->UpdateSystem();
+    renderingSystem->UpdateSystem(SystemContext::PRE_RENDER);
 };
 
 void EditorCameraController::HandlePan(){

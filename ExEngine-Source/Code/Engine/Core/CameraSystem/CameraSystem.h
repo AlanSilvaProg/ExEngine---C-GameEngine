@@ -10,8 +10,8 @@ private:
 public:
     CameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem);
 
-    void UpdateSystem() override;
-    void RenderCamera(std::shared_ptr<EntityCS> camera);
+    void UpdateSystem(SystemContext systemContext) override;
+    void RenderCamera(std::shared_ptr<EntityCS> camera, SystemContext systemContext);
 
     inline const char* SystemName() override { return TYPE_NAME(CameraSystem); };
 };

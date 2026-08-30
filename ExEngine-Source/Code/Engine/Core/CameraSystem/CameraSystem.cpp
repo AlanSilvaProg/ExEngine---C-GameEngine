@@ -13,7 +13,7 @@ CameraSystem::CameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem){
     this->renderingSystem = renderingSystem;
 };
 
-void CameraSystem::UpdateSystem(){
+void CameraSystem::UpdateSystem(SystemContext systemContext){
     auto allEntities = *GetSystemEntities();
     std::shared_ptr<EntityCS> currentCamera = nullptr;
     
@@ -34,7 +34,7 @@ void CameraSystem::UpdateSystem(){
         if(currentCameraComponent->display < nextCameraComponent->display)
             currentCamera = camera;
     }
-    RenderCamera(currentCamera);
+    RenderCamera(currentCamera, systemContext);
 
 #ifndef EXENGINE_EDITOR
     // In the editor, the frame is presented once by EditorInterface after ImGui draws on top.
@@ -42,7 +42,7 @@ void CameraSystem::UpdateSystem(){
 #endif
 };
 
-void CameraSystem::RenderCamera(std::shared_ptr<EntityCS> camera){
+void CameraSystem::RenderCamera(std::shared_ptr<EntityCS> camera, SystemContext systemContext){
     if(camera == nullptr)
     {
         NoCameraEventHandler::noCameraHandler->Invoke();
@@ -58,5 +58,5 @@ void CameraSystem::RenderCamera(std::shared_ptr<EntityCS> camera){
     //ToDo, may it doesn't works with overlay cameras
     SDL_RenderClear(ExRendererGetters::renderer); 
 
-    renderingSystem->UpdateSystem();
+    renderingSystem->UpdateSystem(systemContext);
 };

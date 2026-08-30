@@ -1,31 +1,33 @@
 #pragma once
-#include "../SpecialFields/SpriteReferenceField/SpriteReference.h"
-#include "../Rendering/Layer/LayerAttributes.h"
-#include "../ECS/InternalRegistry/ComponentRegistry.h"
-#include "../Utils/Algorithms/JsonExtensions.h"
 #include "../../JsonUtility/IJsonConvertable.h"
-#include <SDL.h>
+#include "EntityContent.h"
+#include <nlohmann/json.hpp>
 
 class AnimationStep : public IJsonConvertable{
-    SDL_Texture* texture;
-    SDL_Rect* srcRect;
-
+private:
+    EntityContent stepContent;
+    bool returned;
 public:
-    float durantionInSecs; //by rule, it rounds over every 0,5 unit ( can't be 0.2 )
-    SpriteReference spriteReference;
-    LayerAttributes layerAttributes;
+    float secondsToTrigger;
 
-    virtual nlohmann::json ToJson() override{
+    inline void SetNewSetStateContent(const EntityContent& content) { stepContent = content; };
+    inline EntityContent& GetStepStateContent(){
+        returned = true;
+        return stepContent;
+    };
+
+    inline const bool WasReturned() const { return returned; };
+    inline void ResetStep() { returned = false; };
+
+    inline virtual nlohmann::json ToJson() override{
         return {
-            {"durantionInSecs", durantionInSecs},
-            {"spriteReference", spriteReference.ToJson()},
-            {"layerAttributes", layerAttributes.ToJson()}
+            {"stepContent", stepContent.ToJson()},
+            {"secondsToTrigger", secondsToTrigger}
         };
     };
 
-    virtual void FromJson(const nlohmann::json& json) override{
-        if (json.contains("durantionInSecs")) durantionInSecs = json["durantionInSecs"].get<float>();
-        if (json.contains("spriteReference")) spriteReference.FromJson(json["spriteReference"]);
-        if (json.contains("layerAttributes")) layerAttributes.FromJson(json["layerAttributes"]);
+    inline virtual void FromJson(const nlohmann::json& json) override{
+        if (json.contains("stepContent")) stepContent.FromJson(json["stepContent"]);
+        if (json.contains("secondsToTrigger")) secondsToTrigger = json["secondsToTrigger"].get<float>();
     };
 };

@@ -14,16 +14,11 @@ public:
 
     std::string layerId() const { return _layerId; };
 
-    virtual ExSerializedClass Serialize() override{
-        return ExSerializedClass{
-            Demangle(typeid(*this).name()),
-            {
-                EX_SERIALIZER((*this), _layerId, false),
-                EX_SERIALIZER((*this), layerIndex, true),
-                EX_SERIALIZER((*this), layerOrderIndex, true)
-            }
-        };
-    };
+    EX_SERIALIZE_CLASS(
+        EX_SERIALIZER((*this), _layerId, false),
+        EX_SERIALIZER((*this), layerIndex, true),
+        EX_SERIALIZER((*this), layerOrderIndex, true)
+    )
 
     virtual nlohmann::json ToJson() override {
         return {

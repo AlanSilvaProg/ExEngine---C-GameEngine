@@ -20,7 +20,7 @@ EditorDrawBoxSystem::EditorDrawBoxSystem(){
     Require<TransformComponent>(false);
 };
 
-void EditorDrawBoxSystem::UpdateSystem(){
+void EditorDrawBoxSystem::UpdateSystem(SystemContext systemContext){
     if(EditorInterfaceGetters::viewMode != EditorViewMode::SceneView) return;
 
     auto renderer = ExRendererGetters::renderer;

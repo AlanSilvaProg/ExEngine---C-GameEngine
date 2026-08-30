@@ -11,7 +11,7 @@ ClickSystem::ClickSystem(std::shared_ptr<ECSManager> ecsManager) : ecsManager(ec
     Require<TransformComponent>(false);
 };
 
-void ClickSystem::UpdateSystem(){
+void ClickSystem::UpdateSystem(SystemContext systemContext){
     if(Input::GetMouseButtonDown(SDL_BUTTON_LEFT)){
         auto cameraTransformComponent = ExRendererGetters::currentRenderCameraTransform;
         if(cameraTransformComponent == nullptr)

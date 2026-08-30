@@ -7,5 +7,5 @@ EditorSelectionController::EditorSelectionController(){
     auto ecsmanager = EditorInterfaceGetters::engine->GetECSManagerPtr();
     clickSystem = ecsmanager->CreateSystem<EditorClickSystem>();
 
-    *EditorUpdateEventHandler::earlyHandler += [this](){ clickSystem->UpdateSystem(); };
+    *EditorUpdateEventHandler::earlyHandler += [this](){ clickSystem->UpdateSystem(SystemContext::EARLY_UPDATE); };
 };

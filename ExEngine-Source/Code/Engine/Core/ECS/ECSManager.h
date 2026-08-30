@@ -5,6 +5,7 @@
 #include "Pool/IPool.h"
 #include "Pool/EComponentSPoolManager.h"
 #include "EntityCounter/EntityCSCounter.h"
+#include "ComponentUpdate.h"
 #include "../../Logger/Logger.h"
 #include <vector>
 #include <deque>
@@ -41,8 +42,8 @@ public:
     void ChangeName(const std::string name);
     const std::string GetName() const;
 
-    void KillImmediately();
-    void Kill();
+    void UpdateComponentsByJson(const nlohmann::json& componentsContent);
+
     Signature& GetComponentSignature() const;
 
     template<typename TComponent, typename ...TArgs>
@@ -57,12 +58,24 @@ public:
     template<typename TComponent>
     void RemoveComponent() const;
     void RemoveComponent(const int componentId) const;
+    void ApplyComponentUpdate(const ComponentUpdate& update) const;
 
+    void KillImmediately();
+    void Kill();
 };
 
 
 // System
 
+
+enum SystemContext{
+    EARLY_UPDATE,
+    UPDATE,
+    FIXED_UPDATE,
+    LATE_UPDATE,
+    PRE_RENDER,
+    POST_RENDER
+};
 
 class ECSystem {
 protected:
@@ -84,7 +97,7 @@ public:
     void RemoveEntity(const int id);
     void ClearEntities();
     void RemoveRequirement(const int componentId);
-    virtual void UpdateSystem(){};
+    virtual void UpdateSystem(SystemContext systemContext){};
 
     virtual const char* SystemName() = 0; //adicionar nome para os sistemas
 };
@@ -119,16 +132,6 @@ public:
 
 
 // System Context
-
-
-enum SystemContext{
-    EARLY_UPDATE,
-    UPDATE,
-    FIXED_UPDATE,
-    LATE_UPDATE,
-    PRE_RENDER,
-    POST_RENDER
-};
 
 struct SystemEntry {
     std::type_index type;
@@ -218,6 +221,8 @@ public:
     void RemoveComponent(std::shared_ptr<EntityCS> entity);
     void RemoveComponent(const int entityId, const int componentId);
     void RemoveAllComponents(std::shared_ptr<EntityCS> entity);
+    void UpdateEntityComponentsByJson(const int id, const nlohmann::json& componentsContent);
+    bool ApplyComponentUpdate(const int entityId, const ComponentUpdate& update);
     Signature& GetEntitySignature(const int id);
     const std::vector<std::shared_ptr<IPool>>& GetEntityComponentPools() const;
 
@@ -235,8 +240,6 @@ public:
     std::shared_ptr<CustomECSystem> CreateCustomSystem(TArgs&& ...args);
     template<typename TSystem>
     std::shared_ptr<TSystem> GetSystem() const;
-    template<typename TSystem>
-    void UpdateSystem();
 
     void SetToValidation(const int entityId);
 };
@@ -362,15 +365,6 @@ std::shared_ptr<TSystem> ECSManager::GetSystem()const {
         return std::dynamic_pointer_cast<TSystem>(it->second);
     }
     return nullptr; // ou lançar exceção, conforme seu caso
-};
-
-template<typename TSystem>
-void ECSManager::UpdateSystem(){
-    auto system = GetSystem<TSystem>();
-    if(system != systems.end())
-    {
-        static_cast<std::shared_ptr<ECSystem>>(system)->UpdateSystem();
-    }
 };
 
 

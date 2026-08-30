@@ -11,7 +11,7 @@ EditorClickSystem::EditorClickSystem(){
     Require<TransformComponent>(false);
 };
 
-void EditorClickSystem::UpdateSystem(){
+void EditorClickSystem::UpdateSystem(SystemContext systemContext){
     if(EditorInterfaceGetters::viewMode != EditorViewMode::SceneView) return;
     if(ImGui::GetIO().WantCaptureMouse) return;
 

@@ -74,15 +74,10 @@ public:
         return *this;
     };
 
-    virtual ExSerializedClass Serialize() override{
-        return ExSerializedClass{
-            Demangle(typeid(*this).name()),
-            {
-                EX_SERIALIZER_CB((*this), spriteReference, true, ([this](){ SetSprite(spriteReference.id, spriteReference.path); })),
-                EX_SERIALIZER((*this), layerAttributes, true)
-            }
-        };
-    };
+    EX_SERIALIZE_CLASS(
+        EX_SERIALIZER_CB((*this), spriteReference, true, ([this](){ SetSprite(spriteReference.id, spriteReference.path); })),
+        EX_SERIALIZER((*this), layerAttributes, true)
+    )
 
     virtual nlohmann::json ToJson() override {
         return {

@@ -7,5 +7,5 @@ GizmosController::GizmosController(){
     auto ecsmanager = EditorInterfaceGetters::engine->GetECSManagerPtr();
     drawBoxSystem = ecsmanager->CreateSystem<EditorDrawBoxSystem>();
 
-     *EditorUpdateEventHandler::earlyHandler += [this](){ drawBoxSystem->UpdateSystem(); };
+     *EditorUpdateEventHandler::earlyHandler += [this](){ drawBoxSystem->UpdateSystem(SystemContext::EARLY_UPDATE); };
 };

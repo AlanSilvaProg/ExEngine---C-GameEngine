@@ -17,14 +17,9 @@ public:
     };
     ~BoxColliderComponent() = default;
 
-    virtual ExSerializedClass Serialize() override{
-        return ExSerializedClass{
-            Demangle(typeid(*this).name()),
-            {
-                EX_SERIALIZER((*this), exRect, true)
-            }
-        };
-    };
+    EX_SERIALIZE_CLASS(
+        EX_SERIALIZER((*this), exRect, true)
+    )
 
     virtual nlohmann::json ToJson() override {
         return {

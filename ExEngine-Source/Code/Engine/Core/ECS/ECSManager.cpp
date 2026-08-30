@@ -3,6 +3,7 @@
 #include "../Rendering/Renderer/RendererEvent/PreRenderEventHandler.h"
 #include "../../GameCore/Runtime/RuntimeEvent/GameUpdateEventHandler.h"
 #include "../Serializer/Demangle.h"
+#include "../Serializer/ExSerializedFieldSetter.h"
 #include "../UID/UID.h"
 #include <new>
 #include <memory>
@@ -206,6 +207,29 @@ bool ECSManager::HasComponent(const int entityId, const int componentId){
     return GetEntitySignature(entityId)[componentId];
 };
 
+void ECSManager::UpdateEntityComponentsByJson(const int id, const nlohmann::json& componentsContent){
+    //ToDo update entity components based on json
+};
+
+bool ECSManager::ApplyComponentUpdate(const int entityId, const ComponentUpdate& update){
+    if(!HasComponent(entityId, update.componentId)) return false;
+
+    auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentPools[update.componentId]);
+    if(castedPoolManager == nullptr) return false;
+
+    auto component = castedPoolManager->GetComponent(entityId);
+    if(component == nullptr) return false;
+
+    auto serializedComponent = component->Serialize();
+    for(const auto& field : serializedComponent.serializedFields)
+    {
+        if(field.fieldName != update.fieldName) continue;
+        return ExSerializedFieldSetter::TrySetValueFromJson(field, update.newValue);
+    }
+
+    return false;
+};
+
 Signature& ECSManager::GetEntitySignature(const int id){
     return entitiesSignature[id];
 };
@@ -289,6 +313,14 @@ void EntityCS::ChangeName(const std::string name){
     this->name = name;
 };
 
+const std::string EntityCS::GetName() const{
+    return name;
+};
+
+void EntityCS::UpdateComponentsByJson(const nlohmann::json& componentsContent){
+    ecsManager->UpdateEntityComponentsByJson(id, componentsContent);
+};
+
 Signature& EntityCS::GetComponentSignature() const{
     return ecsManager->GetEntitySignature(GetId());
 };
@@ -297,16 +329,16 @@ void EntityCS::RemoveComponent(const int componentId) const{
     ecsManager->RemoveComponent(GetId(), componentId);
 };
 
+void EntityCS::ApplyComponentUpdate(const ComponentUpdate& update) const{
+    ecsManager->ApplyComponentUpdate(GetId(), update);
+};
+
 void EntityCS::KillImmediately(){
     ecsManager->DestroyEntityImmediately(id);
 };
 
 void EntityCS::Kill(){
     ecsManager->DestroyEntity(ecsManager->GetEntity(id));
-};
-
-const std::string EntityCS::GetName() const{
-    return name;
 };
 
 //System
@@ -401,12 +433,12 @@ bool ECSystem::CheckForRegisteredId(const int componentId) const{
 void ECSystemContext::UpdateContext(){
     for(auto& systemEntry : systemEntries)
     {
-        systemEntry.system->UpdateSystem();
+        systemEntry.system->UpdateSystem(systemContext);
     }
 
     for(auto& systemEntry : customSystemEntries)
     {
-        systemEntry->UpdateSystem();
+        systemEntry->UpdateSystem(systemContext);
     }
 };
 

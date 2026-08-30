@@ -18,7 +18,7 @@ private:
 public:
     EditorClickSystem();
 
-    void UpdateSystem() override;
+    void UpdateSystem(SystemContext systemContext) override;
     bool CheckBounds(const std::shared_ptr<EntityCS> entity, const glm::vec2& worldMousePosition) const;
     inline const char* SystemName() override { return TYPE_NAME(EditorClickSystem); };
 };

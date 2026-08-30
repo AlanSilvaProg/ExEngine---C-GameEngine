@@ -13,7 +13,7 @@ RenderingSystem2D::RenderingSystem2D(){
     assetManager = AssetManager::GetInstance();
 };
 
-void RenderingSystem2D::UpdateSystem() {
+void RenderingSystem2D::UpdateSystem(SystemContext systemContext) {
     if(systemEntities.size() == 0)
         return;
 

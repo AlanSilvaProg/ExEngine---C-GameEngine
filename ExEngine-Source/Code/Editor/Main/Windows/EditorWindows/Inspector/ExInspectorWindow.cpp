@@ -5,6 +5,7 @@
 #include "../../../../Utils/FileSystemOpener.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/Serializer/ISerializable.h"
+#include "../../../../../Engine/Core/Serializer/ExSerializedFieldSetter.h"
 #include "../../../../../Engine/Core/Rendering/Layer/LayerAttributes.h"
 #include "../../../../../Engine/Core/ECS/Component/EComponentS.h"
 #include "../../../../../Engine/Core/Components/TransformComponent.h"
@@ -250,11 +251,7 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
             ImGui::SameLine();
             if(ImGui::SmallButton("Clear"))
             {
-                spriteReference->id.clear();
-                spriteReference->path.clear();
-
-                if(exSerializedField.onFieldChanged)
-                    exSerializedField.onFieldChanged();
+                ExSerializedFieldSetter::TrySetValue(exSerializedField, SpriteReference());
             }
         }
         else{
@@ -264,10 +261,10 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
         if(ImGui::BeginDragDropTarget()){
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(std::to_string(ElementTypeId::SPRITE).c_str())){
                 auto spritePayload = *(const nlohmann::json*)payload->Data;
-                spriteReference->FromJson(spritePayload);
+                SpriteReference updatedSpriteReference = *spriteReference;
+                updatedSpriteReference.FromJson(spritePayload);
 
-                if(exSerializedField.onFieldChanged)
-                    exSerializedField.onFieldChanged();
+                ExSerializedFieldSetter::TrySetValue(exSerializedField, updatedSpriteReference);
             }
             ImGui::EndDragDropTarget();
         }
@@ -302,11 +299,10 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
                 }
                 else
                 {
-                    spriteReference->id = selectedPath.stem().string();
-                    spriteReference->path = selectedPath;
-
-                    if(exSerializedField.onFieldChanged)
-                        exSerializedField.onFieldChanged();
+                    ExSerializedFieldSetter::TrySetValue(
+                        exSerializedField,
+                        SpriteReference(selectedPath.stem().string(), selectedPath)
+                    );
                 }
             }
         }
