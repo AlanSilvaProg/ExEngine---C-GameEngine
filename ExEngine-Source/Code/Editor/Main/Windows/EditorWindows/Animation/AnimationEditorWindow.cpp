@@ -89,21 +89,23 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
 
     float headTime = getCurrentTime();
     ImGui::SetNextItemWidth(100);
-    if(ImGui::InputFloat("Head Time", &headTime, 0.0f, 0.0f, "%.2fs"))
+    if(ImGui::DragFloat("Head Time", &headTime, 0.05f, 0.0f, kTimelineMaxSeconds, "%.2fs"))
         setCurrentTime(headTime);
 
-    // No native scrollbar: panning is done via arrow keys / Ctrl+drag, and the bottom
-    // strip that would've held the scrollbar instead hosts the zoom bar below.
-    if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders))
+    // No native scrollbars: panning is done via arrow keys / Ctrl+drag, and the bottom
+    // strip that would've held the horizontal scrollbar instead hosts the zoom bar below.
+    // NoScrollbar/NoScrollWithMouse only hide the decorations; SetScrollX still works.
+    if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         const ImVec2 viewportPos = ImGui::GetWindowPos();
         const ImVec2 viewportSize = ImGui::GetWindowSize();
 
-        constexpr float kZoomBarHeight = 16.0f;
+        // Same thickness as a native scrollbar, so it respects the engine's style config.
+        const float zoomBarHeight = ImGui::GetStyle().ScrollbarSize;
         constexpr float kZoomBarSpacing = 4.0f;
 
         const float availableWidth = ImGui::GetContentRegionAvail().x;
-        const float canvasHeight = ImGui::GetContentRegionAvail().y - kZoomBarHeight - kZoomBarSpacing;
+        const float canvasHeight = ImGui::GetContentRegionAvail().y - zoomBarHeight - kZoomBarSpacing;
         const float timelineWidth = kTimelineMaxSeconds * timelinePixelsPerSecond;
 
         ImGui::InvisibleButton("Timeline Area", ImVec2(timelineWidth, canvasHeight));
@@ -200,12 +202,21 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         );
 
         // Thin full-width bar in place of the old scrollbar: dragging it sets zoom, not scroll.
-        ImGui::SetCursorScreenPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y - kZoomBarHeight));
+        // Borrows the scrollbar's own colors/rounding/thickness so it reads as a native scrollbar.
+        ImGuiStyle& style = ImGui::GetStyle();
+        ImGui::SetCursorScreenPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y - zoomBarHeight));
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, style.Colors[ImGuiCol_ScrollbarBg]);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, style.Colors[ImGuiCol_ScrollbarBg]);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, style.Colors[ImGuiCol_ScrollbarBg]);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab, style.Colors[ImGuiCol_ScrollbarGrab]);
+        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, style.Colors[ImGuiCol_ScrollbarGrabActive]);
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-        ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 8.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, style.GrabMinSize);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, style.ScrollbarRounding);
         ImGui::SetNextItemWidth(viewportSize.x);
         ImGui::SliderFloat("##timelineZoom", &timelinePixelsPerSecond, 20.0f, 1000.0f, "");
-        ImGui::PopStyleVar(2);
+        ImGui::PopStyleVar(3);
+        ImGui::PopStyleColor(5);
     }
     ImGui::EndChild();
 };
