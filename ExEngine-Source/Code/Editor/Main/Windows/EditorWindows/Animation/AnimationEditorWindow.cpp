@@ -71,11 +71,32 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
     // clock-like subdivision: a labeled half-second mark plus 0.1s dashes.
     constexpr float kFineTickThresholdSeconds = 20.0f;
 
-    ImGui::SetNextItemWidth(200);
-    ImGui::SliderFloat("Zoom", &timelinePixelsPerSecond, 20.0f, 1000.0f, "%.0f px/s");
+    auto getCurrentTime = [&]() -> float {
+        return animationComponent != nullptr ? animationComponent->currentTime : previewPlayheadTime;
+    };
+    auto setCurrentTime = [&](float time){
+        time = std::clamp(time, 0.0f, kTimelineMaxSeconds);
+        if(animationComponent != nullptr)
+        {
+            const float clipDuration = std::max(animationComponent->animationInfo.GetAnimationDurationInSecs(), 0.0f);
+            animationComponent->EvaluateTo(std::min(time, clipDuration));
+        }
+        else
+        {
+            previewPlayheadTime = time;
+        }
+    };
+
+    float headTime = getCurrentTime();
+    ImGui::SetNextItemWidth(100);
+    if(ImGui::InputFloat("Head Time", &headTime, 0.0f, 0.0f, "%.2fs"))
+        setCurrentTime(headTime);
 
     if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar))
     {
+        const ImVec2 viewportPos = ImGui::GetWindowPos();
+        const ImVec2 viewportSize = ImGui::GetWindowSize();
+
         const float availableWidth = ImGui::GetContentRegionAvail().x;
         const float availableHeight = ImGui::GetContentRegionAvail().y;
         const float timelineWidth = kTimelineMaxSeconds * timelinePixelsPerSecond;
@@ -88,6 +109,15 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         drawList->AddRectFilled(areaMin, areaMax, IM_COL32(40, 40, 40, 255));
+
+        // Left/Right arrow keys nudge the view by 1 second while hovering the timeline.
+        if(ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+        {
+            if(ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+                ImGui::SetScrollX(std::max(ImGui::GetScrollX() - timelinePixelsPerSecond, 0.0f));
+            if(ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+                ImGui::SetScrollX(std::min(ImGui::GetScrollX() + timelinePixelsPerSecond, ImGui::GetScrollMaxX()));
+        }
 
         // Only build ticks for the currently scrolled-into-view range. Native child
         // scrolling already refuses to go past t=0 or past the fixed max duration.
@@ -111,41 +141,49 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             const bool isHalfSecond = fineTicks && !isWholeSecond && (i % ticksPerSecond) == ticksPerSecond / 2;
 
             const float x = areaMin.x + t * timelinePixelsPerSecond;
-            const float tickTop = isWholeSecond ? areaMin.y : (isHalfSecond
-                ? areaMin.y + (areaMax.y - areaMin.y) * 0.35f
-                : areaMin.y + (areaMax.y - areaMin.y) * 0.6f);
-            const int tickAlpha = isWholeSecond ? 255 : (isHalfSecond ? 200 : 130);
-
-            drawList->AddLine(ImVec2(x, tickTop), ImVec2(x, areaMax.y), IM_COL32(90, 90, 90, tickAlpha));
 
             if(isWholeSecond)
+            {
+                // Only the whole-second marks cross the full height of the timeline.
+                drawList->AddLine(ImVec2(x, areaMin.y), ImVec2(x, areaMax.y), IM_COL32(90, 90, 90, 255));
                 drawList->AddText(ImVec2(x + 2, areaMin.y + 2), IM_COL32(200, 200, 200, 255), (std::to_string(static_cast<int>(std::lround(t))) + "s").c_str());
-            else if(isHalfSecond)
+                continue;
+            }
+
+            // Sub-second dashes stay pinned to the top and stay small; their label sits
+            // right below where the dash ends instead of floating up at the top.
+            const float tickHeight = isHalfSecond ? 12.0f : 6.0f;
+            const float tickBottom = areaMin.y + tickHeight;
+            const int tickAlpha = isHalfSecond ? 200 : 130;
+
+            drawList->AddLine(ImVec2(x, areaMin.y), ImVec2(x, tickBottom), IM_COL32(90, 90, 90, tickAlpha));
+
+            if(isHalfSecond)
             {
                 char label[16];
                 std::snprintf(label, sizeof(label), "%.1f", t);
-                drawList->AddText(ImVec2(x + 2, areaMin.y + 2), IM_COL32(160, 160, 160, 255), label);
+                drawList->AddText(ImVec2(x + 2, tickBottom + 2), IM_COL32(160, 160, 160, 255), label);
             }
         }
 
         if(isActive && ImGui::IsMouseDown(ImGuiMouseButton_Left))
         {
-            const float mouseX = ImGui::GetIO().MousePos.x;
-            float newTime = (mouseX - areaMin.x) / timelinePixelsPerSecond;
-            newTime = std::clamp(newTime, 0.0f, kTimelineMaxSeconds);
+            ImGuiIO& io = ImGui::GetIO();
+            const bool isCtrlOrCmdPressed = io.KeyCtrl || io.KeySuper;
 
-            if(animationComponent != nullptr)
+            if(isCtrlOrCmdPressed)
             {
-                const float clipDuration = std::max(animationComponent->animationInfo.GetAnimationDurationInSecs(), 0.0f);
-                animationComponent->EvaluateTo(std::min(newTime, clipDuration));
+                // Same modifier+drag the editor camera uses to pan, applied here to scroll the timeline.
+                ImGui::SetScrollX(std::clamp(ImGui::GetScrollX() - io.MouseDelta.x, 0.0f, ImGui::GetScrollMaxX()));
             }
             else
             {
-                previewPlayheadTime = newTime;
+                const float newTime = (io.MousePos.x - areaMin.x) / timelinePixelsPerSecond;
+                setCurrentTime(newTime);
             }
         }
 
-        const float playheadTime = animationComponent != nullptr ? animationComponent->currentTime : previewPlayheadTime;
+        const float playheadTime = getCurrentTime();
         const float playheadX = areaMin.x + std::clamp(playheadTime, 0.0f, kTimelineMaxSeconds) * timelinePixelsPerSecond;
         drawList->AddLine(ImVec2(playheadX, areaMin.y), ImVec2(playheadX, areaMax.y), IM_COL32(255, 60, 60, 255), 2.0f);
         drawList->AddTriangleFilled(
@@ -154,6 +192,18 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             ImVec2(playheadX, areaMin.y + 8),
             IM_COL32(255, 60, 60, 255)
         );
+
+        // Bare zoom knob, no label/value text, anchored to the timeline viewport's
+        // bottom-right corner so it stays put regardless of scroll position.
+        constexpr float kZoomSliderWidth = 90.0f;
+        constexpr float kZoomMargin = 10.0f;
+        const float zoomSliderBottomOffset = kZoomMargin + ImGui::GetStyle().ScrollbarSize;
+        ImGui::SetCursorScreenPos(ImVec2(
+            viewportPos.x + viewportSize.x - kZoomSliderWidth - kZoomMargin,
+            viewportPos.y + viewportSize.y - ImGui::GetFrameHeight() - zoomSliderBottomOffset
+        ));
+        ImGui::SetNextItemWidth(kZoomSliderWidth);
+        ImGui::SliderFloat("##timelineZoom", &timelinePixelsPerSecond, 20.0f, 1000.0f, "");
     }
     ImGui::EndChild();
 };
