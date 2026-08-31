@@ -89,8 +89,12 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
 
     float headTime = getCurrentTime();
     ImGui::SetNextItemWidth(100);
+    bool headTimeEdited = false;
     if(ImGui::DragFloat("Head Time", &headTime, 0.05f, 0.0f, kTimelineMaxSeconds, "%.2fs"))
+    {
         setCurrentTime(headTime);
+        headTimeEdited = true;
+    }
 
     // No native scrollbars: panning is done via arrow keys / Ctrl+drag, and the bottom
     // strip that would've held the horizontal scrollbar instead hosts the zoom bar below.
@@ -124,6 +128,20 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
                 ImGui::SetScrollX(std::max(ImGui::GetScrollX() - timelinePixelsPerSecond, 0.0f));
             if(ImGui::IsKeyPressed(ImGuiKey_RightArrow))
                 ImGui::SetScrollX(std::min(ImGui::GetScrollX() + timelinePixelsPerSecond, ImGui::GetScrollMaxX()));
+        }
+
+        // Editing the head time box can set a time outside the current view; force the
+        // scroll to follow so the playhead never ends up hidden off-screen.
+        if(headTimeEdited)
+        {
+            const float editedPlayheadX = getCurrentTime() * timelinePixelsPerSecond;
+            float desiredScroll = ImGui::GetScrollX();
+            if(editedPlayheadX < desiredScroll)
+                desiredScroll = editedPlayheadX;
+            else if(editedPlayheadX > desiredScroll + availableWidth)
+                desiredScroll = editedPlayheadX - availableWidth;
+
+            ImGui::SetScrollX(std::clamp(desiredScroll, 0.0f, ImGui::GetScrollMaxX()));
         }
 
         // Only build ticks for the currently scrolled-into-view range. Native child
