@@ -92,16 +92,21 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
     if(ImGui::InputFloat("Head Time", &headTime, 0.0f, 0.0f, "%.2fs"))
         setCurrentTime(headTime);
 
-    if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar))
+    // No native scrollbar: panning is done via arrow keys / Ctrl+drag, and the bottom
+    // strip that would've held the scrollbar instead hosts the zoom bar below.
+    if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders))
     {
         const ImVec2 viewportPos = ImGui::GetWindowPos();
         const ImVec2 viewportSize = ImGui::GetWindowSize();
 
+        constexpr float kZoomBarHeight = 16.0f;
+        constexpr float kZoomBarSpacing = 4.0f;
+
         const float availableWidth = ImGui::GetContentRegionAvail().x;
-        const float availableHeight = ImGui::GetContentRegionAvail().y;
+        const float canvasHeight = ImGui::GetContentRegionAvail().y - kZoomBarHeight - kZoomBarSpacing;
         const float timelineWidth = kTimelineMaxSeconds * timelinePixelsPerSecond;
 
-        ImGui::InvisibleButton("Timeline Area", ImVec2(timelineWidth, availableHeight));
+        ImGui::InvisibleButton("Timeline Area", ImVec2(timelineWidth, canvasHeight));
 
         const bool isActive = ImGui::IsItemActive();
         const ImVec2 areaMin = ImGui::GetItemRectMin();
@@ -162,7 +167,8 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             {
                 char label[16];
                 std::snprintf(label, sizeof(label), "%.1f", t);
-                drawList->AddText(ImVec2(x + 2, tickBottom + 2), IM_COL32(160, 160, 160, 255), label);
+                const ImVec2 labelSize = ImGui::CalcTextSize(label);
+                drawList->AddText(ImVec2(x - labelSize.x * 0.5f, tickBottom + 2), IM_COL32(160, 160, 160, 255), label);
             }
         }
 
@@ -193,17 +199,13 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             IM_COL32(255, 60, 60, 255)
         );
 
-        // Bare zoom knob, no label/value text, anchored to the timeline viewport's
-        // bottom-right corner so it stays put regardless of scroll position.
-        constexpr float kZoomSliderWidth = 90.0f;
-        constexpr float kZoomMargin = 10.0f;
-        const float zoomSliderBottomOffset = kZoomMargin + ImGui::GetStyle().ScrollbarSize;
-        ImGui::SetCursorScreenPos(ImVec2(
-            viewportPos.x + viewportSize.x - kZoomSliderWidth - kZoomMargin,
-            viewportPos.y + viewportSize.y - ImGui::GetFrameHeight() - zoomSliderBottomOffset
-        ));
-        ImGui::SetNextItemWidth(kZoomSliderWidth);
+        // Thin full-width bar in place of the old scrollbar: dragging it sets zoom, not scroll.
+        ImGui::SetCursorScreenPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y - kZoomBarHeight));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_GrabMinSize, 8.0f);
+        ImGui::SetNextItemWidth(viewportSize.x);
         ImGui::SliderFloat("##timelineZoom", &timelinePixelsPerSecond, 20.0f, 1000.0f, "");
+        ImGui::PopStyleVar(2);
     }
     ImGui::EndChild();
 };
