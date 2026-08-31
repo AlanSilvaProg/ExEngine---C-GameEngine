@@ -80,6 +80,7 @@ void EditorInterface::InitializeEditor(){
         EditorInterfaceGetters::assetBrowserIsOpened = result.assetBrowserIsOpened;
         EditorInterfaceGetters::currentWorldPath = result.currentWorldPath;
         EditorInterfaceGetters::engineConfigEnabled = result.engineConfigEnabled;
+        EditorInterfaceGetters::animationEditorEnabled = result.animationEditorEnabled;
         EditorInterfaceGetters::buildTarget = result.buildTarget;
 
         ImGui::LoadIniSettingsFromMemory(result.editorLayout.c_str());
@@ -229,6 +230,7 @@ EditorInterface::~EditorInterface(){
     result.ecsAdministratorEnabled = EditorInterfaceGetters::ecsAdministratorEnabled;
     result.assetBrowserIsOpened = EditorInterfaceGetters::assetBrowserIsOpened;
     result.engineConfigEnabled = EditorInterfaceGetters::engineConfigEnabled;
+    result.animationEditorEnabled = EditorInterfaceGetters::animationEditorEnabled;
     result.buildTarget = EditorInterfaceGetters::buildTarget;
 
     if(!EditorInterfaceGetters::worldWithoutPath){

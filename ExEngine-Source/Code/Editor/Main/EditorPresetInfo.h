@@ -13,6 +13,7 @@ public:
     bool ecsAdministratorEnabled;
     bool assetBrowserIsOpened;
     bool engineConfigEnabled;
+    bool animationEditorEnabled;
     std::string currentWorldPath;
     BuildType buildTarget;
     std::string editorLayout;
@@ -30,6 +31,7 @@ public:
             {"ecsAdministratorEnabled", ecsAdministratorEnabled},
             {"assetBrowserIsOpened", assetBrowserIsOpened},
             {"engineConfigEnabled", engineConfigEnabled},
+            {"animationEditorEnabled", animationEditorEnabled},
             {"currentWorldPath", currentWorldPath},
             {"buildTarget", buildTarget},
             {"editorLayout", editorLayout}
@@ -45,6 +47,7 @@ public:
         if (json.contains("ecsAdministratorEnabled")) ecsAdministratorEnabled = json["ecsAdministratorEnabled"];
         if (json.contains("assetBrowserIsOpened")) assetBrowserIsOpened = json["assetBrowserIsOpened"];
         if (json.contains("engineConfigEnabled")) engineConfigEnabled = json["engineConfigEnabled"];
+        if (json.contains("animationEditorEnabled")) animationEditorEnabled = json["animationEditorEnabled"];
         if (json.contains("currentWorldPath")) currentWorldPath = json["currentWorldPath"];
         if (json.contains("buildTarget")) buildTarget = json["buildTarget"];
         if (json.contains("editorLayout")) editorLayout = json["editorLayout"];

@@ -13,6 +13,7 @@ void WindowSection::Draw(){
             ImGui::MenuItem("ECS Monitoring Panel", nullptr, &EditorInterfaceGetters::ecsMonitoringEnabled);
             ImGui::MenuItem("ECS Administrator", nullptr, &EditorInterfaceGetters::ecsAdministratorEnabled);
             ImGui::MenuItem("Engine Config", nullptr, &EditorInterfaceGetters::engineConfigEnabled);
+            ImGui::MenuItem("Animation Editor", nullptr, &EditorInterfaceGetters::animationEditorEnabled);
             ImGui::MenuItem("Project Settings", nullptr, &EditorInterfaceGetters::projectSettingsEnabled);
             ImGui::MenuItem("Build Settings", nullptr, &EditorInterfaceGetters::buildWindowEnabled);
             ImGui::EndMenu();

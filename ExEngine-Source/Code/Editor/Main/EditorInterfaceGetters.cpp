@@ -16,6 +16,7 @@ bool EditorInterfaceGetters::ecsMonitoringEnabled = false;
 bool EditorInterfaceGetters::ecsAdministratorEnabled = false;
 bool EditorInterfaceGetters::assetBrowserIsOpened = false;
 bool EditorInterfaceGetters::engineConfigEnabled = false;
+bool EditorInterfaceGetters::animationEditorEnabled = false;
 std::filesystem::path EditorInterfaceGetters::currentProjectPath;
 std::filesystem::path EditorInterfaceGetters::currentWorldPath;
 BuildType EditorInterfaceGetters::buildTarget;
