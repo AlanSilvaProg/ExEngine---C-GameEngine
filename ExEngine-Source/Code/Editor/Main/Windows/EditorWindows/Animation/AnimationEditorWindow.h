@@ -10,6 +10,10 @@ private:
 
     void DrawEntityInfo(const std::shared_ptr<EntityCS> entity);
     void DrawTimeline(const std::shared_ptr<AnimationComponent> animationComponent);
+
+    void AddKeyframe();
+    void SaveData();
+    void ResetEntityState();
 public:
     void Draw(const int phase) override; //0 == early 1 == late
 };

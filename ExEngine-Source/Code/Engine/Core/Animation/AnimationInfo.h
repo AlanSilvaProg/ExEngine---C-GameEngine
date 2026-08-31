@@ -2,6 +2,9 @@
 #include "AnimationStep.h"
 #include "../AssetManager/AssetManager.h"
 #include "../../JsonUtility/IJsonConvertable.h"
+#include "../Serializer/ExEngineSerializer.h"
+#include "../Serializer/ISerializable.h"
+#include "../Serializer/ExSerializedClass.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -12,7 +15,7 @@ enum AnimationLoopType{
     PINGPONG
 };
 
-struct AnimationInfo : public IJsonConvertable{
+struct AnimationInfo : public ISerializable, public IJsonConvertable{
 private:
     bool running;
     int lastCalledIndex = -1;
@@ -55,6 +58,11 @@ public:
     inline void Stop(){
         running = false;
     };
+
+    EX_SERIALIZE_CLASS(
+        EX_SERIALIZER((*this), running, false),
+        EX_SERIALIZER((*this), animationLoopType, true)
+    )
 
     inline virtual nlohmann::json ToJson() override{
         nlohmann::json stepsJson = nlohmann::json::array();

@@ -4,6 +4,7 @@
 #include "../../ECS/Component/EComponentS.h"
 #include "../../ECS/ECSManager.h"
 #include "../../Runtime/Time/Time.h"
+#include <vector>
 
 struct AnimationComponent : public EComponentS<AnimationComponent>{
 public:

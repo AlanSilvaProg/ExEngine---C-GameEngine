@@ -14,6 +14,7 @@
 #include "../../../../../Engine/Core/Utils/ExRect.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/SpecialFields/SpriteReferenceField/SpriteReference.h"
+#include "../../../../../Engine/Core/Animation/AnimationInfo.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
 #include <filesystem>
@@ -317,6 +318,14 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
         ImGui::SameLine();
         ImGui::DragFloat2("##end", &rect->endRect[0], 0.1f);
         ImGui::EndGroup();
+    }
+    else if (exSerializedField.fieldType == typeid(AnimationLoopType)) {
+        auto* enumValue = static_cast<AnimationLoopType*>(exSerializedField.field_ptr);
+        static const char* enumNames[] = { "None", "Loop", "PingPong" };
+        int currentIndex = static_cast<int>(*enumValue);
+        if (ImGui::Combo(label, &currentIndex, enumNames, IM_ARRAYSIZE(enumNames))) {
+            ExSerializedFieldSetter::TrySetValue(exSerializedField, static_cast<AnimationLoopType>(currentIndex));
+        }
     }
     else
     {

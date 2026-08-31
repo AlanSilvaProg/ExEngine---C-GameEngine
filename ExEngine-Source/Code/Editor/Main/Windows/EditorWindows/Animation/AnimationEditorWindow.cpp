@@ -61,14 +61,32 @@ void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entit
     }
 
     ImGui::TextWrapped("%s", entity->GetName().c_str());
+
+    if(ImGui::Button("Add Keyframe"))
+    {
+        AddKeyframe();
+    }
+
+    if(ImGui::Button("Save Data"))
+    {
+        SaveData();
+    }
 };
 
+void AnimationEditorWindow::AddKeyframe(){
+    // create a new keyframe ( animationStep ) with the current entity state
+};
+
+void AnimationEditorWindow::SaveData(){
+    //save this animations data into the component
+};
+
+void AnimationEditorWindow::ResetEntityState(){
+    // Bring back the entity to its natural state, without animation
+}
+
 void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponent> animationComponent){
-    // The ruler always spans the same fixed range regardless of whether an animation is
-    // bound, so the timeline is buildable/navigable even with nothing selected.
     constexpr float kTimelineMaxSeconds = 1000.0f;
-    // Below this many visible seconds we switch from whole-second ticks to a
-    // clock-like subdivision: a labeled half-second mark plus 0.1s dashes.
     constexpr float kFineTickThresholdSeconds = 20.0f;
 
     auto getCurrentTime = [&]() -> float {
@@ -96,9 +114,6 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         headTimeEdited = true;
     }
 
-    // No native scrollbars: panning is done via arrow keys / Ctrl+drag, and the bottom
-    // strip that would've held the horizontal scrollbar instead hosts the zoom bar below.
-    // NoScrollbar/NoScrollWithMouse only hide the decorations; SetScrollX still works.
     if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         const ImVec2 viewportPos = ImGui::GetWindowPos();
@@ -130,8 +145,6 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
                 ImGui::SetScrollX(std::min(ImGui::GetScrollX() + timelinePixelsPerSecond, ImGui::GetScrollMaxX()));
         }
 
-        // Editing the head time box can set a time outside the current view; force the
-        // scroll to follow so the playhead never ends up hidden off-screen.
         if(headTimeEdited)
         {
             const float editedPlayheadX = getCurrentTime() * timelinePixelsPerSecond;
@@ -144,8 +157,6 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             ImGui::SetScrollX(std::clamp(desiredScroll, 0.0f, ImGui::GetScrollMaxX()));
         }
 
-        // Only build ticks for the currently scrolled-into-view range. Native child
-        // scrolling already refuses to go past t=0 or past the fixed max duration.
         const float scrollX = ImGui::GetScrollX();
         const float visibleStart = std::max(scrollX / timelinePixelsPerSecond, 0.0f);
         const float visibleEnd = std::min((scrollX + availableWidth) / timelinePixelsPerSecond, kTimelineMaxSeconds);
