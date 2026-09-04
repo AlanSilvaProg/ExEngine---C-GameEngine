@@ -29,6 +29,15 @@ void AnimationEditorWindow::Draw(const int phase){
             entity = nullptr;
     }
 
+    if(currentEntity != entity)
+    {
+        //Reset to the original value if appliable 
+        ResetEntityState();
+        currentEntity = entity;
+        //Cache current entity state if appliable
+        CacheEntityState();
+    }
+
     ImGui::SetNextWindowSizeConstraints(ImVec2(600, 300), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::SetNextWindowSize(ImVec2(600, 300), ImGuiCond_FirstUseEver);
 
@@ -64,25 +73,73 @@ void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entit
 
     if(ImGui::Button("Add Keyframe"))
     {
-        AddKeyframe();
+        AddKeyframe(entity);
     }
 
     if(ImGui::Button("Save Data"))
     {
-        SaveData();
+        SaveData(entity);
     }
 };
 
-void AnimationEditorWindow::AddKeyframe(){
-    // create a new keyframe ( animationStep ) with the current entity state
+void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
+    auto animationComponent = entity->GetComponent<AnimationComponent>();
+
+    if(animationComponent == nullptr) return;
+
+    
 };
 
-void AnimationEditorWindow::SaveData(){
+void AnimationEditorWindow::SaveData(const std::shared_ptr<EntityCS> entity){
     //save this animations data into the component
 };
 
+void AnimationEditorWindow::CacheEntityState(){
+    if(currentEntity == nullptr) return;
+
+    auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    const auto& componentsPool = ecsManager->GetEntityComponentPools();
+    const auto entityId = currentEntity->GetId();
+
+    currentEntityOriginalState = nlohmann::json::array();
+
+    for(const auto& pool : componentsPool)
+    {
+        auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(pool);
+        if(castedPoolManager == nullptr) continue;
+
+        auto component = castedPoolManager->GetComponent(entityId);
+        if(component == nullptr) continue;
+
+        currentEntityOriginalState.push_back({
+            {"id", component->GetComponentId()},
+            {"data", component->ToJson()}
+        });
+    }
+}
+
 void AnimationEditorWindow::ResetEntityState(){
-    // Bring back the entity to its natural state, without animation
+    if(currentEntity == nullptr) return;
+
+    auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    const auto& componentsPool = ecsManager->GetEntityComponentPools();
+    const auto entityId = currentEntity->GetId();
+
+    for(const auto& entry : currentEntityOriginalState)
+    {
+        const int id = entry["id"];
+        if(id < 0 || id >= static_cast<int>(componentsPool.size())) continue;
+
+        auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(componentsPool[id]);
+        if(castedPoolManager == nullptr) continue;
+
+        auto component = castedPoolManager->GetComponent(entityId);
+        if(component == nullptr) continue; // component removed since caching
+
+        component->FromJson(entry["data"]);
+    }
+
+    currentEntityOriginalState = nlohmann::json::array();
 }
 
 void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponent> animationComponent){
@@ -96,8 +153,12 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         time = std::clamp(time, 0.0f, kTimelineMaxSeconds);
         if(animationComponent != nullptr)
         {
-            const float clipDuration = std::max(animationComponent->animationInfo.GetAnimationDurationInSecs(), 0.0f);
-            animationComponent->EvaluateTo(std::min(time, clipDuration));
+            const auto currentAnimDuration = animationComponent->animationInfo.GetAnimationDurationInSecs();
+            if(currentAnimDuration > 0){
+                animationComponent->EvaluateTo(time > currentAnimDuration ? currentAnimDuration : time);    
+            }
+
+            animationComponent->currentTime = time;
         }
         else
         {
