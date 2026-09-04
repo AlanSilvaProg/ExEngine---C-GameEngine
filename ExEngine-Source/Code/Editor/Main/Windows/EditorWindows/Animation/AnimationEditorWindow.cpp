@@ -2,11 +2,16 @@
 #include "../ElementSelectionController.h"
 #include "../EntityBrowser/EntityBrowserSelection.h"
 #include "../../../EditorInterfaceGetters.h"
+#include "../../../../EditorEvents/EditorCommandEventHandler.h"
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <string>
+
+AnimationEditorWindow::AnimationEditorWindow(){
+    *EditorCommandEventHandler::deleteCmmd += [this](){ this->DeleteSelectedKeyframe(); };
+};
 
 void AnimationEditorWindow::Draw(const int phase){
     if(phase != 1) return;
@@ -31,9 +36,11 @@ void AnimationEditorWindow::Draw(const int phase){
 
     if(currentEntity != entity)
     {
-        //Reset to the original value if appliable 
+        //Reset to the original value if appliable
         ResetEntityState();
         currentEntity = entity;
+        isPlaying = false;
+        SetSelectedKeyframeTime(-1.0f);
         //Cache current entity state if appliable
         CacheEntityState();
     }
@@ -75,11 +82,6 @@ void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entit
     {
         AddKeyframe(entity);
     }
-
-    if(ImGui::Button("Save Data"))
-    {
-        SaveData(entity);
-    }
 };
 
 void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
@@ -87,11 +89,74 @@ void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
 
     if(animationComponent == nullptr) return;
 
-    
+    auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    const auto& componentsPool = ecsManager->GetEntityComponentPools();
+    const auto entityId = entity->GetId();
+
+    EntityContent stepContent;
+
+    for(const auto& pool : componentsPool)
+    {
+        auto castedPoolManager = std::dynamic_pointer_cast<EComponentSPoolManager>(pool);
+        if(castedPoolManager == nullptr) continue;
+
+        auto component = castedPoolManager->GetComponent(entityId);
+        if(component == nullptr) continue;
+
+        // The AnimationComponent drives the timeline rather than being an animated target;
+        // capturing it here would nest the whole step history inside every new keyframe.
+        if(component->GetComponentId() == AnimationComponent::ComponentId) continue;
+
+        const auto componentId = component->GetComponentId();
+
+        // ToJson() must be bound to a named variable before calling .items() on it - items()
+        // returns a proxy holding a reference back into the json object, which would otherwise
+        // dangle the moment the temporary from ToJson() is destroyed at the end of this statement.
+        const auto componentJson = component->ToJson();
+        for(const auto& [fieldName, value] : componentJson.items())
+        {
+            stepContent.componentUpdates.emplace_back(componentId, fieldName, value);
+        }
+    }
+
+    AnimationStep step;
+    step.secondsToTrigger = animationComponent->currentTime;
+    step.ResetStep();
+    step.SetNewSetStateContent(stepContent);
+
+    auto& steps = animationComponent->animationInfo.animationSteps;
+    auto insertPos = std::lower_bound(steps.begin(), steps.end(), step.secondsToTrigger,
+        [](const AnimationStep& existing, float time){ return existing.secondsToTrigger < time; });
+
+    if(insertPos != steps.end() && insertPos->secondsToTrigger == step.secondsToTrigger)
+        *insertPos = step;
+    else
+        steps.insert(insertPos, step);
 };
 
-void AnimationEditorWindow::SaveData(const std::shared_ptr<EntityCS> entity){
-    //save this animations data into the component
+void AnimationEditorWindow::SetSelectedKeyframeTime(const float time){
+    selectedKeyframeTime = time;
+
+    // Claim the shared Delete command while a keyframe is selected, so it targets the
+    // keyframe instead of the entity that's still the main editor selection.
+    ElementSelectionController::SetDeleteCommandOverridden(time >= 0.0f);
+};
+
+void AnimationEditorWindow::DeleteSelectedKeyframe(){
+    if(selectedKeyframeTime < 0.0f) return;
+    if(currentEntity == nullptr) return;
+
+    auto animationComponent = currentEntity->GetComponent<AnimationComponent>();
+    if(animationComponent == nullptr) return;
+
+    auto& steps = animationComponent->animationInfo.animationSteps;
+    const auto stepToRemove = std::find_if(steps.begin(), steps.end(), [this](const AnimationStep& step){
+        return std::abs(step.secondsToTrigger - selectedKeyframeTime) < 0.0001f;
+    });
+
+    if(stepToRemove != steps.end()) steps.erase(stepToRemove);
+
+    SetSelectedKeyframeTime(-1.0f);
 };
 
 void AnimationEditorWindow::CacheEntityState(){
@@ -166,6 +231,32 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         }
     };
 
+    const float animationDuration = animationComponent != nullptr ? animationComponent->animationInfo.GetAnimationDurationInSecs() : 0.0f;
+    const bool canPlay = animationComponent != nullptr && animationDuration > 0.0f;
+
+    // Playback is driven here rather than through AnimationSystem/AnimationManager, since no
+    // system currently ticks the animation queues while just editing (no game running).
+    if(isPlaying)
+    {
+        if(!canPlay)
+        {
+            isPlaying = false;
+        }
+        else
+        {
+            const float nextTime = animationComponent->currentTime + ImGui::GetIO().DeltaTime;
+            if(nextTime >= animationDuration)
+            {
+                animationComponent->EvaluateTo(animationDuration);
+                isPlaying = false;
+            }
+            else
+            {
+                animationComponent->EvaluateTo(nextTime);
+            }
+        }
+    }
+
     float headTime = getCurrentTime();
     ImGui::SetNextItemWidth(100);
     bool headTimeEdited = false;
@@ -174,6 +265,31 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         setCurrentTime(headTime);
         headTimeEdited = true;
     }
+
+    ImGui::SameLine();
+    const float transportButtonSize = ImGui::GetFrameHeight();
+
+    ImGui::BeginDisabled(!canPlay || isPlaying);
+    ImTextureID playTextureId = (ImTextureID)(intptr_t)EditorInterfaceGetters::defaultIconsInformation["PlayIcon"]->GetTexture();
+    if(ImGui::ImageButton("AnimationPlayButton", playTextureId, ImVec2(transportButtonSize, transportButtonSize)))
+        isPlaying = true;
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!canPlay);
+    if(ImGui::Button("Restart"))
+    {
+        animationComponent->EvaluateTo(0.0f);
+        isPlaying = true;
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!isPlaying);
+    ImTextureID pauseTextureId = (ImTextureID)(intptr_t)EditorInterfaceGetters::defaultIconsInformation["PauseIcon"]->GetTexture();
+    if(ImGui::ImageButton("AnimationPauseButton", pauseTextureId, ImVec2(transportButtonSize, transportButtonSize)))
+        isPlaying = false;
+    ImGui::EndDisabled();
 
     if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
@@ -276,8 +392,33 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             }
             else
             {
-                const float newTime = (io.MousePos.x - areaMin.x) / timelinePixelsPerSecond;
-                setCurrentTime(newTime);
+                bool clickedKeyframe = false;
+
+                // Only test for a keyframe hit on the click's first frame, so dragging
+                // afterwards still scrubs the playhead like before.
+                if(ImGui::IsItemActivated() && animationComponent != nullptr)
+                {
+                    constexpr float kKeyframeHitRadius = 7.0f;
+                    for(const auto& step : animationComponent->animationInfo.animationSteps)
+                    {
+                        const float stepX = areaMin.x + step.secondsToTrigger * timelinePixelsPerSecond;
+                        if(std::abs(io.MousePos.x - stepX) <= kKeyframeHitRadius)
+                        {
+                            SetSelectedKeyframeTime(step.secondsToTrigger);
+                            setCurrentTime(step.secondsToTrigger);
+                            clickedKeyframe = true;
+                            break;
+                        }
+                    }
+
+                    if(!clickedKeyframe) SetSelectedKeyframeTime(-1.0f);
+                }
+
+                if(!clickedKeyframe)
+                {
+                    const float newTime = (io.MousePos.x - areaMin.x) / timelinePixelsPerSecond;
+                    setCurrentTime(newTime);
+                }
             }
         }
 
@@ -290,6 +431,27 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
             ImVec2(playheadX, areaMin.y + 8),
             IM_COL32(255, 60, 60, 255)
         );
+
+        if(animationComponent != nullptr)
+        {
+            constexpr float kKeyframeHalfSize = 6.0f;
+            const float keyframeY = areaMin.y + 30.0f;
+
+            for(const auto& step : animationComponent->animationInfo.animationSteps)
+            {
+                const float keyframeX = areaMin.x + step.secondsToTrigger * timelinePixelsPerSecond;
+                const bool isSelected = std::abs(step.secondsToTrigger - selectedKeyframeTime) < 0.0001f;
+                const ImU32 color = isSelected ? IM_COL32(70, 140, 255, 255) : IM_COL32(230, 230, 230, 255);
+
+                drawList->AddQuadFilled(
+                    ImVec2(keyframeX, keyframeY - kKeyframeHalfSize),
+                    ImVec2(keyframeX + kKeyframeHalfSize, keyframeY),
+                    ImVec2(keyframeX, keyframeY + kKeyframeHalfSize),
+                    ImVec2(keyframeX - kKeyframeHalfSize, keyframeY),
+                    color
+                );
+            }
+        }
 
         // Thin full-width bar in place of the old scrollbar: dragging it sets zoom, not scroll.
         // Borrows the scrollbar's own colors/rounding/thickness so it reads as a native scrollbar.

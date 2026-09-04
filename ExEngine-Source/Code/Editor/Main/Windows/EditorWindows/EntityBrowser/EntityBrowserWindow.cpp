@@ -21,6 +21,8 @@ void EntityBrowserWindow::Duplicate(){
 };
 
 void EntityBrowserWindow::Delete(){
+    if (ElementSelectionController::IsDeleteCommandOverridden()) return;
+
     if (EntityBrowserWindow::IsValidSelection())
     {
         EditorInterfaceGetters::engine->GetECSManagerPtr()->DestroyEntity(entityBrowserSelection->GetSelectedEntityId());
