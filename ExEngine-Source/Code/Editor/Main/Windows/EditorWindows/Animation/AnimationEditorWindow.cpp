@@ -16,7 +16,17 @@ AnimationEditorWindow::AnimationEditorWindow(){
 void AnimationEditorWindow::Draw(const int phase){
     if(phase != 1) return;
 
-    if(!EditorInterfaceGetters::animationEditorEnabled) return;
+    if(!EditorInterfaceGetters::animationEditorEnabled){
+        if(currentEntity != nullptr){
+            //Reset to the original value if appliable
+            ResetEntityState();
+            currentEntity = nullptr;
+            isPlaying = false;
+            SetSelectedKeyframeTime(-1.0f);
+            //Cache current entity state if appliable
+        }
+        return;
+    }
 
     std::shared_ptr<EntityCS> entity = nullptr;
     std::shared_ptr<AnimationComponent> animationComponent = nullptr;
@@ -62,7 +72,7 @@ void AnimationEditorWindow::Draw(const int phase){
 
         if(ImGui::BeginChild("Animation Right", {0, 0}, ImGuiChildFlags_Borders)) // 2
         {
-            DrawTimeline(animationComponent);
+            DrawTimeline(entity, animationComponent);
         }
         ImGui::EndChild(); // 2
     }
@@ -81,6 +91,11 @@ void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entit
     if(ImGui::Button("Add Keyframe"))
     {
         AddKeyframe(entity);
+    }
+
+    if(ImGui::Button("Save Changes"))
+    {
+        SaveChanges(entity);
     }
 };
 
@@ -132,6 +147,24 @@ void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
         *insertPos = step;
     else
         steps.insert(insertPos, step);
+};
+
+void AnimationEditorWindow::SaveChanges(const std::shared_ptr<EntityCS> entity){
+    auto animationComponent = entity->GetComponent<AnimationComponent>();
+    if(animationComponent == nullptr) return;
+
+    // Update just the AnimationComponent's cached entry so ResetEntityState (which runs when
+    // switching entities or closing the window) stops undoing keyframe edits made here, while
+    // any unsaved edits to the entity's other components are still reverted as before.
+    for(auto& entry : currentEntityOriginalState)
+    {
+        const int id = entry["id"];
+        if(id == animationComponent->GetComponentId())
+        {
+            entry["data"] = animationComponent->ToJson();
+            break;
+        }
+    }
 };
 
 void AnimationEditorWindow::SetSelectedKeyframeTime(const float time){
@@ -207,7 +240,16 @@ void AnimationEditorWindow::ResetEntityState(){
     currentEntityOriginalState = nlohmann::json::array();
 }
 
-void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponent> animationComponent){
+void AnimationEditorWindow::ApplyEvaluatedState(const std::shared_ptr<EntityCS> entity, AnimationStep* currentAnimationState){
+    if(currentAnimationState == nullptr || currentAnimationState->WasReturned()) return;
+
+    for(const auto& componentUpdate : currentAnimationState->GetStepStateContent().componentUpdates)
+    {
+        entity->ApplyComponentUpdate(componentUpdate);
+    }
+};
+
+void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity, const std::shared_ptr<AnimationComponent> animationComponent){
     constexpr float kTimelineMaxSeconds = 1000.0f;
     constexpr float kFineTickThresholdSeconds = 20.0f;
 
@@ -220,7 +262,9 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         {
             const auto currentAnimDuration = animationComponent->animationInfo.GetAnimationDurationInSecs();
             if(currentAnimDuration > 0){
-                animationComponent->EvaluateTo(time > currentAnimDuration ? currentAnimDuration : time);    
+                const auto currentAnimationState = animationComponent->EvaluateTo(time > currentAnimDuration ? currentAnimDuration : time);
+
+                ApplyEvaluatedState(entity, currentAnimationState); 
             }
 
             animationComponent->currentTime = time;
@@ -245,15 +289,10 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<AnimationComponen
         else
         {
             const float nextTime = animationComponent->currentTime + ImGui::GetIO().DeltaTime;
-            if(nextTime >= animationDuration)
-            {
-                animationComponent->EvaluateTo(animationDuration);
-                isPlaying = false;
-            }
-            else
-            {
-                animationComponent->EvaluateTo(nextTime);
-            }
+            isPlaying = nextTime < animationDuration;
+
+            const auto currentAnimationState = animationComponent->EvaluateTo(nextTime > animationDuration ? animationDuration : nextTime);
+            ApplyEvaluatedState(entity, currentAnimationState);
         }
     }
 

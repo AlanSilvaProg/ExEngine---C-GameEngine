@@ -16,13 +16,15 @@ private:
     float selectedKeyframeTime = -1.0f; // negative means no keyframe is selected
 
     void DrawEntityInfo(const std::shared_ptr<EntityCS> entity);
-    void DrawTimeline(const std::shared_ptr<AnimationComponent> animationComponent);
+    void DrawTimeline(const std::shared_ptr<EntityCS> entity, const std::shared_ptr<AnimationComponent> animationComponent);
 
     void AddKeyframe(const std::shared_ptr<EntityCS> entity);
+    void SaveChanges(const std::shared_ptr<EntityCS> entity);
     void DeleteSelectedKeyframe();
     void SetSelectedKeyframeTime(const float time);
     void CacheEntityState();
     void ResetEntityState();
+    void ApplyEvaluatedState(const std::shared_ptr<EntityCS> entity, AnimationStep* currentAnimationState);
 public:
     AnimationEditorWindow();
 

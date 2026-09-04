@@ -57,6 +57,9 @@ public:
 
     inline void Stop(){
         running = false;
+        if(lastCalledIndex != -1){
+            animationSteps[lastCalledIndex].ResetStep();
+        }
     };
 
     EX_SERIALIZE_CLASS(
