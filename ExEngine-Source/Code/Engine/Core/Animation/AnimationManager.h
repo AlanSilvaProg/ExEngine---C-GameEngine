@@ -1,18 +1,23 @@
 #pragma once
 #include <unordered_set>
+#include "../ECS/ECSManager.h"
+#include "../EngineGetters.h"
+#include "System/AnimationSystem.h"
 
 struct AnimationManager{
 private:
-    inline static std::unordered_set<int> entityToTriggerAnimation;
-    inline static std::unordered_set<int> entityToStopAnimation;
-    inline static std::unordered_set<int> entityWithPlayingAnimation;
+    static std::unordered_set<int> entityToTriggerAnimation;
+    static std::unordered_set<int> entityToStopAnimation;
+    static std::unordered_set<int> entityWithPlayingAnimation;
 
 public:
-    inline static int ScheduleEntityToAnimate(const int id){ entityToTriggerAnimation.emplace(id); };
-    inline static int ScheduleEntityToStopAnimation(const int id){ entityToStopAnimation.emplace(id); };
-    inline static int InsertEntityPlayingAnimation(const int id){ entityWithPlayingAnimation.emplace(id); };
+    static void InitializeAnimationSystem();
 
-    inline static std::unordered_set<int>& GetEntitiesToTriggerAnimationQueue(){ return entityToTriggerAnimation; };
-    inline static std::unordered_set<int>& GetEntitiesToStopAnimationQueue(){ return entityToStopAnimation; };
-    inline static std::unordered_set<int>& GetEntitiesWithPlayingAnimationQueue(){ return entityWithPlayingAnimation; };
+    static int ScheduleEntityToAnimate(const int id);
+    static int ScheduleEntityToStopAnimation(const int id);
+    static int InsertEntityPlayingAnimation(const int id);
+
+    static std::unordered_set<int>& GetEntitiesToTriggerAnimationQueue();
+    static std::unordered_set<int>& GetEntitiesToStopAnimationQueue();
+    static std::unordered_set<int>& GetEntitiesWithPlayingAnimationQueue();
 };

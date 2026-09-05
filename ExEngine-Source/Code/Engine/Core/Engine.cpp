@@ -12,6 +12,7 @@
 #include "Configuration/ConfigurationFileManager.h"
 #include "CollisionSystem/ExPhysicsEngine.h"
 #include "Runtime/Settings/RuntimeSettings.h"
+#include "Animation/AnimationManager.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 
@@ -61,6 +62,7 @@ void Engine::StartEngine(){
         ExPhysicsEngine::Initialize(ecsManager);
 
     ExRenderer::Initialize(ecsManager);
+    AnimationManager::InitializeAnimationSystem();
 };
 
 void Engine::StopEngine(){

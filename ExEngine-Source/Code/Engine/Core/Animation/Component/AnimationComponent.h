@@ -7,6 +7,8 @@
 #include <vector>
 
 struct AnimationComponent : public EComponentS<AnimationComponent>{
+private: 
+    bool startAutomatically;
 public:
     static constexpr unsigned int ComponentId = 4;
 
@@ -19,6 +21,12 @@ public:
         animationInfo = animationComponent.animationInfo;
     };
     ~AnimationComponent() = default;
+
+    inline const bool ValidateAutoPlay(){
+        if(!startAutomatically) return false;
+        startAutomatically = false;
+        return true;
+    };
 
     //add progress basead on time
     inline AnimationStep* Evaluate(const SystemContext context){
@@ -76,18 +84,21 @@ public:
     };
 
     EX_SERIALIZE_CLASS(
+        EX_SERIALIZER((*this), startAutomatically, true),
         EX_SERIALIZER((*this), currentTime, true),
         EX_SERIALIZER((*this), animationInfo, true)
     )
 
     virtual nlohmann::json ToJson() override {
         return {
+            {"startAutomatically", startAutomatically},
             {"currentTime", currentTime},
             {"animationInfo", animationInfo.ToJson()}
         };
     };
 
     virtual void FromJson(const nlohmann::json& json) override {
+        if (json.contains("startAutomatically")) startAutomatically = json["startAutomatically"].get<bool>();
         if (json.contains("currentTime")) currentTime = json["currentTime"].get<float>();
         if (json.contains("animationInfo")) animationInfo.FromJson(json["animationInfo"]);
     };

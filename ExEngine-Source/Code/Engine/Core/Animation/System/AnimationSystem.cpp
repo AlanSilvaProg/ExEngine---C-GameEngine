@@ -1,5 +1,6 @@
 #include "AnimationSystem.h"
 #include "../AnimationManager.h"
+#include "../../Runtime/App.h"
 
 AnimationSystem::AnimationSystem() : entitiesToTrigger(AnimationManager::GetEntitiesToTriggerAnimationQueue()),
       entitiesToStop(AnimationManager::GetEntitiesToStopAnimationQueue()),
@@ -9,10 +10,16 @@ AnimationSystem::AnimationSystem() : entitiesToTrigger(AnimationManager::GetEnti
 };
 
 void AnimationSystem::UpdateSystem(SystemContext systemContext){
+    if(!App::isPlaying) return;
+
     for(const auto& entity : systemEntities)
     {
         auto entityAnimation = entity->GetComponent<AnimationComponent>();
         const auto entityId = entity->GetId();
+
+        if(entityAnimation->ValidateAutoPlay()){
+            entitiesToTrigger.insert(entityId);
+        }
 
         if(entitiesToStop.contains(entityId)){
             StopEntityAnimation(entityId, entityAnimation);
