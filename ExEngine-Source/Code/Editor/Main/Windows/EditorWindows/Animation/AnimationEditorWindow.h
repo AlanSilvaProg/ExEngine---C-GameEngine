@@ -15,6 +15,9 @@ private:
     bool isPlaying = false;
     float selectedKeyframeTime = -1.0f; // negative means no keyframe is selected
 
+    bool isDraggingKeyframe = false;
+    float draggingKeyframeTime = -1.0f; // tracks the dragged keyframe's current time as it moves
+
     void DrawEntityInfo(const std::shared_ptr<EntityCS> entity);
     void DrawTimeline(const std::shared_ptr<EntityCS> entity, const std::shared_ptr<AnimationComponent> animationComponent);
 

@@ -23,6 +23,7 @@ void AnimationEditorWindow::Draw(const int phase){
             currentEntity = nullptr;
             isPlaying = false;
             SetSelectedKeyframeTime(-1.0f);
+            isDraggingKeyframe = false;
             //Cache current entity state if appliable
         }
         return;
@@ -51,6 +52,7 @@ void AnimationEditorWindow::Draw(const int phase){
         currentEntity = entity;
         isPlaying = false;
         SetSelectedKeyframeTime(-1.0f);
+        isDraggingKeyframe = false;
         //Cache current entity state if appliable
         CacheEntityState();
     }
@@ -431,13 +433,13 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
             }
             else
             {
-                bool clickedKeyframe = false;
-
-                // Only test for a keyframe hit on the click's first frame, so dragging
-                // afterwards still scrubs the playhead like before.
+                // Only test for a keyframe hit on the click's first frame, so a click that
+                // misses every keyframe still scrubs the playhead for the rest of the drag.
                 if(ImGui::IsItemActivated() && animationComponent != nullptr)
                 {
                     constexpr float kKeyframeHitRadius = 7.0f;
+                    isDraggingKeyframe = false;
+
                     for(const auto& step : animationComponent->animationInfo.animationSteps)
                     {
                         const float stepX = areaMin.x + step.secondsToTrigger * timelinePixelsPerSecond;
@@ -445,15 +447,49 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
                         {
                             SetSelectedKeyframeTime(step.secondsToTrigger);
                             setCurrentTime(step.secondsToTrigger);
-                            clickedKeyframe = true;
+                            isDraggingKeyframe = true;
+                            draggingKeyframeTime = step.secondsToTrigger;
                             break;
                         }
                     }
 
-                    if(!clickedKeyframe) SetSelectedKeyframeTime(-1.0f);
+                    if(!isDraggingKeyframe) SetSelectedKeyframeTime(-1.0f);
                 }
 
-                if(!clickedKeyframe)
+                if(isDraggingKeyframe && animationComponent != nullptr)
+                {
+                    auto& steps = animationComponent->animationInfo.animationSteps;
+                    const auto draggedStep = std::find_if(steps.begin(), steps.end(), [this](const AnimationStep& step){
+                        return std::abs(step.secondsToTrigger - draggingKeyframeTime) < 0.0001f;
+                    });
+
+                    if(draggedStep != steps.end())
+                    {
+                        float newTime = std::clamp((io.MousePos.x - areaMin.x) / timelinePixelsPerSecond, 0.0f, kTimelineMaxSeconds);
+
+                        // Nudge away from any other keyframe so the drag never collapses two
+                        // keyframes onto the same time, which would make them ambiguous to
+                        // select/delete afterwards.
+                        constexpr float kMinKeyframeGap = 0.001f;
+                        for(const auto& other : steps)
+                        {
+                            if(&other == &(*draggedStep)) continue;
+                            if(std::abs(other.secondsToTrigger - newTime) < kMinKeyframeGap)
+                                newTime = newTime < other.secondsToTrigger ? other.secondsToTrigger - kMinKeyframeGap : other.secondsToTrigger + kMinKeyframeGap;
+                        }
+                        newTime = std::clamp(newTime, 0.0f, kTimelineMaxSeconds);
+
+                        draggedStep->secondsToTrigger = newTime;
+                        draggingKeyframeTime = newTime;
+                        SetSelectedKeyframeTime(newTime);
+                        setCurrentTime(newTime);
+
+                        std::stable_sort(steps.begin(), steps.end(), [](const AnimationStep& a, const AnimationStep& b){
+                            return a.secondsToTrigger < b.secondsToTrigger;
+                        });
+                    }
+                }
+                else if(!isDraggingKeyframe)
                 {
                     const float newTime = (io.MousePos.x - areaMin.x) / timelinePixelsPerSecond;
                     setCurrentTime(newTime);
