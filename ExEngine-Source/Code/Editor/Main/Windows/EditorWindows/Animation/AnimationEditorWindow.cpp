@@ -4,6 +4,7 @@
 #include "../../../EditorInterfaceGetters.h"
 #include "../../../../EditorEvents/EditorCommandEventHandler.h"
 #include <imgui.h>
+#include <imgui/misc/cpp/imgui_stdlib.h>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -24,6 +25,11 @@ void AnimationEditorWindow::Draw(const int phase){
             isPlaying = false;
             SetSelectedKeyframeTime(-1.0f);
             isDraggingKeyframe = false;
+            currentAnimation = 0;
+            showUnsavedChangesPopup = false;
+            requestOpenUnsavedChangesPopup = false;
+            pendingConfirmedAction = nullptr;
+            hasUnsavedChanges = false;
             //Cache current entity state if appliable
         }
         return;
@@ -41,20 +47,22 @@ void AnimationEditorWindow::Draw(const int phase){
 
         if(entity != nullptr && ecsManager->HasComponent<AnimationComponent>(entity))
             animationComponent = entity->GetComponent<AnimationComponent>();
-        else
-            entity = nullptr;
     }
 
-    if(currentEntity != entity)
+    if(currentEntity != entity && !showUnsavedChangesPopup)
     {
-        //Reset to the original value if appliable
-        ResetEntityState();
-        currentEntity = entity;
-        isPlaying = false;
-        SetSelectedKeyframeTime(-1.0f);
-        isDraggingKeyframe = false;
-        //Cache current entity state if appliable
-        CacheEntityState();
+        // Only worth confirming if there's actually something that could be lost.
+        PerformOrConfirm([this, entity](){ SwitchToEntity(entity); });
+    }
+
+    // While the confirmation popup is open, keep displaying the entity that's already
+    // loaded (not the newly selected one) so Save/Discard act on the right data.
+    if(showUnsavedChangesPopup)
+    {
+        entity = currentEntity;
+        auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+        animationComponent = (entity != nullptr && ecsManager->HasComponent<AnimationComponent>(entity))
+            ? entity->GetComponent<AnimationComponent>() : nullptr;
     }
 
     ImGui::SetNextWindowSizeConstraints(ImVec2(600, 300), ImVec2(FLT_MAX, FLT_MAX));
@@ -62,11 +70,53 @@ void AnimationEditorWindow::Draw(const int phase){
 
     if(ImGui::Begin("Animation", &EditorInterfaceGetters::animationEditorEnabled, ImGuiWindowFlags_NoDocking)) // 0
     {
+        // OpenPopup and BeginPopupModal must run at the same ID-stack level, so the actual
+        // ImGui::OpenPopup call is deferred to right here (inside this window) rather than
+        // fired from wherever RequestConfirmedAction was called (e.g. a nested child window).
+        if(requestOpenUnsavedChangesPopup)
+        {
+            ImGui::OpenPopup("Unsaved Changes##AnimationEditor");
+            requestOpenUnsavedChangesPopup = false;
+        }
+
+        if(ImGui::BeginPopupModal("Unsaved Changes##AnimationEditor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("\"%s\" has unsaved animation changes.", currentEntity != nullptr ? currentEntity->GetName().c_str() : "");
+            ImGui::Text("Save changes before continuing?");
+            ImGui::Separator();
+
+            if(ImGui::Button("Save"))
+            {
+                SaveChanges(currentEntity);
+                if(pendingConfirmedAction) pendingConfirmedAction();
+                pendingConfirmedAction = nullptr;
+                showUnsavedChangesPopup = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Discard"))
+            {
+                if(pendingConfirmedAction) pendingConfirmedAction();
+                pendingConfirmedAction = nullptr;
+                showUnsavedChangesPopup = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Cancel"))
+            {
+                pendingConfirmedAction = nullptr;
+                showUnsavedChangesPopup = false;
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
         auto availableSpace = ImGui::GetContentRegionAvail();
 
         if(ImGui::BeginChild("Animation Left", {availableSpace.x * 0.2f, availableSpace.y}, ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX)) // 1
         {
-            DrawEntityInfo(entity);
+            DrawEntityInfo(entity, animationComponent);
         }
         ImGui::EndChild(); // 1
 
@@ -81,14 +131,30 @@ void AnimationEditorWindow::Draw(const int phase){
     ImGui::End(); // 0
 };
 
-void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entity){
+void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entity, const std::shared_ptr<AnimationComponent> animationComponent){
     if(entity == nullptr)
     {
         ImGui::TextDisabled("No entity selected");
         return;
     }
 
+    ImGui::TextDisabled("Entity Name");
     ImGui::TextWrapped("%s", entity->GetName().c_str());
+
+    if(animationComponent == nullptr){
+        if(ImGui::Button("Add Animation Component")){
+            entity->AddComponent<AnimationComponent>();
+        }
+        return;
+    }
+
+    if(currentAnimation >= 0 && currentAnimation < static_cast<int>(animationComponent->animationInfo.size()))
+    {
+        ImGui::TextDisabled("Animation Name");
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if(ImGui::InputText("##AnimationName", &animationComponent->animationInfo[currentAnimation].name))
+            hasUnsavedChanges = true;
+    }
 
     if(ImGui::Button("Add Keyframe"))
     {
@@ -98,6 +164,24 @@ void AnimationEditorWindow::DrawEntityInfo(const std::shared_ptr<EntityCS> entit
     if(ImGui::Button("Save Changes"))
     {
         SaveChanges(entity);
+        hasUnsavedChanges = false;
+    }
+
+    if(ImGui::Button("New Animation"))
+    {
+        PerformOrConfirm([this, animationComponent](){
+            // Discard whatever unsaved edits exist before creating the new animation, so
+            // "Discard" in the confirmation popup actually discards them. Cache happens
+            // AFTER creating the new animation so it becomes part of the new baseline
+            // instead of being silently lost by some later discard.
+            ResetEntityState();
+
+            currentAnimation = animationComponent->CreateNewAnimation();
+            animationComponent->animationInfo[currentAnimation].name += "_"+std::to_string(currentAnimation);
+
+            CacheEntityState();
+            hasUnsavedChanges = false;
+        });
     }
 };
 
@@ -105,6 +189,7 @@ void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
     auto animationComponent = entity->GetComponent<AnimationComponent>();
 
     if(animationComponent == nullptr) return;
+    if(currentAnimation < 0 || currentAnimation >= static_cast<int>(animationComponent->animationInfo.size())) return;
 
     auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
     const auto& componentsPool = ecsManager->GetEntityComponentPools();
@@ -141,7 +226,7 @@ void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
     step.ResetStep();
     step.SetNewSetStateContent(stepContent);
 
-    auto& steps = animationComponent->animationInfo.animationSteps;
+    auto& steps = animationComponent->animationInfo[currentAnimation].animationSteps;
     auto insertPos = std::lower_bound(steps.begin(), steps.end(), step.secondsToTrigger,
         [](const AnimationStep& existing, float time){ return existing.secondsToTrigger < time; });
 
@@ -149,6 +234,8 @@ void AnimationEditorWindow::AddKeyframe(const std::shared_ptr<EntityCS> entity){
         *insertPos = step;
     else
         steps.insert(insertPos, step);
+
+    hasUnsavedChanges = true;
 };
 
 void AnimationEditorWindow::SaveChanges(const std::shared_ptr<EntityCS> entity){
@@ -183,13 +270,18 @@ void AnimationEditorWindow::DeleteSelectedKeyframe(){
 
     auto animationComponent = currentEntity->GetComponent<AnimationComponent>();
     if(animationComponent == nullptr) return;
+    if(currentAnimation < 0 || currentAnimation >= static_cast<int>(animationComponent->animationInfo.size())) return;
 
-    auto& steps = animationComponent->animationInfo.animationSteps;
+    auto& steps = animationComponent->animationInfo[currentAnimation].animationSteps;
     const auto stepToRemove = std::find_if(steps.begin(), steps.end(), [this](const AnimationStep& step){
         return std::abs(step.secondsToTrigger - selectedKeyframeTime) < 0.0001f;
     });
 
-    if(stepToRemove != steps.end()) steps.erase(stepToRemove);
+    if(stepToRemove != steps.end())
+    {
+        steps.erase(stepToRemove);
+        hasUnsavedChanges = true;
+    }
 
     SetSelectedKeyframeTime(-1.0f);
 };
@@ -242,6 +334,43 @@ void AnimationEditorWindow::ResetEntityState(){
     currentEntityOriginalState = nlohmann::json::array();
 }
 
+void AnimationEditorWindow::SwitchToEntity(const std::shared_ptr<EntityCS> entity){
+    //Reset to the original value if appliable
+    ResetEntityState();
+    currentEntity = entity;
+    isPlaying = false;
+    SetSelectedKeyframeTime(-1.0f);
+    isDraggingKeyframe = false;
+    currentAnimation = 0;
+    hasUnsavedChanges = false;
+    //Cache current entity state if appliable
+    CacheEntityState();
+};
+
+void AnimationEditorWindow::SwitchToAnimation(const int newAnimationIndex){
+    // Discard whatever unsaved edits exist on the animation being left, so "Discard" in the
+    // confirmation popup actually discards them (a no-op if Save already ran beforehand).
+    ResetEntityState();
+    CacheEntityState();
+    hasUnsavedChanges = false;
+
+    currentAnimation = newAnimationIndex;
+    SetSelectedKeyframeTime(-1.0f);
+};
+
+void AnimationEditorWindow::RequestConfirmedAction(std::function<void()> action){
+    pendingConfirmedAction = std::move(action);
+    showUnsavedChangesPopup = true;
+    requestOpenUnsavedChangesPopup = true;
+};
+
+void AnimationEditorWindow::PerformOrConfirm(std::function<void()> action){
+    if(hasUnsavedChanges)
+        RequestConfirmedAction(std::move(action));
+    else
+        action();
+};
+
 void AnimationEditorWindow::ApplyEvaluatedState(const std::shared_ptr<EntityCS> entity, AnimationStep* currentAnimationState){
     if(currentAnimationState == nullptr || currentAnimationState->WasReturned()) return;
 
@@ -255,6 +384,12 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
     constexpr float kTimelineMaxSeconds = 1000.0f;
     constexpr float kFineTickThresholdSeconds = 20.0f;
 
+    // A freshly-added AnimationComponent starts with an empty animationInfo, so
+    // animationInfo[currentAnimation] is only safe to index once this is true.
+    const bool hasCurrentAnimation = animationComponent != nullptr
+        && currentAnimation >= 0
+        && currentAnimation < static_cast<int>(animationComponent->animationInfo.size());
+
     auto getCurrentTime = [&]() -> float {
         return animationComponent != nullptr ? animationComponent->currentTime : previewPlayheadTime;
     };
@@ -262,11 +397,14 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
         time = std::clamp(time, 0.0f, kTimelineMaxSeconds);
         if(animationComponent != nullptr)
         {
-            const auto currentAnimDuration = animationComponent->animationInfo.GetAnimationDurationInSecs();
-            if(currentAnimDuration > 0){
-                const auto currentAnimationState = animationComponent->EvaluateTo(time > currentAnimDuration ? currentAnimDuration : time);
+            if(hasCurrentAnimation)
+            {
+                const auto currentAnimDuration = animationComponent->animationInfo[currentAnimation].GetAnimationDurationInSecs();
+                if(currentAnimDuration > 0){
+                    const auto currentAnimationState = animationComponent->EvaluateTo(time > currentAnimDuration ? currentAnimDuration : time);
 
-                ApplyEvaluatedState(entity, currentAnimationState); 
+                    ApplyEvaluatedState(entity, currentAnimationState);
+                }
             }
 
             animationComponent->currentTime = time;
@@ -277,7 +415,7 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
         }
     };
 
-    const float animationDuration = animationComponent != nullptr ? animationComponent->animationInfo.GetAnimationDurationInSecs() : 0.0f;
+    const float animationDuration = hasCurrentAnimation ? animationComponent->animationInfo[currentAnimation].GetAnimationDurationInSecs() : 0.0f;
     const bool canPlay = animationComponent != nullptr && animationDuration > 0.0f;
 
     // Playback is driven here rather than through AnimationSystem/AnimationManager, since no
@@ -331,6 +469,48 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
     if(ImGui::ImageButton("AnimationPauseButton", pauseTextureId, ImVec2(transportButtonSize, transportButtonSize)))
         isPlaying = false;
     ImGui::EndDisabled();
+
+    if(animationComponent != nullptr)
+    {
+        ImGui::SameLine();
+        ImGui::BeginDisabled(animationComponent->animationInfo.size() <= 1);
+
+        const int animationCount = static_cast<int>(animationComponent->animationInfo.size());
+
+        if(ImGui::Button("-") && animationCount > 0)
+        {
+            const int targetIndex = (currentAnimation - 1 + animationCount) % animationCount;
+            PerformOrConfirm([this, targetIndex](){ SwitchToAnimation(targetIndex); });
+        }
+
+        ImGui::SameLine();
+
+        ImGui::SetNextItemWidth(150);
+        const char* currentAnimationName = (currentAnimation >= 0 && currentAnimation < animationCount)
+            ? animationComponent->animationInfo[currentAnimation].name.c_str()
+            : "";
+        if(ImGui::BeginCombo("##AnimationSelect", currentAnimationName))
+        {
+            for(int i = 0; i < animationCount; ++i)
+            {
+                const bool isSelected = (i == currentAnimation);
+                if(ImGui::Selectable(animationComponent->animationInfo[i].name.c_str(), isSelected) && !isSelected)
+                    PerformOrConfirm([this, i](){ SwitchToAnimation(i); });
+
+                if(isSelected) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::SameLine();
+        if(ImGui::Button("+") && animationCount > 0)
+        {
+            const int targetIndex = (currentAnimation + 1) % animationCount;
+            PerformOrConfirm([this, targetIndex](){ SwitchToAnimation(targetIndex); });
+        }
+
+        ImGui::EndDisabled();
+    }
 
     if(ImGui::BeginChild("Timeline Scroll Area", {0, 0}, ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
@@ -435,12 +615,12 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
             {
                 // Only test for a keyframe hit on the click's first frame, so a click that
                 // misses every keyframe still scrubs the playhead for the rest of the drag.
-                if(ImGui::IsItemActivated() && animationComponent != nullptr)
+                if(ImGui::IsItemActivated() && hasCurrentAnimation)
                 {
                     constexpr float kKeyframeHitRadius = 7.0f;
                     isDraggingKeyframe = false;
 
-                    for(const auto& step : animationComponent->animationInfo.animationSteps)
+                    for(const auto& step : animationComponent->animationInfo[currentAnimation].animationSteps)
                     {
                         const float stepX = areaMin.x + step.secondsToTrigger * timelinePixelsPerSecond;
                         if(std::abs(io.MousePos.x - stepX) <= kKeyframeHitRadius)
@@ -456,9 +636,9 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
                     if(!isDraggingKeyframe) SetSelectedKeyframeTime(-1.0f);
                 }
 
-                if(isDraggingKeyframe && animationComponent != nullptr)
+                if(isDraggingKeyframe && hasCurrentAnimation)
                 {
-                    auto& steps = animationComponent->animationInfo.animationSteps;
+                    auto& steps = animationComponent->animationInfo[currentAnimation].animationSteps;
                     const auto draggedStep = std::find_if(steps.begin(), steps.end(), [this](const AnimationStep& step){
                         return std::abs(step.secondsToTrigger - draggingKeyframeTime) < 0.0001f;
                     });
@@ -481,6 +661,7 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
 
                         draggedStep->secondsToTrigger = newTime;
                         draggingKeyframeTime = newTime;
+                        hasUnsavedChanges = true;
                         SetSelectedKeyframeTime(newTime);
                         setCurrentTime(newTime);
 
@@ -507,12 +688,12 @@ void AnimationEditorWindow::DrawTimeline(const std::shared_ptr<EntityCS> entity,
             IM_COL32(255, 60, 60, 255)
         );
 
-        if(animationComponent != nullptr)
+        if(hasCurrentAnimation)
         {
             constexpr float kKeyframeHalfSize = 6.0f;
             const float keyframeY = areaMin.y + 30.0f;
 
-            for(const auto& step : animationComponent->animationInfo.animationSteps)
+            for(const auto& step : animationComponent->animationInfo[currentAnimation].animationSteps)
             {
                 const float keyframeX = areaMin.x + step.secondsToTrigger * timelinePixelsPerSecond;
                 const bool isSelected = std::abs(step.secondsToTrigger - selectedKeyframeTime) < 0.0001f;

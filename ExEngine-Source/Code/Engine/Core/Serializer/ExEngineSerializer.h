@@ -31,6 +31,12 @@ virtual ExSerializedClass Serialize() override{ \
 #endif
 
 template<typename T>
+struct is_vector_of_json_convertable : std::false_type {};
+
+template<typename T>
+struct is_vector_of_json_convertable<std::vector<T>> : std::is_base_of<IJsonConvertable, T> {};
+
+template<typename T>
 ISerializable* GetSerializablePtr(T* ptr) {
     if constexpr (std::is_base_of<ISerializable, T>::value) {
         return ptr;
@@ -64,6 +70,15 @@ std::function<bool(const nlohmann::json&)> MakeFieldJsonSetter(T* ptr) {
         }
         else if constexpr (std::is_same<T, glm::vec2>::value || std::is_same<T, glm::vec3>::value) {
             JsonExtensions::glm_from_json(json, *ptr);
+            return true;
+        }
+        else if constexpr (is_vector_of_json_convertable<T>::value) {
+            ptr->clear();
+            for (const auto& elemJson : json) {
+                typename T::value_type elem;
+                elem.FromJson(elemJson);
+                ptr->push_back(elem);
+            }
             return true;
         }
         else {

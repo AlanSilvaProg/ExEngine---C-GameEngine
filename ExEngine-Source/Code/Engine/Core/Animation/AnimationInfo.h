@@ -20,6 +20,7 @@ private:
     bool running;
     int lastCalledIndex = -1;
 public:
+    std::string name = "New Animation";
     AnimationLoopType animationLoopType;
     std::vector<AnimationStep> animationSteps;
 
@@ -64,6 +65,7 @@ public:
 
     EX_SERIALIZE_CLASS(
         EX_SERIALIZER((*this), running, false),
+        EX_SERIALIZER((*this), name, true),
         EX_SERIALIZER((*this), animationLoopType, true)
     )
 
@@ -74,12 +76,14 @@ public:
         }
 
         return {
+            {"name", name},
             {"animationLoopType", animationLoopType},
             {"animationSteps", stepsJson}
         };
     };
 
     inline virtual void FromJson(const nlohmann::json& json) override{
+        if (json.contains("name")) name = json["name"].get<std::string>();
         if (json.contains("animationLoopType")) animationLoopType = json["animationLoopType"];
 
         if (json.contains("animationSteps")) {
