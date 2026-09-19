@@ -16,6 +16,7 @@ void WindowSection::Draw(){
             ImGui::MenuItem("Animation Editor", nullptr, &EditorInterfaceGetters::animationEditorEnabled);
             ImGui::MenuItem("Project Settings", nullptr, &EditorInterfaceGetters::projectSettingsEnabled);
             ImGui::MenuItem("Build Settings", nullptr, &EditorInterfaceGetters::buildWindowEnabled);
+            ImGui::MenuItem("Network Test", nullptr, &EditorInterfaceGetters::networkTestWindowEnabled);
             ImGui::EndMenu();
         }
         ImGui::EndMenu();
