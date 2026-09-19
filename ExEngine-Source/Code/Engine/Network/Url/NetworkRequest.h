@@ -51,7 +51,7 @@ struct RequestComposition{
 private:
     std::string url;
     std::string urlMethod = "GET";
-    std::vector<const std::string> postFields;
+    std::vector<std::string> postFields;
     std::vector<std::string> headerList;
     std::string content;
     bool hasFinished;
@@ -62,11 +62,11 @@ public:
     RequestComposition() = default;
     RequestComposition(std::string url) : url(url){};
     RequestComposition(std::string url, std::string urlMethod) : url(url), urlMethod(urlMethod) {};
-    RequestComposition(std::string url, std::string urlMethod, std::vector<const std::string> postFields) : url(url), urlMethod(urlMethod), postFields(postFields) {};
-    RequestComposition(std::string url, std::string urlMethod, std::vector<const std::string> postFields, std::vector<const std::string> headerList) : url(url), urlMethod(urlMethod), postFields(postFields), headerList(headerList) {};
+    RequestComposition(std::string url, std::string urlMethod, std::vector<std::string> postFields) : url(url), urlMethod(urlMethod), postFields(postFields) {};
+    RequestComposition(std::string url, std::string urlMethod, std::vector<std::string> postFields, std::vector<std::string> headerList) : url(url), urlMethod(urlMethod), postFields(postFields), headerList(headerList) {};
     ~RequestComposition() = default; // ToDo if awaitable, clean every allocated memory tasks resource
 
-    inline RequestComposition* Perform(){ NetworkRequest::DoRequest(this); return this; };
+    RequestComposition* Perform();
 
     // Personalization
     inline RequestComposition* ChangeUrl(std::string url) { this->url = url; return this; };
@@ -96,7 +96,7 @@ public:
 
     // Getter's 
     inline std::string GetContent() { return content; };
-    inline std::vector<const std::string>& GetPostFields() { return postFields; };
+    inline std::vector<std::string>& GetPostFields() { return postFields; };
     inline nlohmann::json GetContentAsJson() { return JsonUtility::GetJsonFromString(content); };
 };
 
@@ -153,3 +153,5 @@ public:
         curl_easy_cleanup(curl);
     };
 };
+
+inline RequestComposition* RequestComposition::Perform(){ NetworkRequest::DoRequest(this); return this; };

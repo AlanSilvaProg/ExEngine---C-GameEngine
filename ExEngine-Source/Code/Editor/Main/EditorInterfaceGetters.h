@@ -27,6 +27,7 @@ public:
     static bool assetBrowserIsOpened;
     static bool engineConfigEnabled;
     static bool animationEditorEnabled;
+    static bool networkTestWindowEnabled;
     static std::filesystem::path currentProjectPath;
     static std::filesystem::path currentWorldPath;
     static BuildType buildTarget;

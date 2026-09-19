@@ -15,7 +15,7 @@ bool App::isEditorMode = false;
 
 App::App(){
     AppEventsHandler::Create();
-    auto result = curl_global_init(CURL_GLOBAL_DEFAULT);
+    auto result = curl_global_init(CURL_GLOBAL_ALL);
     if(result != CURLE_OK){
         Logger::LogError("Curl initialization failed with CURLcode: " + std::to_string(result));
     }

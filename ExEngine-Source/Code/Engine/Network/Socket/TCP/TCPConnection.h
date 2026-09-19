@@ -9,7 +9,7 @@ private:
 public: 
     CURL* CreateConnectionHanlder(const std::string socketAddress) override {
         handler = curl_easy_init();
-        curl_easy_setopt(handler, CURLOPT_URL, socketAddress);
+        curl_easy_setopt(handler, CURLOPT_URL, socketAddress.c_str());
         curl_easy_setopt(handler, CURLOPT_CONNECT_ONLY, 0L);
         return handler;
     };
