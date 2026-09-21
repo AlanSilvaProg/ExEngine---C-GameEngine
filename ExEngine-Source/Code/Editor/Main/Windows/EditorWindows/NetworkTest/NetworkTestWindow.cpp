@@ -1,8 +1,9 @@
 #include "NetworkTestWindow.h"
 #include "../../../EditorInterfaceGetters.h"
-#include "../../../../../Engine/Network/Url/NetworkRequest.h"
-#include "../../../../../Engine/Network/Socket/SocketConnection.h"
-#include "../../../../../Engine/Network/Socket/TransferType.h"
+#include "../../../../../Engine/Network/NetworkManager.h"
+#include "../../../../../Engine/Network/BidirectionalCommunication/TransferType.h"
+#include "../../../../../Engine/Network/HttpVersion.h"
+#include "../../../../../Engine/Network/INetworkObject.h"
 #include <imgui.h>
 #include <imgui/misc/cpp/imgui_stdlib.h>
 
@@ -12,6 +13,9 @@ NetworkTestWindow::~NetworkTestWindow(){
 
     if(socketThread.joinable())
         socketThread.join();
+
+    if(sendThread.joinable())
+        sendThread.join();
 };
 
 void NetworkTestWindow::Draw(const int phase){
@@ -41,6 +45,9 @@ void NetworkTestWindow::DrawNetworkRequestSection(){
     const char* methods[] = { "GET", "POST (sample fields)" };
     ImGui::Combo("Method##NetworkRequest", &requestMethodIndex, methods, IM_ARRAYSIZE(methods));
 
+    const char* httpVersions[] = { "Auto", "HTTP/1.1", "HTTP/2", "HTTP/3" };
+    ImGui::Combo("HTTP Version##NetworkRequest", &requestHttpVersionIndex, httpVersions, IM_ARRAYSIZE(httpVersions));
+
     ImGui::BeginDisabled(requestInProgress);
     if(ImGui::Button("Send Request"))
         SendTestRequest();
@@ -63,13 +70,15 @@ void NetworkTestWindow::DrawNetworkRequestSection(){
 };
 
 void NetworkTestWindow::DrawSocketConnectionSection(){
-    ImGui::TextUnformatted("SocketConnection");
-    ImGui::TextDisabled("Free public host: example.com (result logged to the Console)");
+    ImGui::TextUnformatted("Bidirectional Connection");
+    ImGui::TextDisabled("Result logged to the Console");
 
-    ImGui::InputText("Address##SocketConnection", &socketAddress);
-
-    const char* transferTypes[] = { "TCP", "UDP" };
+    const char* transferTypes[] = { "TCP WebSocket", "UDP QUIC" };
     ImGui::Combo("Transfer Type##SocketConnection", &socketTransferTypeIndex, transferTypes, IM_ARRAYSIZE(transferTypes));
+
+    const bool isQuic = socketTransferTypeIndex == 1;
+    std::string& currentAddress = isQuic ? quicAddress : socketAddress;
+    ImGui::InputText("Address##SocketConnection", &currentAddress);
 
     ImGui::BeginDisabled(socketInProgress);
     if(ImGui::Button("Connect"))
@@ -80,6 +89,17 @@ void NetworkTestWindow::DrawSocketConnectionSection(){
     {
         ImGui::SameLine();
         ImGui::TextUnformatted("Connecting...");
+    }
+
+    ImGui::BeginDisabled(sendInProgress);
+    if(ImGui::Button("Send Message"))
+        SendTestMessage();
+    ImGui::EndDisabled();
+
+    if(sendInProgress)
+    {
+        ImGui::SameLine();
+        ImGui::TextUnformatted("Sending...");
     }
 };
 
@@ -94,8 +114,12 @@ void NetworkTestWindow::SendTestRequest(){
     const std::string url = requestUrl;
     const bool isPost = requestMethodIndex == 1;
 
-    requestThread = std::thread([this, url, isPost](){
+    static const HttpVersion httpVersions[] = { AUTO, HTTP1_1, HTTP2, HTTP3 };
+    const HttpVersion httpVersion = httpVersions[requestHttpVersionIndex];
+
+    requestThread = std::thread([this, url, isPost, httpVersion](){
         RequestComposition composition(url);
+        composition.ChangeHttpVersion(httpVersion);
 
         if(isPost)
         {
@@ -125,13 +149,28 @@ void NetworkTestWindow::ConnectTestSocket(){
 
     socketInProgress = true;
 
-    const std::string address = socketAddress;
-    const TransferType transferType = socketTransferTypeIndex == 0 ? TransferType::TCP : TransferType::UDP;
+    const bool isQuic = socketTransferTypeIndex == 1;
+    const std::string address = isQuic ? quicAddress : socketAddress;
+    const TransferType transferType = isQuic ? TransferType::UDPQUIC : TransferType::TCP;
 
     socketThread = std::thread([this, address, transferType](){
-        SocketConnection connection;
-        connection.TryConnectTo(address, transferType);
+        NetworkManager::bidirectionalConnectionPtr->TryConnectTo(address, transferType);
 
         socketInProgress = false;
+    });
+};
+
+void NetworkTestWindow::SendTestMessage(){
+    if(sendInProgress) return;
+
+    if(sendThread.joinable())
+        sendThread.join();
+
+    sendInProgress = true;
+
+    sendThread = std::thread([this](){
+        NetworkManager::bidirectionalConnectionPtr->SendMessage(INetworkObject{});
+
+        sendInProgress = false;
     });
 };

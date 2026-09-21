@@ -1,6 +1,7 @@
 #pragma once
 #include "../../JsonUtility/JsonUtility.h"
 #include "../../Logger/Logger.h"
+#include "../HttpVersion.h"
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
 #include <string>
@@ -54,6 +55,7 @@ private:
     std::vector<std::string> postFields;
     std::vector<std::string> headerList;
     std::string content;
+    HttpVersion httpVersion = AUTO;
     bool hasFinished;
     bool success;
 
@@ -76,6 +78,7 @@ public:
     * @param method Can be any NetworkRequest_OPT_METHOD Macro.
     */
     inline RequestComposition* ChangeUrlMethod(const std::string method){ urlMethod = method; return this; };
+    inline RequestComposition* ChangeHttpVersion(const HttpVersion version){ httpVersion = version; return this; };
     inline RequestComposition* AddPostFields(const std::string key, const std::string value){ postFields.push_back(FORMAT_POST_FIELD(key, value)); return this; };
 
     inline RequestComposition* AddCustomHeader(const std::string headerValue) { headerList.push_back(headerValue); return this; };
@@ -113,6 +116,15 @@ public:
 
         curl_easy_setopt(curl, CURLOPT_URL, composition->url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, composition->urlMethod.c_str());
+
+        long curlHttpVersion = CURL_HTTP_VERSION_NONE;
+        switch(composition->httpVersion){
+            case AUTO: curlHttpVersion = CURL_HTTP_VERSION_NONE; break;
+            case HTTP1_1: curlHttpVersion = CURL_HTTP_VERSION_1_1; break;
+            case HTTP2: curlHttpVersion = CURL_HTTP_VERSION_2_0; break;
+            case HTTP3: curlHttpVersion = CURL_HTTP_VERSION_3; break;
+        }
+        curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, curlHttpVersion);
 
         curl_slist* headerList = nullptr;
         if(!composition->headerList.empty()){
