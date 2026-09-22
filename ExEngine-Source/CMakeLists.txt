@@ -41,6 +41,14 @@ find_package(glm CONFIG REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_ttf REQUIRED)
 find_package(SDL2_image REQUIRED)
+
+# macOS ships a system libcurl (linked by default), but it is built without WebSocket
+# and HTTP/3 support. Point CMake at the Homebrew curl keg instead, which has both -
+# needed for BidirectionalCommunication's TCPWebSocketConnection/UDPQUICConnection.
+if(APPLE)
+    set(CURL_INCLUDE_DIR /opt/homebrew/opt/curl/include)
+    set(CURL_LIBRARY /opt/homebrew/opt/curl/lib/libcurl.dylib)
+endif()
 find_package(CURL REQUIRED)
 
 #Editor option

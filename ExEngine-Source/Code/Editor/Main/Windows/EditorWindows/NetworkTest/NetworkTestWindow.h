@@ -10,6 +10,7 @@ private:
     // NetworkRequest test state
     std::string requestUrl = "https://jsonplaceholder.typicode.com/todos/1";
     int requestMethodIndex = 0; // GET, POST
+    int requestHttpVersionIndex = 0; // HTTP1_1, HTTP2, HTTP3 (see HttpVersion.h)
     std::atomic<bool> requestInProgress{false};
     std::thread requestThread;
     std::mutex requestResultMutex;
@@ -18,16 +19,21 @@ private:
     bool requestSuccess = false;
 
     // SocketConnection test state
-    std::string socketAddress = "https://echo.websocket.org/.sse";
-    int socketTransferTypeIndex = 0; // TCP, UDP
+    std::string socketAddress = "wss://echo.websocket.org/"; // Websocket (TCP) - must be ws:// or wss:// for curl_ws_recv/send to work
+    std::string quicAddress = "https://cloudflare-quic.com/"; // UDP QUIC
+    int socketTransferTypeIndex = 0; // Bidirectional communication (TCP), UDP QUIC
     std::atomic<bool> socketInProgress{false};
     std::thread socketThread;
+
+    std::atomic<bool> sendInProgress{false};
+    std::thread sendThread;
 
     void DrawNetworkRequestSection();
     void DrawSocketConnectionSection();
 
     void SendTestRequest();
     void ConnectTestSocket();
+    void SendTestMessage();
 public:
     ~NetworkTestWindow();
 

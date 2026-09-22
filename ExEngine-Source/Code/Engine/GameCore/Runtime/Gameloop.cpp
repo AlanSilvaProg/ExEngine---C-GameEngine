@@ -5,6 +5,7 @@
 #include "../../Core/Input/Input.h"
 #include "../../Core/Runtime/App.h"
 #include "../../Core/CollisionSystem/ExPhysicsEngine.h"
+#include "../../Network/NetworkManager.h"
 #include <SDL.h>
 
 void Gameloop::ExecuteGameLoop(){
@@ -29,6 +30,7 @@ void Gameloop::Initialize(){
 };
 
 void Gameloop::Update(){
+    NetworkManager::Update();
     ProcessInputPhase();
     ecsManager->Update();
     ProcessCollisionPhase();

@@ -1,6 +1,6 @@
 #pragma once
 
 enum TransferType{
-    UDP,
+    UDPQUIC,
     TCP
 };
