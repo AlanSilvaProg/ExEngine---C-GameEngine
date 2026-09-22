@@ -4,6 +4,7 @@
 #include "TransferType.h"
 #include "../INetworkObject.h"
 #include "../../Logger/Logger.h"
+#include <atomic>
 #include <curl/curl.h>
 #include <memory>
 #include <string>
@@ -20,6 +21,7 @@ public:
 class BidirectionalConnection{
 private:
     std::unique_ptr<IConnectionKind> connectionKind;
+    std::atomic<bool> connected{false};
 public:
     inline ~BidirectionalConnection(){
         CloseAnyConnection();
@@ -41,17 +43,19 @@ public:
             return;
         }
 
+        connected = true;
+
         //ToDo Register all notifications to callback
     };
 
     inline void UpdateConnection(){
-        if(connectionKind == nullptr) return;
+        if(!connected) return;
 
         connectionKind->UpdateConnection();
     };
 
     inline void SendMessage(INetworkObject networkObject){
-        if(connectionKind == nullptr){
+        if(!connected){
             Logger::Log("BidirectionalConnection: cannot send, not connected");
             return;
         }
@@ -60,6 +64,8 @@ public:
     };
 
     inline void CloseAnyConnection(){
+        connected = false;
+
         if(connectionKind == nullptr) return;
 
         connectionKind->CleanupHandler();

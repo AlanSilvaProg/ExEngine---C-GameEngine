@@ -6,8 +6,8 @@
 #include <curl/curl.h>
 
 class TCPWebSocketConnection : public IConnectionKind{
-private: 
-    CURL* handler;
+private:
+    CURL* handler = nullptr;
 public: 
     void CreateConnectionHanlder(const std::string socketAddress) override {
         handler = curl_easy_init();

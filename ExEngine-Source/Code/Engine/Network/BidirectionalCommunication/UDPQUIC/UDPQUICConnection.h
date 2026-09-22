@@ -6,7 +6,13 @@
 
 class UDPQUICConnection : public IConnectionKind{
 private:
-    CURL* handler;
+    CURL* handler = nullptr;
+    // libcurl's CONNECT_ONLY=2 is documented/supported for WebSocket and HTTP/2 upgrades,
+    // but not HTTP/3: for h3 it silently runs the request to completion during Connect()
+    // instead of stopping at "connected". So every curl_easy_recv() afterward is guaranteed
+    // to fail - this latches after the first failure so UpdateConnection() (polled every
+    // frame by NetworkManager::Update) logs it once instead of spamming forever.
+    bool receiveUnavailable = false;
 public:
     void CreateConnectionHanlder(const std::string socketAddress) override {
         handler = curl_easy_init();
@@ -22,7 +28,26 @@ public:
     };
 
     void UpdateConnection() override {
-        // ToDo: read incoming QUIC data once SocketConnection keeps the handler alive after connect.
+        if(handler == nullptr || receiveUnavailable) return;
+
+        char buffer[4096];
+        size_t bytesReceived = 0;
+
+        CURLcode result = curl_easy_recv(handler, buffer, sizeof(buffer), &bytesReceived);
+
+        if(result == CURLE_AGAIN) return;
+
+        if(result != CURLE_OK){
+            receiveUnavailable = true;
+            Logger::Log("UDPQUICConnection: recv failed: " + std::string(curl_easy_strerror(result))
+                + " (HTTP/3 CONNECT_ONLY already ran the request to completion in libcurl - "
+                + "no data is left to receive on this connection)");
+            return;
+        }
+
+        if(bytesReceived == 0) return;
+
+        Logger::Log("UDPQUICConnection received " + std::to_string(bytesReceived) + " bytes: " + std::string(buffer, bytesReceived));
     };
 
     void SendMessage(INetworkObject networkObject) override{
@@ -31,8 +56,6 @@ public:
         const std::string content = networkObject.TestContent();
         size_t bytesSent = 0;
 
-        // No WebSocket-style framing API exists for QUIC in curl - this writes straight to
-        // the raw connect-only socket opened in CreateConnectionHanlder.
         CURLcode result = curl_easy_send(handler, content.c_str(), content.size(), &bytesSent);
 
         if(result != CURLE_OK){
