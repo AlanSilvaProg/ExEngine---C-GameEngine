@@ -515,6 +515,38 @@ namespace StackTrace
 
 #endif
 
+#if !defined(__APPLE__) && !defined(__linux__) && !defined(_WIN32)
+
+    // No native backtrace/symbol API on this platform (e.g. wasm32-emscripten) - GetStackTrace()/
+    // GetStackTraceWithLines() below still call Capture() unconditionally, so it needs some
+    // definition here even though it can't actually walk the stack.
+    bool ResolveSymbol(void* address, Frame& frame)
+    {
+        frame.address = address;
+        frame.function = "<unknown>";
+        return false;
+    }
+
+    bool ResolveLineInfo(void* address, Frame& frame)
+    {
+        return false;
+    }
+
+    std::vector<Frame> Capture(bool resolveLines)
+    {
+        return {};
+    }
+
+    void InstallCrashHandler()
+    {
+    }
+
+    void UninstallCrashHandler()
+    {
+    }
+
+#endif
+
     // Format a single frame into a readable string
     // Pattern: "index: function [file:line] (address)"
     // Handles missing optional information gracefully

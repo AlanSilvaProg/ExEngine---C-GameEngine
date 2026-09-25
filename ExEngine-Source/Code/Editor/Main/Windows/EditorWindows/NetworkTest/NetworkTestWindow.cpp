@@ -73,18 +73,16 @@ void NetworkTestWindow::DrawSocketConnectionSection(){
     ImGui::TextUnformatted("Bidirectional Connection");
     ImGui::TextDisabled("Result logged to the Console");
 
-    // UDP QUIC is blocked for now: libcurl's CONNECT_ONLY doesn't support HTTP/3 the way it
-    // does WebSocket/H2 - it runs the request to completion instead of staying open, so there
-    // is nothing left to send/receive on afterward. See UDPQUICConnection.h for details.
-    const char* transferTypes[] = { "TCP WebSocket", "UDP QUIC (In Development)" };
+    // UDP QUIC is raw QUIC via msquic, not HTTP/3 - both ends must speak the same ALPN.
+    // See UDPQUICConnection.h for details.
+    const char* transferTypes[] = { "TCP WebSocket", "UDP QUIC" };
     if(ImGui::BeginCombo("Transfer Type##SocketConnection", transferTypes[socketTransferTypeIndex]))
     {
         if(ImGui::Selectable(transferTypes[0], socketTransferTypeIndex == 0))
             socketTransferTypeIndex = 0;
 
-        ImGui::BeginDisabled(true);
-        ImGui::Selectable(transferTypes[1], socketTransferTypeIndex == 1);
-        ImGui::EndDisabled();
+        if(ImGui::Selectable(transferTypes[1], socketTransferTypeIndex == 1))
+            socketTransferTypeIndex = 1;
 
         ImGui::EndCombo();
     }

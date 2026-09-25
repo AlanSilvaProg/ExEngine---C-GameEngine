@@ -3,7 +3,12 @@
 #include "../../Logger/Logger.h"
 #include "../HttpVersion.h"
 #include <nlohmann/json.hpp>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/fetch.h>
+#include <cstring>
+#else
 #include <curl/curl.h>
+#endif
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -111,6 +116,63 @@ private:
         return totalSize;
     };
 public:
+#ifdef __EMSCRIPTEN__
+    // libcurl talks to raw native sockets, which the browser sandbox does not expose - this uses
+    // emscripten_fetch (the browser's own fetch()/XHR) instead. EMSCRIPTEN_FETCH_SYNCHRONOUS makes
+    // emscripten_fetch() block the calling thread until the request finishes, same as
+    // curl_easy_perform() below, but that only works off the browser's main thread (a real Web
+    // Worker, which -pthread turns std::thread into) - every current caller already runs this
+    // from a background std::thread, so that holds.
+    inline static void DoRequest(RequestComposition* composition){
+        emscripten_fetch_attr_t attr;
+        emscripten_fetch_attr_init(&attr);
+        std::strncpy(attr.requestMethod, composition->urlMethod.c_str(), sizeof(attr.requestMethod) - 1);
+        attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
+
+        std::string postFields;
+        if(!composition->postFields.empty()){
+            for(const auto& field : composition->postFields){
+                if(!postFields.empty())
+                    postFields += "&";
+                postFields += field;
+            }
+            attr.requestData = postFields.c_str();
+            attr.requestDataSize = postFields.size();
+        }
+
+        // requestHeaders wants alternating name/value C strings (a nullptr-terminated array),
+        // not the "Name: Value" lines curl_slist_append() takes below - split each one.
+        std::vector<std::string> headerParts;
+        std::vector<const char*> headerPointers;
+        if(!composition->headerList.empty()){
+            for(const auto& header : composition->headerList){
+                const size_t separator = header.find(':');
+                if(separator == std::string::npos) continue;
+
+                std::string value = header.substr(separator + 1);
+                while(!value.empty() && value.front() == ' ') value.erase(value.begin());
+
+                headerParts.push_back(header.substr(0, separator));
+                headerParts.push_back(std::move(value));
+            }
+
+            for(const auto& part : headerParts) headerPointers.push_back(part.c_str());
+            headerPointers.push_back(nullptr);
+            attr.requestHeaders = headerPointers.data();
+        }
+
+        emscripten_fetch_t* fetch = emscripten_fetch(&attr, composition->url.c_str());
+
+        composition->content = fetch->data ? std::string(fetch->data, fetch->numBytes) : "";
+        composition->success = fetch->status >= 200 && fetch->status < 300;
+        composition->hasFinished = true;
+
+        if(!composition->success)
+            Logger::Log("Network Request failed with HTTP status " + std::to_string(fetch->status));
+
+        emscripten_fetch_close(fetch);
+    };
+#else
     inline static void DoRequest(RequestComposition* composition){
         auto curl = curl_easy_init();
 
@@ -164,6 +226,7 @@ public:
         curl_slist_free_all(headerList);
         curl_easy_cleanup(curl);
     };
+#endif
 };
 
 inline RequestComposition* RequestComposition::Perform(){ NetworkRequest::DoRequest(this); return this; };

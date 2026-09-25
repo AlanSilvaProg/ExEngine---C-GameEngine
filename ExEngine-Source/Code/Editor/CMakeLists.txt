@@ -6,7 +6,11 @@ file(GLOB ENGINE_SOURCE */**.h */**.cpp
                 */**/**/**/**.h */**/**/**/**.cpp
                 */**/**/**/**/**.h */**/**/**/**/**.cpp)
 
-set(ENGINE_LIBRARY_TYPE SHARED)
+if(EMSCRIPTEN)
+    set(ENGINE_LIBRARY_TYPE STATIC)
+else()
+    set(ENGINE_LIBRARY_TYPE SHARED)
+endif()
 
 add_library(${TARGET_NAME} ${ENGINE_LIBRARY_TYPE} ${ENGINE_SOURCE})
 target_link_libraries(${TARGET_NAME} PRIVATE ThirdParty Engine)
@@ -19,7 +23,7 @@ if(APPLE)
     )
 endif()
 
-if(UNIX)
+if(UNIX AND NOT EMSCRIPTEN)
     target_link_libraries(${TARGET_NAME} PRIVATE dl)
 endif()
 

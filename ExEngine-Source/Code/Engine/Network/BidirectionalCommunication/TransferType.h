@@ -2,5 +2,6 @@
 
 enum TransferType{
     UDPQUIC,
-    TCP
+    TCP,
+    EMSCRIPTENWEBSOCKET
 };

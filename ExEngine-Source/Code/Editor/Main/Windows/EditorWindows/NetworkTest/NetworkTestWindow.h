@@ -20,7 +20,7 @@ private:
 
     // SocketConnection test state
     std::string socketAddress = "wss://echo.websocket.org/"; // Websocket (TCP) - must be ws:// or wss:// for curl_ws_recv/send to work
-    std::string quicAddress = "https://cloudflare-quic.com/"; // UDP QUIC
+    std::string quicAddress = "127.0.0.1:4433"; // UDP QUIC (raw QUIC "host:port" - the peer must speak the "exengine" ALPN, see UDPQUICConnection.h)
     int socketTransferTypeIndex = 0; // Bidirectional communication (TCP), UDP QUIC
     std::atomic<bool> socketInProgress{false};
     std::thread socketThread;

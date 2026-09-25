@@ -28,6 +28,12 @@ if(APPLE)
 elseif(WIN32)
     add_compile_definitions("EXENGINE_WINDOWS")
     set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
+elseif(EMSCRIPTEN)
+    add_compile_definitions("EXENGINE_WEB")
+    # glm is header-only; its CMake config package lives under the Homebrew (host) prefix, which
+    # the Emscripten toolchain's find_package (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY) can never
+    # see - reuse the same installed headers directly instead of going through find_package below.
+    set(GLM_INCLUDE_DIRS /opt/homebrew/Cellar/glm/1.0.0/include)
 else()
     add_compile_definitions("EXENGINE_LINUX")
 endif()
@@ -37,19 +43,59 @@ include(FetchContent)
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
-find_package(glm CONFIG REQUIRED)
-find_package(SDL2 REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-find_package(SDL2_image REQUIRED)
-
-# macOS ships a system libcurl (linked by default), but it is built without WebSocket
-# and HTTP/3 support. Point CMake at the Homebrew curl keg instead, which has both -
-# needed for BidirectionalCommunication's TCPWebSocketConnection/UDPQUICConnection.
-if(APPLE)
-    set(CURL_INCLUDE_DIR /opt/homebrew/opt/curl/include)
-    set(CURL_LIBRARY /opt/homebrew/opt/curl/lib/libcurl.dylib)
+# glm's config package and the SDL2/SDL2_ttf/SDL2_image Homebrew binaries are all native (host)
+# artifacts - none of it can link into a .wasm module, and an Emscripten build sources SDL2
+# through its own bundled ports instead (see the EMSCRIPTEN block below), so skip all four here.
+if(NOT EMSCRIPTEN)
+    find_package(glm CONFIG REQUIRED)
+    find_package(SDL2 REQUIRED)
+    find_package(SDL2_ttf REQUIRED)
+    find_package(SDL2_image REQUIRED)
 endif()
-find_package(CURL REQUIRED)
+
+if(EMSCRIPTEN)
+    # Emscripten's bundled SDL2/SDL2_ttf/SDL2_image ports replace the Homebrew find_package calls
+    # above. These flags must be visible at both compile time (so <SDL.h> etc. resolve to the
+    # port's headers) and link time (to pull the port library in), so apply them to every target.
+    set(EMSCRIPTEN_SDL_FLAGS -sUSE_SDL=2 -sUSE_SDL_TTF=2 -sUSE_SDL_IMAGE=2)
+    add_compile_options(${EMSCRIPTEN_SDL_FLAGS})
+    add_link_options(${EMSCRIPTEN_SDL_FLAGS})
+
+    # emscripten_fetch (NetworkRequest's Emscripten backend) needs its JS support code pulled in
+    # explicitly, same as -lwebsocket.js above.
+    add_compile_options(-sFETCH=1)
+    add_link_options(-sFETCH=1)
+
+    # NetworkRequest's Emscripten backend (emscripten_fetch) blocks the calling thread until the
+    # request completes via EMSCRIPTEN_FETCH_SYNCHRONOUS, which only works off the browser's main
+    # thread - real Web Workers, which -pthread turns std::thread into. Every current caller
+    # already runs network requests from a background std::thread, so this matches. Note this
+    # requires the page to be served with the Cross-Origin-Opener-Policy/Cross-Origin-Embedder-Policy
+    # headers SharedArrayBuffer needs, or thread creation fails at runtime.
+    add_compile_options(-pthread)
+    add_link_options(-pthread)
+endif()
+
+# CURL and msquic back the native TCPWebSocketConnection/UDPQUICConnection transports, neither
+# of which can run inside the browser sandbox - an Emscripten build uses EmscriptenWebSocketConnection
+# instead (see BidirectionalCommunication/Emscripten/EmscriptenWebSocketConnection.h), so skip both.
+if(NOT EMSCRIPTEN)
+    # macOS ships a system libcurl (linked by default), but it is built without WebSocket
+    # and HTTP/3 support. Point CMake at the Homebrew curl keg instead, which has both -
+    # needed for BidirectionalCommunication's TCPWebSocketConnection/UDPQUICConnection.
+    if(APPLE)
+        set(CURL_INCLUDE_DIR /opt/homebrew/opt/curl/include)
+        set(CURL_LIBRARY /opt/homebrew/opt/curl/lib/libcurl.dylib)
+    endif()
+    find_package(CURL REQUIRED)
+
+    # msquic (installed via `brew install libmsquic`) provides the QUIC/HTTP3 backend for
+    # UDPQUICConnection in BidirectionalCommunication.
+    if(APPLE)
+        set(msquic_DIR /opt/homebrew/opt/libmsquic/share/msquic)
+    endif()
+    find_package(msquic CONFIG REQUIRED)
+endif()
 
 #Editor option
 option(EDITOR "Build with editor features" ON)
@@ -111,6 +157,8 @@ if(WIN32)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExGameEngineWin")
 elseif(APPLE)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExGameEngineMac")
+elseif(EMSCRIPTEN)
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExGameEngineWeb" SUFFIX ".html")
 else()
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExGameEngineLinux")
 endif()

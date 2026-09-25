@@ -5,7 +5,6 @@
 #include "../INetworkObject.h"
 #include "../../Logger/Logger.h"
 #include <atomic>
-#include <curl/curl.h>
 #include <memory>
 #include <string>
 
@@ -33,13 +32,11 @@ public:
         connectionKind = ConnectionKindFactory::Create(transferType);
         connectionKind->CreateConnectionHanlder(socketAddress);
 
-        auto result = connectionKind->Connect();
-
-        if(result != CURLE_OK){
+        if(!connectionKind->Connect()){
             connectionKind->CleanupHandler();
             connectionKind = nullptr;
 
-            Logger::Log("DEU RUIM: " + std::string(curl_easy_strerror(result)));
+            Logger::LogError("Connection Failed");
             return;
         }
 

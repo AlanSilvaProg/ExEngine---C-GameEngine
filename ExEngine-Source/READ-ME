@@ -10,3 +10,12 @@ Automated CLI build proccesses
 
 command to build CLI cmakes:
 cmake -S . -B ./build && cmake --build ./build  
+
+BUILD Test Emscripten
+
+cd /engine-folder
+
+EMSDK_PYTHON=/opt/homebrew/bin/python3 emcmake cmake --preset=game-dev \
+  -DGAME_PATH=/Users/a.silva/Desktop/Projects/ExEngine---C-GameEngine/ExEngine-Source/build/engine-debug/Projects/NewProject
+
+EMSDK_PYTHON=/opt/homebrew/bin/python3 cmake --build build/game-dev

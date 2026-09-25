@@ -16,9 +16,14 @@ add_library(ThirdParty STATIC ${EDITOR_UI_SOURCE})
 
 # Configure UI library
 target_include_directories(ThirdParty_UI PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} imgui)
-target_link_libraries(ThirdParty_UI PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
 
 # Configure main ThirdParty library (backward compatibility)
 target_include_directories(ThirdParty PUBLIC . ${CMAKE_CURRENT_SOURCE_DIR} imgui)
 
-target_link_libraries(ThirdParty PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
+if(NOT EMSCRIPTEN)
+    # SDL2_ttf::SDL2_image are Homebrew imported targets that only exist when the root
+    # find_package calls ran - an Emscripten build sources SDL2 through the -s flags set at the
+    # root CMakeLists.txt instead, applied to every target already.
+    target_link_libraries(ThirdParty_UI PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
+    target_link_libraries(ThirdParty PUBLIC ${SDL2_LIBRARIES} SDL2_ttf::SDL2_ttf SDL2_image::SDL2_image)
+endif()

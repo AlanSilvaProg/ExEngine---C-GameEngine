@@ -17,8 +17,15 @@ public:
         curl_easy_setopt(handler, CURLOPT_TIMEOUT, 10L);
     };
 
-    CURLcode Connect() override{
-        return curl_easy_perform(handler);
+    bool Connect() override{
+        CURLcode result = curl_easy_perform(handler);
+
+        if(result != CURLE_OK){
+            Logger::Log("TCPWebSocketConnection: connect failed: " + std::string(curl_easy_strerror(result)));
+            return false;
+        }
+
+        return true;
     };
 
     void UpdateConnection() override {

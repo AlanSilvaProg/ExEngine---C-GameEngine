@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <typeindex>
 #include <functional>
+#include <cstdint>
 
 #ifndef TYPE_NAME
 #define TYPE_NAME(T) #T
@@ -109,8 +110,8 @@ public:
 class CustomECSystem: public ECSystem{
 private:
     std::string systemName;
-    inline static u_int8_t id = 0;
-    u_int8_t systemId;
+    inline static uint8_t id = 0;
+    uint8_t systemId;
 public:
     CustomECSystem() { systemId = id ++;};
     CustomECSystem(std::string systemName) : systemName(systemName) { systemId = id ++; };
@@ -124,7 +125,7 @@ public:
     template<typename TComponent>
     void IsNotRequired();
 
-    inline u_int8_t GetId() { return systemId; };  
+    inline uint8_t GetId() { return systemId; };
 
     template<typename TComponent>
     inline void AddRequire(const bool optional) { Require<TComponent>(optional); };
