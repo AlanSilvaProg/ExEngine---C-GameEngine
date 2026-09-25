@@ -42,6 +42,7 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& ga
     
     InitializeEditor();
     InitializeScriptHotReload();
+    InitializePlayerBuildRunner();
     InitializeFileWatcher();
     CreateEditorBase();
     InputEventHandler::Create();
@@ -113,6 +114,7 @@ void EditorInterface::EarlyUpdate() const{
         Time::PermissionForUpdate();
 
     if(scriptHotReloadManager) scriptHotReloadManager->Poll();
+    if(playerBuildRunner) playerBuildRunner->Poll();
 
     UpdateWindowTitle();
     ClampWindowsToViewport();
@@ -255,6 +257,11 @@ void EditorInterface::InitializeScriptHotReload(){
     scriptHotReloadManager = std::make_shared<ScriptHotReloadManager>(ecsManager, EditorInterfaceGetters::currentProjectPath);
     EditorInterfaceGetters::scriptHotReloadManager = scriptHotReloadManager;
     scriptHotReloadManager->ScanAndCompileExistingScripts();
+};
+
+void EditorInterface::InitializePlayerBuildRunner(){
+    playerBuildRunner = std::make_shared<PlayerBuildRunner>();
+    EditorInterfaceGetters::playerBuildRunner = playerBuildRunner;
 };
 
 void EditorInterface::InitializeFileWatcher() {

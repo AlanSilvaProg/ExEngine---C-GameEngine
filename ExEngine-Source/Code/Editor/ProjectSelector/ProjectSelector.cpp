@@ -5,7 +5,7 @@
 #include "../../Engine/Core/Engine.h"
 #include "../../Engine/Logger/Logger.h"
 #include "../Main/EditorInterfaceGetters.h"
-#include "../Main/ProjectManager/ProjectInfo.h"
+#include "../../Engine/Core/Project/ProjectInfo.h"
 #include "../Main/ProjectManager/ProjectManager.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <string>

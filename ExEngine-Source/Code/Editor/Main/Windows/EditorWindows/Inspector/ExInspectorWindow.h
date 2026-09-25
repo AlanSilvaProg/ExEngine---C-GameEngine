@@ -22,6 +22,9 @@ private:
     std::map<std::string, std::string> hppFileContents;
     std::map<std::string, std::string> originalHppContents;
     std::map<std::string, bool> hppFileModified;
+    // Last on-disk write time seen for each cached path, so an external edit (IDE save) is
+    // detected and reloaded instead of silently showing whatever was first read this session.
+    std::map<std::string, std::filesystem::file_time_type> hppFileLastWriteTime;
     
     // Selection tracking for unsaved changes
     std::string lastSelectedAssetPath;

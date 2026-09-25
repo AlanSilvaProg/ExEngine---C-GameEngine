@@ -47,7 +47,7 @@ namespace{
     };
 }
 
-ScriptCompileResult ScriptCompiler::Compile(const std::filesystem::path& scriptPath, const std::filesystem::path& outputDirectory, const std::string& moduleName){
+ScriptCompileResult ScriptCompiler::Compile(const std::filesystem::path& scriptPath, const std::filesystem::path& outputDirectory, const std::string& moduleName, const std::string& linkLibOverride, const std::string& definesOverride){
     ScriptCompileResult result;
 
     auto trampolinePath = outputDirectory / (moduleName + ".generated.cpp");
@@ -68,10 +68,10 @@ ScriptCompileResult ScriptCompiler::Compile(const std::filesystem::path& scriptP
     trampolineFile.close();
 
     auto includeDirs = SplitPipeList(SCRIPT_INCLUDE_DIRS);
-    auto defines = SplitPipeList(SCRIPT_DEFINES);
+    auto defines = SplitPipeList(definesOverride.empty() ? SCRIPT_DEFINES : definesOverride);
     std::string compilerId = SCRIPT_CXX_COMPILER_ID;
     std::string compilerPath = SCRIPT_CXX_COMPILER;
-    std::string linkLib = SCRIPT_ENGINE_LINK_LIB;
+    std::string linkLib = linkLibOverride.empty() ? SCRIPT_ENGINE_LINK_LIB : linkLibOverride;
 
     std::vector<std::string> argv;
     argv.push_back(compilerPath);

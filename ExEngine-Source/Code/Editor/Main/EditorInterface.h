@@ -7,6 +7,7 @@
 #include "../Engine/Core/Engine.h"
 #include "../FileWatcher/FileWatcher.h"
 #include "../Scripting/ScriptHotReloadManager.h"
+#include "../Build/PlayerBuildRunner.h"
 #include <memory>
 #include <filesystem>
 
@@ -27,10 +28,12 @@ private:
     std::unique_ptr<GizmosController> gizmosController;
     std::unique_ptr<FileWatcher> fileWatcher;
     std::shared_ptr<ScriptHotReloadManager> scriptHotReloadManager;
+    std::shared_ptr<PlayerBuildRunner> playerBuildRunner;
 
     void InitializeEditor();
     void InitializeFileWatcher();
     void InitializeScriptHotReload();
+    void InitializePlayerBuildRunner();
     void OnFileCreated(const FileEvent& event);
     void OnFileModified(const FileEvent& event);
     void OnFileDeleted(const FileEvent& event);

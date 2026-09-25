@@ -1,5 +1,5 @@
 #pragma once
-#include "DynamicLibrary.h"
+#include "../../Engine/Core/Scripting/DynamicLibrary.h"
 #include "../../Engine/Core/ECS/ECSManager.h"
 #include <atomic>
 #include <condition_variable>

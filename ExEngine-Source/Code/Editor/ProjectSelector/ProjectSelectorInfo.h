@@ -1,6 +1,6 @@
 #pragma once
 #include "../../Engine/JsonUtility/IJsonConvertable.h"
-#include "../Main/ProjectManager/ProjectInfo.h"
+#include "../../Engine/Core/Project/ProjectInfo.h"
 #include <vector>
 #include <string>
 #include <filesystem>

@@ -1,7 +1,7 @@
 #pragma once
 #include "../Section.h"
 #include "../../../../Engine/File/FileManagement.h"
-#include "../../ProjectManager/ProjectInfo.h"
+#include "../../../../Engine/Core/Project/ProjectInfo.h"
 #include "../../EditorInterfaceGetters.h"
 
 class ProjectSection : public Section {

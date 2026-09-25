@@ -58,4 +58,7 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
     SCRIPT_ENGINE_LINK_LIB="$<TARGET_LINKER_FILE:Engine>"
     SCRIPT_INCLUDE_DIRS="${SCRIPT_INCLUDE_DIRS_STR}"
     SCRIPT_DEFINES="${SCRIPT_DEFINES_STR}"
+    # PlayerBuilder.cpp uses this to find the repo root - it invokes cmake itself to build/reuse a
+    # cached, editor-less "export template" (see Code/Editor/Build/PlayerBuilder.cpp).
+    ENGINE_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
 )

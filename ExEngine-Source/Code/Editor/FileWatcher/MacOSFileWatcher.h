@@ -27,7 +27,7 @@ private:
                                    const FSEventStreamEventId eventIds[]);
     
     void ProcessEvent(const std::string& path, FSEventStreamEventFlags flags);
-    FileEventType DetermineEventType(FSEventStreamEventFlags flags);
+    FileEventType DetermineEventType(FSEventStreamEventFlags flags, const std::string& path);
     
     FSEventStreamRef m_eventStream;
     CFRunLoopRef m_runLoop;

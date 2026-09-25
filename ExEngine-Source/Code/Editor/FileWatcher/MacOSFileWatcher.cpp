@@ -189,7 +189,7 @@ void MacOSFileWatcher::ProcessEvent(const std::string& path, FSEventStreamEventF
     FileEvent event;
     event.filePath = path;
     event.timestamp = std::chrono::system_clock::now();
-    event.type = DetermineEventType(flags);
+    event.type = DetermineEventType(flags, path);
     
     // Get file size for created/modified events
     if (event.type == FileEventType::Created || event.type == FileEventType::Modified) {
@@ -205,7 +205,22 @@ void MacOSFileWatcher::ProcessEvent(const std::string& path, FSEventStreamEventF
     m_eventCallback(event);
 }
 
-FileEventType MacOSFileWatcher::DetermineEventType(FSEventStreamEventFlags flags) {
+FileEventType MacOSFileWatcher::DetermineEventType(FSEventStreamEventFlags flags, const std::string& path) {
+    if (flags & kFSEventStreamEventFlagItemRenamed) {
+        // FSEvents reports a rename as two independent per-path events (old path, new path), each
+        // flagged Renamed, with no pairing between them - this is exactly the shape of an "atomic
+        // save" (write a temp file, then rename it over the target), which is the default save
+        // behavior in most editors (VSCode, JetBrains IDEs, etc.). Disambiguate by existence
+        // instead of trying to pair them: whichever path still exists is the "new" one.
+        //
+        // This also matters because FileEvent::oldPath is never populated here, so
+        // FileWatcher::ProcessEvent's own Renamed-specific handling (which needs it) never
+        // triggers - without this, a Renamed event falls through to being dispatched as *both*
+        // OnFileDeleted and OnFileCreated for the same live path, which for a script unregisters
+        // it right as (or after) the resulting recompile finishes, undoing the reload.
+        return std::filesystem::exists(path) ? FileEventType::Created : FileEventType::Deleted;
+    }
+
     if (flags & kFSEventStreamEventFlagItemCreated) {
         return FileEventType::Created;
     } else if (flags & kFSEventStreamEventFlagItemRemoved) {

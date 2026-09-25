@@ -3,6 +3,7 @@
 #include "../Engine/Core/Engine.h"
 #include "../Engine/Core/AssetManager/SpriteInformation.h"
 #include "../Scripting/ScriptHotReloadManager.h"
+#include "../Build/PlayerBuildRunner.h"
 #include <memory>
 #include <filesystem>
 #include <map>
@@ -17,6 +18,7 @@ class EditorInterfaceGetters
 public:
     static std::shared_ptr<Engine> engine;
     static std::shared_ptr<ScriptHotReloadManager> scriptHotReloadManager;
+    static std::shared_ptr<PlayerBuildRunner> playerBuildRunner;
     static EditorViewMode viewMode;
     static bool inspectorEnabled;
     static bool entityBrowserEnabled;

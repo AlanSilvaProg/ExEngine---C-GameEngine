@@ -486,8 +486,17 @@ void ExInspectorWindow::DrawHppFileEditor(const std::filesystem::path& assetPath
         }
     }
     
-    // Load file content if not already loaded
-    if (hppFileContents.find(pathStr) == hppFileContents.end()) {
+    // Load file content the first time it's selected, or reload it if it changed on disk since
+    // (e.g. saved from an external IDE) - unless there's an unsaved edit made right here in the
+    // Inspector, which an external change shouldn't silently discard.
+    std::error_code writeTimeError;
+    auto diskWriteTime = std::filesystem::last_write_time(assetPath, writeTimeError);
+
+    const bool notLoadedYet = hppFileContents.find(pathStr) == hppFileContents.end();
+    const bool changedOnDisk = !notLoadedYet && !writeTimeError
+        && hppFileLastWriteTime.count(pathStr) && diskWriteTime != hppFileLastWriteTime[pathStr];
+
+    if (notLoadedYet || (changedOnDisk && !hppFileModified[pathStr])) {
         std::ifstream file(assetPath);
         if (file.is_open()) {
             std::stringstream buffer;
@@ -501,6 +510,8 @@ void ExInspectorWindow::DrawHppFileEditor(const std::filesystem::path& assetPath
             originalHppContents[pathStr] = "";
             hppFileModified[pathStr] = false;
         }
+
+        if (!writeTimeError) hppFileLastWriteTime[pathStr] = diskWriteTime;
     }
 
     // Buttons row

@@ -2,7 +2,7 @@
 #include "LoggerNotifier.h"
 #include "StackTrace/StackTrace.h"
 #include <iostream>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <chrono>
 #include <ctime>
 
@@ -37,6 +37,11 @@ void Logger::Log(std::string message, LogType logType){
 };
 
 void Logger::Log(std::string message){
+    // "sem logs e tudo mais" for a Release export - only the Editor and a Dev Mode export define
+    // EXENGINE_BUILD_DEV (see root CMakeLists.txt), so this no-ops for everything else.
+#ifndef EXENGINE_BUILD_DEV
+    return;
+#endif
     std::shared_ptr<LogEntry> logEntry = std::make_shared<LogEntry>();
     logEntry->logType = LogType::LOG;
     GetComposition(logEntry->message);
@@ -47,6 +52,9 @@ void Logger::Log(std::string message){
 };
 
 void Logger::LogWarning(std::string message){
+#ifndef EXENGINE_BUILD_DEV
+    return;
+#endif
     std::shared_ptr<LogEntry> logEntry = std::make_shared<LogEntry>();
     logEntry->logType = LogType::WARNING;
     GetComposition(logEntry->message);
@@ -57,6 +65,9 @@ void Logger::LogWarning(std::string message){
 };
 
 void Logger::LogError(std::string message){
+#ifndef EXENGINE_BUILD_DEV
+    return;
+#endif
     std::shared_ptr<LogEntry> logEntry = std::make_shared<LogEntry>();
     logEntry->logType = LogType::ERROR;
     GetComposition(logEntry->message);

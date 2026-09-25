@@ -109,6 +109,12 @@ endif()
 
 if(EDITOR)
     add_compile_definitions("EXENGINE_EDITOR")
+else()
+    # App::isPlaying (Code/Engine/Core/Runtime/App.cpp) is only ever flipped to true by the
+    # Editor's own Play button (GameShortcutsWindow.cpp) - a shipped build has no separate edit/play
+    # mode, so it needs to start "playing" on its own. App.cpp already has this exact branch, just
+    # never had anything defining GAME_BUILD to take it.
+    add_compile_definitions("GAME_BUILD")
 endif()
 #
 
@@ -127,12 +133,46 @@ if(DEBUG_MODE)
 endif()
 #
 
+# Single flag meaning "this is a dev build" - true for the Editor (always) and for a shipped
+# (non-editor) build exported with Dev Mode on (PlayerBuilder passes -DDEBUG_MODE=ON for those,
+# OFF for Release). Logger.cpp gates its output on this alone instead of re-deriving the same
+# EDITOR-or-DEBUG_MODE condition itself.
+if(EDITOR OR DEBUG_MODE)
+    add_compile_definitions("EXENGINE_BUILD_DEV")
+endif()
+#
+
 add_subdirectory(ThirdParty)
 add_subdirectory(Code)
 
 if(DEFINED GAME_PATH)
     message(STATUS "Building with game project at: ${GAME_PATH}")
     target_compile_definitions(Engine PUBLIC GAME_PATH="${GAME_PATH}")
+
+    if(NOT EDITOR)
+        # A shipped (non-editor) build has no ScriptHotReloadManager/dlopen to load a project's
+        # scripts at runtime - bake them into Engine instead. REGISTER_COMPONENT/REGISTER_SYSTEM
+        # (Code/Engine/Core/ECS/InternalRegistry/ComponentRegistry.h, SystemRegistry.h) self-register
+        # via a static initializer, so simply compiling each script as a normal translation unit
+        # reproduces the same registration that dlopen()'ing it does today in the Editor. This
+        # mirrors ScriptCompiler::Compile()'s own trampoline trick (Code/Editor/Scripting/
+        # ScriptCompiler.cpp) instead of compiling the .hpp directly, since project scripts use
+        # repo-root-relative includes like "Code/Engine/ExEngine.h".
+        target_include_directories(Engine PUBLIC ${CMAKE_SOURCE_DIR})
+
+        file(GLOB_RECURSE GAME_SCRIPT_HEADERS "${GAME_PATH}/Assets/Scripts/*.hpp")
+        foreach(scriptHeader ${GAME_SCRIPT_HEADERS})
+            get_filename_component(scriptName ${scriptHeader} NAME_WE)
+            set(trampolinePath "${CMAKE_BINARY_DIR}/GeneratedScripts/${scriptName}.generated.cpp")
+            file(WRITE ${trampolinePath} "#include \"${scriptHeader}\"\n")
+            target_sources(Engine PRIVATE ${trampolinePath})
+        endforeach()
+
+        if(GAME_SCRIPT_HEADERS)
+            list(LENGTH GAME_SCRIPT_HEADERS GAME_SCRIPT_COUNT)
+            message(STATUS "Baked ${GAME_SCRIPT_COUNT} game script(s) from ${GAME_PATH}/Assets/Scripts into Engine")
+        endif()
+    endif()
 else()
     message(STATUS "No external game path provided — building engine/editor only")
 endif()
@@ -161,6 +201,26 @@ elseif(EMSCRIPTEN)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExGameEngineWeb" SUFFIX ".html")
 else()
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "ExGameEngineLinux")
+endif()
+
+if(DEFINED GAME_PATH AND NOT EDITOR AND EXISTS "${GAME_PATH}/Assets")
+    # Bundle the project's Assets next to the executable, in the same "Assets" folder
+    # Engine::GetEngineAssetsPath() (SDL_GetBasePath()/Assets) already looks in, so asset-loading
+    # code needs no changes. SDL resolves GetBasePath() to Contents/Resources inside a macOS .app
+    # bundle rather than the folder holding the Mach-O binary, so a bundled build copies there.
+    if(APPLE AND NOT DEBUG_MODE)
+        set(GAME_ASSETS_DEST "$<TARGET_BUNDLE_CONTENT_DIR:${PROJECT_NAME}>/Resources/Assets")
+    else()
+        set(GAME_ASSETS_DEST "$<TARGET_FILE_DIR:${PROJECT_NAME}>/Assets")
+    endif()
+
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${GAME_PATH}/Assets" "${GAME_ASSETS_DEST}")
+
+    if(EMSCRIPTEN)
+        # That plain directory isn't reachable from inside the browser sandbox - preload it into
+        # the wasm virtual filesystem at the same relative path instead.
+        target_link_options(${PROJECT_NAME} PRIVATE "--preload-file" "${GAME_PATH}/Assets@Assets")
+    endif()
 endif()
 
 if(EDITOR)
