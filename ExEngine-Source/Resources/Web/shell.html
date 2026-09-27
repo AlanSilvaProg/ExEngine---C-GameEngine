@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>ExEngine</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+        }
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <script type="text/javascript">
+        var Module = {
+            canvas: (function() {
+                var canvas = document.getElementById('canvas');
+                // Keep keyboard focus on the canvas so game input reaches it instead of
+                // the browser chrome, without showing any focus outline.
+                canvas.addEventListener("click", function() { canvas.focus(); }, false);
+                return canvas;
+            })()
+        };
+        // Stop arrow keys/space from scrolling the page while the canvas has focus.
+        window.addEventListener("keydown", function(e) {
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].indexOf(e.key) > -1) {
+                e.preventDefault();
+            }
+        }, false);
+    </script>
+    {{{ SCRIPT }}}
+</body>
+</html>

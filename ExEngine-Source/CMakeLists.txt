@@ -83,6 +83,10 @@ if(EMSCRIPTEN)
     # new thread, but the thread pool is exhausted" / "Blocking on the main thread is very
     # dangerous"). Pre-spawning a small pool up front avoids that lazy on-demand spawn entirely.
     add_link_options(-sPTHREAD_POOL_SIZE=4)
+
+    # Replaces Emscripten's default shell (spinner/status/progress bar/resize controls) with a
+    # minimal one that's just a fullscreen canvas - see Resources/Web/shell.html.
+    add_link_options(--shell-file ${CMAKE_SOURCE_DIR}/Resources/Web/shell.html)
 endif()
 
 # CURL and msquic back the native TCPWebSocketConnection/UDPQUICConnection transports, neither

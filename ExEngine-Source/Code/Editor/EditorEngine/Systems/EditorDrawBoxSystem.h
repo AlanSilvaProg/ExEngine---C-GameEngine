@@ -2,6 +2,7 @@
 #include "../../../Engine/Core/ECS/ECSManager.h"
 #include "../../../Engine/Core/Components/BoxColliderComponent.h"
 #include "../../../Engine/Core/Components/TransformComponent.h"
+#include "../../../Engine/Core/Components/AnchorComponent.h"
 #include <glm/glm.hpp>
 
 class EditorDrawBoxSystem : public ECSystem{

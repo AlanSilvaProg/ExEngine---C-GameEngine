@@ -2,6 +2,7 @@
 #include "ExPhysicsEngine.h"
 #include "../Components/BoxColliderComponent.h"
 #include "../Components/TransformComponent.h"
+#include "../Components/AnchorComponent.h"
 #include "../Rendering/Renderer/ExRendererGetters.h"
 #include "../Input/Input.h"
 #include <algorithm>
@@ -29,7 +30,7 @@ void ClickSystem::UpdateSystem(SystemContext systemContext){
         });
 
         auto mousePosition = Input::GetMousePosition();
-        glm::vec2 worldMousePosition = glm::vec2(mousePosition.x, mousePosition.y) + glm::vec2(cameraTransformComponent->position.x, cameraTransformComponent->position.y);
+        glm::vec2 worldMousePosition = ExRendererGetters::ScreenToWorld(glm::vec2(mousePosition.x, mousePosition.y), glm::vec2(cameraTransformComponent->position.x, cameraTransformComponent->position.y));
         
         for(auto entity : entities){
             if(CheckBounds(entity, worldMousePosition))
@@ -43,7 +44,7 @@ void ClickSystem::UpdateSystem(SystemContext systemContext){
 bool ClickSystem::CheckBounds(const std::shared_ptr<EntityCS> entity, const glm::vec2& worldMousePosition) const{
     auto transformComponent = entity->GetComponent<TransformComponent>();
     auto boxColliderComponent = entity->GetComponent<BoxColliderComponent>();
-    glm::vec2 entityPosition(transformComponent->position.x, transformComponent->position.y);
+    glm::vec2 entityPosition = AnchorComponent::GetPivotAdjustedPosition(entity, transformComponent);
 
     glm::vec2 rectMin = entityPosition + glm::min(boxColliderComponent->exRect.beginRect, boxColliderComponent->exRect.endRect);
     glm::vec2 rectMax = entityPosition + glm::max(boxColliderComponent->exRect.beginRect, boxColliderComponent->exRect.endRect);

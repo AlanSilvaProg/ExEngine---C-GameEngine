@@ -33,7 +33,7 @@ void EditorDrawBoxSystem::UpdateSystem(SystemContext systemContext){
 
     const glm::ivec2 mousePositionInt = Input::GetMousePosition();
     const glm::vec2 mouseScreenPosition(mousePositionInt.x, mousePositionInt.y);
-    const glm::vec2 worldMousePosition = mouseScreenPosition + cameraPosition;
+    const glm::vec2 worldMousePosition = ExRendererGetters::ScreenToWorld(mouseScreenPosition, cameraPosition);
 
     const bool mousePressed = Input::GetMouseButtonPressed(SDL_BUTTON_LEFT);
     const bool mouseJustPressed = Input::GetMouseButtonDown(SDL_BUTTON_LEFT);
@@ -67,7 +67,7 @@ void EditorDrawBoxSystem::UpdateSystem(SystemContext systemContext){
         const auto transformComponent = entity->GetComponent<TransformComponent>();
         const auto boxColliderComponent = entity->GetComponent<BoxColliderComponent>();
 
-        const glm::vec2 entityPosition(transformComponent->position.x, transformComponent->position.y);
+        const glm::vec2 entityPosition = AnchorComponent::GetPivotAdjustedPosition(entity, transformComponent);
 
         // Corner being dragged moves with the mouse while the opposite corner (captured on drag start) stays put.
         if(isDragging && draggedEntityId == entity->GetId()){
@@ -88,7 +88,7 @@ void EditorDrawBoxSystem::UpdateSystem(SystemContext systemContext){
 
         glm::vec2 screenCorners[4];
         for(int i = 0; i < 4; i++){
-            screenCorners[i] = entityPosition + localCorners[i] - cameraPosition;
+            screenCorners[i] = ExRendererGetters::WorldToScreen(entityPosition + localCorners[i], cameraPosition);
         }
 
         SDL_Rect rect = {

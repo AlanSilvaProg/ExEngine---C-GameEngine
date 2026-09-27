@@ -72,8 +72,5 @@ void EditorCameraController::FocusOnSelection(){
     auto entityTransform = entity->GetComponent<TransformComponent>();
     if(entityTransform == nullptr) return;
 
-    int windowWidth, windowHeight;
-    SDL_GetWindowSize(ExRendererGetters::window, &windowWidth, &windowHeight);
-
-    transform->position = entityTransform->position - glm::vec3(windowWidth * 0.5f, windowHeight * 0.5f, 0);
+    transform->position = entityTransform->position;
 };

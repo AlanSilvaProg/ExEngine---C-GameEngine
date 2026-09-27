@@ -1,10 +1,12 @@
 #include "RenderingSystem2D.h"
 #include "../Renderer/ExRendererGetters.h"
 #include "../../Components/TransformComponent.h"
+#include "../../Components/AnchorComponent.h"
 #include "../Components/SpriteComponent.h"
 #include "../../../Logger/Logger.h"
 #include <algorithm>
 #include <SDL2/SDL.h>
+#include <glm/glm.hpp>
 
 RenderingSystem2D::RenderingSystem2D(){
     Require<TransformComponent>(false);    
@@ -43,10 +45,15 @@ void RenderingSystem2D::UpdateSystem(SystemContext systemContext) {
         //ToDo draw a white rect or similiar by default
         if(texture == nullptr) continue;
 
+        glm::vec2 worldPosition = AnchorComponent::GetPivotAdjustedPosition(entity, transformComponent);
+
+        glm::vec2 cameraPosition(cameraTransformComponent->position.x, cameraTransformComponent->position.y);
+        glm::vec2 screenPosition = ExRendererGetters::WorldToScreen(worldPosition, cameraPosition);
+
         //render texture
         SDL_Rect dstRect = {
-            static_cast<int>(transformComponent->position.x - cameraTransformComponent->position.x),
-            static_cast<int>(transformComponent->position.y - cameraTransformComponent->position.y),
+            static_cast<int>(screenPosition.x),
+            static_cast<int>(screenPosition.y),
             static_cast<int>(spriteComponent->srcRect->w * transformComponent->scale.x),
             static_cast<int>(spriteComponent->srcRect->h * transformComponent->scale.y)
         };
