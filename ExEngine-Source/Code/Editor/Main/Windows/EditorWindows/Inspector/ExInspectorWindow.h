@@ -31,6 +31,9 @@ private:
     bool showSaveConfirmDialog;
     std::string pendingSelectionPath;
 
+    // Add Component popup search field.
+    char addComponentSearchBuffer[128] = "";
+
     void DrawEntity(const EntityBrowserSelection* entityBrowserSelection);
     void DrawEntityComponent(const std::shared_ptr<IPool> componentPool, const int entityId);
     void DrawMissingComponent(const int entityId, const int componentId);

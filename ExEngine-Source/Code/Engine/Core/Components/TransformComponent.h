@@ -8,6 +8,7 @@
 struct TransformComponent : public EComponentS<TransformComponent>{
 public:
     static constexpr unsigned int ComponentId = 1;
+    static constexpr const char* ComponentGroup = "Core";
 
     glm::vec3 position = glm::vec3(0,0,0);
     glm::vec3 rotation = glm::vec3(0,0,0);

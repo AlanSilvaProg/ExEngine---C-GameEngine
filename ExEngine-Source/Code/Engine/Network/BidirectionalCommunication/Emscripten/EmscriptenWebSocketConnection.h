@@ -8,11 +8,9 @@
 #include <deque>
 #include <emscripten/websocket.h>
 
-// Browser WebSockets are inherently asynchronous: onopen/onmessage/onclose only fire back into
-// the JS event loop, which the main thread must keep spinning - unlike UDPQUICConnection's
-// Connect(), blocking here on a condition_variable would deadlock the page. So Connect() only
-// creates the socket and kicks off the handshake; UpdateConnection() drains whatever the
-// callbacks recorded meanwhile, and SendMessage() queues frames until the socket actually opens.
+// Browser WebSockets are inherently async (onopen/onmessage/onclose only fire via the JS event
+// loop) - blocking here like UDPQUICConnection::Connect() would deadlock the page. Connect() just
+// starts the handshake; UpdateConnection() drains callback state, SendMessage() queues until open.
 class EmscriptenWebSocketConnection : public IConnectionKind{
 private:
     EMSCRIPTEN_WEBSOCKET_T socket = 0;

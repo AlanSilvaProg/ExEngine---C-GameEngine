@@ -12,6 +12,7 @@ private:
     unsigned int currentAnimation = 0;
 public:
     static constexpr unsigned int ComponentId = 4;
+    static constexpr const char* ComponentGroup = "Animation";
 
     float currentTime = 0;
     std::vector<AnimationInfo> animationInfo = { AnimationInfo{} }; // always has at least one entry

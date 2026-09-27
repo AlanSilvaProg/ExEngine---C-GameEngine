@@ -547,43 +547,33 @@ namespace StackTrace
 
 #endif
 
-    // Format a single frame into a readable string
-    // Pattern: "index: function [file:line] (address)"
-    // Handles missing optional information gracefully
-    // Extracts basename for long file paths
-    // Never truncates function names
+    // Frame format: "index: function [file:line] (address)"
     std::string FormatFrame(const Frame& frame, int index)
     {
         std::ostringstream oss;
-        // Function name (never truncated, always included)
         oss << frame.function;
-        
-        // File and line information (optional)
+
         if (!frame.file.empty() && frame.line > 0)
         {
-            // Extract basename from file path for readability
             std::string filename = frame.file;
             size_t lastSlash = filename.find_last_of("/\\");
             if (lastSlash != std::string::npos)
                 filename = filename.substr(lastSlash + 1);
-            
+
             oss << " [" << filename << ":" << frame.line << "]";
         }
         else if (!frame.file.empty())
         {
-            // File available but no line number
             std::string filename = frame.file;
             size_t lastSlash = filename.find_last_of("/\\");
             if (lastSlash != std::string::npos)
                 filename = filename.substr(lastSlash + 1);
-            
+
             oss << " [" << filename << "]";
         }
-        // If no file info, omit the brackets entirely
-        
-        // Address
+
         // oss << " (" << frame.address << ")";
-        
+
         return oss.str();
     }
 

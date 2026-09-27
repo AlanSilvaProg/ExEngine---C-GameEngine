@@ -8,11 +8,9 @@
 #include <chrono>
 #include <msquic.h>
 
-// Raw QUIC transport backed by msquic (libmsquic via Homebrew). This talks QUIC directly -
-// it is not an HTTP/3 client - both ends must agree on the same ALPN below. The previous
-// implementation piggybacked on libcurl's CONNECT_ONLY mode, but that only staged
-// WebSocket/H2 upgrades: for HTTP/3 curl ran the request to completion during Connect()
-// instead of stopping at "connected", so nothing was left to send/receive afterward.
+// Raw QUIC transport via msquic - not an HTTP/3 client, both ends must share the ALPN below.
+// Replaces a previous libcurl CONNECT_ONLY approach, which ran HTTP/3 requests to completion
+// during Connect() instead of stopping at "connected", leaving nothing to send/receive after.
 class UDPQUICConnection : public IConnectionKind{
 private:
     inline static const char* Alpn = "exengine";

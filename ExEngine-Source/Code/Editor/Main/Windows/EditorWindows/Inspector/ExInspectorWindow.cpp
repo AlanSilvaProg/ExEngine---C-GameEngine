@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <SDL.h>
 
@@ -179,16 +180,18 @@ void ExInspectorWindow::DrawMissingComponent(const int entityId, const int compo
 
 void ExInspectorWindow::DrawSerializedClass(const ExSerializedClass& fieldsToSerialize, const int id = 0, bool root = false) const
 {
-    //serializing fields
     auto className = fieldsToSerialize.className;
-    ImGui::Text("%s", className.c_str());
 
     if(root)
     {
-        ImGui::SameLine();
-        ImGui::Text("%s", "Component Id: ");
-        ImGui::SameLine();
-        ImGui::Text("%s", std::to_string(id).c_str());
+        // CollapsingHeader is the arrow-to-collapse widget ImGui windows themselves use.
+        if(!ImGui::CollapsingHeader(className.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) return;
+
+        ImGui::Text("Component Id: %d", id);
+    }
+    else
+    {
+        ImGui::Text("%s", className.c_str());
     }
 
     for(auto field : fieldsToSerialize.serializedFields)
@@ -352,18 +355,75 @@ void ExInspectorWindow::DrawAddComponentButton(const int entityId){
     if(ImGui::Button("Add Component"))
     {
         ImGui::OpenPopup("AddComponentContext");
+        addComponentSearchBuffer[0] = '\0';
     }
 
     if(ImGui::BeginPopup("AddComponentContext"))
-    {   
-        for(auto componentRegistryPair : ComponentRegistry::components)
+    {
+        ImGui::SetNextItemWidth(220.0f);
+        ImGui::InputTextWithHint("##ComponentSearch", "Search components...", addComponentSearchBuffer, sizeof(addComponentSearchBuffer));
+        ImGui::Separator();
+
+        std::string searchTerm = addComponentSearchBuffer;
+        std::transform(searchTerm.begin(), searchTerm.end(), searchTerm.begin(), ::tolower);
+
+        if(!searchTerm.empty())
         {
-            auto componentName = ComponentRegistry::componentsNameById[componentRegistryPair.first];
-            auto popupLabel = componentName + "###id_" + componentName;
-            if(ImGui::MenuItem(popupLabel.c_str())){
-                componentRegistryPair.second(ecsManager->GetEntity(entityId));
+            // Searching flattens every group into one filtered, alphabetized list.
+            std::map<std::string, unsigned int> matches;
+            for(auto componentRegistryPair : ComponentRegistry::components)
+            {
+                auto componentId = componentRegistryPair.first;
+                auto componentName = ComponentRegistry::componentsNameById[componentId];
+                auto lowerName = componentName;
+                std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+
+                if(lowerName.find(searchTerm) != std::string::npos)
+                    matches.insert({componentName, componentId});
+            }
+
+            for(auto& match : matches)
+            {
+                auto group = ComponentRegistry::componentGroupById[match.second];
+                auto popupLabel = match.first + " (" + group + ")###id_" + match.first;
+                if(ImGui::MenuItem(popupLabel.c_str())){
+                    ComponentRegistry::components[match.second](ecsManager->GetEntity(entityId));
+                    ImGui::CloseCurrentPopup();
+                }
             }
         }
+        else
+        {
+            // Otherwise, components are grouped into sections (Core, Rendering, Physics, ...),
+            // each alphabetized within itself - the section a component lands in is whatever it
+            // sets via its own `static constexpr const char* ComponentGroup = "...";` ("Other" if
+            // it doesn't set one).
+            std::map<std::string, std::map<std::string, unsigned int>> groupedComponents;
+            for(auto componentRegistryPair : ComponentRegistry::components)
+            {
+                auto componentId = componentRegistryPair.first;
+                auto componentName = ComponentRegistry::componentsNameById[componentId];
+                auto group = ComponentRegistry::componentGroupById[componentId];
+                groupedComponents[group].insert({componentName, componentId});
+            }
+
+            for(auto& groupPair : groupedComponents)
+            {
+                if(ImGui::BeginMenu(groupPair.first.c_str()))
+                {
+                    for(auto& componentPair : groupPair.second)
+                    {
+                        auto popupLabel = componentPair.first + "###id_" + componentPair.first;
+                        if(ImGui::MenuItem(popupLabel.c_str())){
+                            ComponentRegistry::components[componentPair.second](ecsManager->GetEntity(entityId));
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+        }
+
         ImGui::EndPopup();
     }
 };

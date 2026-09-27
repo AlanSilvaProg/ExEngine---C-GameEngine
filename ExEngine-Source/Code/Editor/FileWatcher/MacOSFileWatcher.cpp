@@ -207,17 +207,10 @@ void MacOSFileWatcher::ProcessEvent(const std::string& path, FSEventStreamEventF
 
 FileEventType MacOSFileWatcher::DetermineEventType(FSEventStreamEventFlags flags, const std::string& path) {
     if (flags & kFSEventStreamEventFlagItemRenamed) {
-        // FSEvents reports a rename as two independent per-path events (old path, new path), each
-        // flagged Renamed, with no pairing between them - this is exactly the shape of an "atomic
-        // save" (write a temp file, then rename it over the target), which is the default save
-        // behavior in most editors (VSCode, JetBrains IDEs, etc.). Disambiguate by existence
-        // instead of trying to pair them: whichever path still exists is the "new" one.
-        //
-        // This also matters because FileEvent::oldPath is never populated here, so
-        // FileWatcher::ProcessEvent's own Renamed-specific handling (which needs it) never
-        // triggers - without this, a Renamed event falls through to being dispatched as *both*
-        // OnFileDeleted and OnFileCreated for the same live path, which for a script unregisters
-        // it right as (or after) the resulting recompile finishes, undoing the reload.
+        // FSEvents reports a rename as two untied per-path events (old + new), both flagged
+        // Renamed - same shape as an atomic save. Disambiguate by existence: whichever path still
+        // exists is the "new" one (oldPath is never populated, so leaving this unhandled would
+        // fire both OnFileDeleted/OnFileCreated for the same path).
         return std::filesystem::exists(path) ? FileEventType::Created : FileEventType::Deleted;
     }
 

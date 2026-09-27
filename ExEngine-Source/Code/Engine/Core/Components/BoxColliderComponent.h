@@ -8,6 +8,7 @@
 struct BoxColliderComponent : public EComponentS<BoxColliderComponent>{
 public:
     static constexpr unsigned int ComponentId = 3;
+    static constexpr const char* ComponentGroup = "Physics";
 
     ExRect exRect;
 

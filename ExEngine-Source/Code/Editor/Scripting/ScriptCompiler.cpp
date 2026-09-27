@@ -53,11 +53,9 @@ ScriptCompileResult ScriptCompiler::Compile(const std::filesystem::path& scriptP
     auto trampolinePath = outputDirectory / (moduleName + ".generated.cpp");
     auto outputLibraryPath = outputDirectory / (moduleName + PlatformLibraryExtension());
 
-    // The .hpp itself is never compiled directly - a tiny generated .cpp including it is the
-    // actual translation unit, which keeps this independent of any compiler-specific flag for
-    // treating a header as a source file. Written directly (not via FileManagement::CreateFile,
-    // which deliberately never overwrites an existing file) since this cache file must be
-    // regenerated fresh on every recompile.
+    // A tiny generated .cpp #including the .hpp is the actual translation unit (keeps this
+    // independent of compiler-specific header-as-source flags). Written directly, not via
+    // FileManagement::CreateFile (never overwrites), since this must regenerate on every recompile.
     std::ofstream trampolineFile(trampolinePath);
     if(!trampolineFile.is_open())
     {

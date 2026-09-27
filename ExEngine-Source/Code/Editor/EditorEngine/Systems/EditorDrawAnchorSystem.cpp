@@ -78,11 +78,9 @@ void EditorDrawAnchorSystem::UpdateSystem(SystemContext systemContext){
         const auto transformComponent = entity->GetComponent<TransformComponent>();
         const auto anchorComponent = entity->GetComponent<AnchorComponent>();
 
-        // RenderingSystem2D draws the sprite's top-left at (transform.position - anchor.position),
-        // so the point "anchor.position" units into the sprite always lands on transform.position -
-        // that's the pivot the reticle marks and drags. While dragging, move the transform to the
-        // mouse and re-derive the anchor from the sprite's fixed top-left (captured on drag start)
-        // so the anchor's value changes without the rendered sprite shifting on screen.
+        // Anchor is pinned to transform.position (see RenderingSystem2D). Move transform to the
+        // mouse and re-derive anchor from the fixed top-left captured on drag start, so the
+        // sprite itself doesn't shift on screen while dragging.
         if(isDragging && draggedEntityId == entity->GetId()){
             transformComponent->position.x = worldMousePosition.x;
             transformComponent->position.y = worldMousePosition.y;

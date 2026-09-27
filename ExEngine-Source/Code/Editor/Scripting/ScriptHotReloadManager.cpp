@@ -85,12 +85,9 @@ void ScriptHotReloadManager::ApplyDeletion(const std::string& filePath){
         ComponentRegistry::Unregister(module.registryId);
         orphanedModules.push_back(std::move(module));
 
-        // Any System that #included this Component's .hpp got its full definition (and
-        // REGISTER_COMPONENT) compiled into the System's own module, so that System keeps running
-        // with a fully functional but now-orphaned copy of the type - the deletion above only ever
-        // touches the Component's own module/registry entry, never the System's. Force those Systems
-        // to recompile right now so the missing header fails loudly at the moment of deletion,
-        // instead of lingering until some unrelated future edit trips over it.
+        // Systems that #included this Component's .hpp baked a copy of it into their own module and
+        // keep running fine - force them to recompile now so a missing-header failure surfaces
+        // immediately instead of lingering until an unrelated future edit trips over it.
         auto deletedPath = std::filesystem::path(filePath).lexically_normal().string();
         for(const auto& [systemPath, dependencies] : systemDependencies)
         {

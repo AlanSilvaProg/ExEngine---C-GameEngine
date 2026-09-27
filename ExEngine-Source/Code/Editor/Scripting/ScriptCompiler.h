@@ -14,15 +14,10 @@ struct ScriptCompileResult{
 // class never has to guess the toolchain/include paths used to build the Editor.
 class ScriptCompiler{
 public:
-    // outputDirectory is expected to already exist (typically <project>/Library/ScriptModules).
-    // moduleName must be unique per compile (the caller is expected to embed a revision number in
-    // it): the previous module for the same script may still be dlopen'd/mapped in memory when a
-    // recompile starts, and overwriting that same file on disk while it's mapped is unsafe.
-    //
-    // linkLibOverride/definesOverride ('|'-separated, matching SCRIPT_DEFINES' own format) default
-    // to the Editor's own baked SCRIPT_ENGINE_LINK_LIB/SCRIPT_DEFINES (EXENGINE_EDITOR's Engine
-    // build) when left empty. PlayerBuilder passes both explicitly instead, to link an exported
-    // project's scripts against the non-editor export template's Engine build.
+    // outputDirectory must already exist. moduleName must be unique per compile (embed a revision
+    // number) - the previous module may still be mapped in memory when overwriting starts.
+    // linkLibOverride/definesOverride default to the Editor's own Engine build when empty;
+    // PlayerBuilder passes both explicitly to target an export template's Engine build instead.
     static ScriptCompileResult Compile(const std::filesystem::path& scriptPath, const std::filesystem::path& outputDirectory, const std::string& moduleName, const std::string& linkLibOverride = "", const std::string& definesOverride = "");
 
     // Writes a clangd-compatible compile_flags.txt at the project's root, using the exact same

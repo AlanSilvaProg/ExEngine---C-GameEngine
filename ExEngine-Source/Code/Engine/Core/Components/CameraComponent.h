@@ -5,6 +5,7 @@
 struct CameraComponent : public EComponentS<CameraComponent>{
 public:
     static constexpr unsigned int ComponentId = 0;
+    static constexpr const char* ComponentGroup = "Rendering";
 
     int display;
 

@@ -8,16 +8,10 @@
 #include <utility>
 #include <string>
 
-// Analogous to ComponentRegistry, but for strong-typed ECSystem subclasses defined in hot-reloaded
-// scripts. Systems can't be keyed by std::type_index like ECSManager::systems does internally:
-// every dlopen/LoadLibrary of a recompiled script produces a brand new type_info for "the same"
-// class, so a stable, user-assigned SystemId (mirroring EComponentS::ComponentId) is used instead.
-//
-// Registering here does NOT instantiate the system - it only stores a factory. Actual instantiation
-// happens later, driven by ScriptHotReloadManager, which is the only place with access to the live
-// ECSManager. This keeps the Engine free of any dependency on Editor-only globals. The factory
-// returns the (type_index, instance) pair it created so the caller can tear it down again on the
-// next reload (ECSManager::DestroySystem/ECSystemContext::Unregister both need that pair).
+// Analogous to ComponentRegistry, but for hot-reloaded ECSystem scripts: each reload gives "the
+// same" class a new type_info, so systems are keyed by a stable, user-assigned SystemId instead.
+// Registering only stores a factory; ScriptHotReloadManager instantiates it against the live
+// ECSManager, returning (type_index, instance) so the caller can tear it down on the next reload.
 class SystemRegistry{
 public:
     static inline std::unordered_map<unsigned int, std::function<std::pair<std::type_index, std::shared_ptr<ECSystem>>(std::shared_ptr<ECSManager>)>> systemFactories;

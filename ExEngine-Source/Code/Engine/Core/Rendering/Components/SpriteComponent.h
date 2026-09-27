@@ -22,6 +22,7 @@ private:
 
 public:
     static constexpr unsigned int ComponentId = 2;
+    static constexpr const char* ComponentGroup = "Rendering";
     
     SpriteReference spriteReference;
     LayerAttributes layerAttributes;

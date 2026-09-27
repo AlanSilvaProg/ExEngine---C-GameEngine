@@ -12,11 +12,9 @@
 #include <unordered_map>
 #include <vector>
 
-// Drives compilation and hot-reload of user .hpp scripts (Components and Systems) into the live
-// ECS. FileWatcher events arrive on a background thread and are only enqueued here; the actual
-// compiler invocation runs on this manager's own worker thread (so a ~1-3s clang invocation never
-// stalls the editor UI); the resulting dlopen/dlclose and ECS mutation only ever happen from
-// Poll(), which the caller must invoke from the main thread once per frame.
+// Drives compilation and hot-reload of user .hpp scripts into the live ECS. FileWatcher events
+// are enqueued here and compiled on a worker thread (so a multi-second clang invocation never
+// stalls the UI); dlopen/dlclose and ECS mutation only happen from Poll(), main-thread only.
 class ScriptHotReloadManager{
 public:
     ScriptHotReloadManager(std::shared_ptr<ECSManager> ecsManager, std::filesystem::path projectPath);
@@ -100,12 +98,9 @@ private:
     std::mutex pendingDeletionsMutex;
     std::vector<std::string> pendingDeletions;
 
-    // System script path -> lexically-normalized paths of every project .hpp it #includes (as found
-    // in its last successful compile). A System that #includes a Component's .hpp gets that
-    // Component's full definition (and its REGISTER_COMPONENT) baked into the System's own compiled
-    // module, so the reference survives independently of the Component's own module/script. This map
-    // is what lets OnScriptFileDeleted notice "this System still embeds the Component you just
-    // deleted" and react instead of leaving a silently-stale reference.
+    // System path -> project .hpp paths it #includes. A System that #includes a Component's .hpp
+    // bakes that Component's definition into its own module - this lets OnScriptFileDeleted detect
+    // and recompile Systems still embedding a just-deleted Component.
     std::unordered_map<std::string, std::vector<std::string>> systemDependencies;
 
     // ProcessTracker ids for scripts currently queued or compiling, keyed by scriptPathKey.

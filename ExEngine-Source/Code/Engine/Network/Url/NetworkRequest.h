@@ -77,11 +77,7 @@ public:
 
     // Personalization
     inline RequestComposition* ChangeUrl(std::string url) { this->url = url; return this; };
-    /**
-    * Change the http method.
-    *
-    * @param method Can be any NetworkRequest_OPT_METHOD Macro.
-    */
+    // method: any NetworkRequest_OPT_METHOD macro.
     inline RequestComposition* ChangeUrlMethod(const std::string method){ urlMethod = method; return this; };
     inline RequestComposition* ChangeHttpVersion(const HttpVersion version){ httpVersion = version; return this; };
     inline RequestComposition* AddPostFields(const std::string key, const std::string value){ postFields.push_back(FORMAT_POST_FIELD(key, value)); return this; };
@@ -117,12 +113,10 @@ private:
     };
 public:
 #ifdef __EMSCRIPTEN__
-    // libcurl talks to raw native sockets, which the browser sandbox does not expose - this uses
-    // emscripten_fetch (the browser's own fetch()/XHR) instead. EMSCRIPTEN_FETCH_SYNCHRONOUS makes
-    // emscripten_fetch() block the calling thread until the request finishes, same as
-    // curl_easy_perform() below, but that only works off the browser's main thread (a real Web
-    // Worker, which -pthread turns std::thread into) - every current caller already runs this
-    // from a background std::thread, so that holds.
+    // libcurl needs raw sockets, unavailable in the browser sandbox - uses emscripten_fetch
+    // (fetch()/XHR) instead. EMSCRIPTEN_FETCH_SYNCHRONOUS blocks the calling thread like
+    // curl_easy_perform() below, but only works off the main thread - callers already run this
+    // from a background std::thread (a real Web Worker under -pthread), so that holds.
     inline static void DoRequest(RequestComposition* composition){
         emscripten_fetch_attr_t attr;
         emscripten_fetch_attr_init(&attr);
