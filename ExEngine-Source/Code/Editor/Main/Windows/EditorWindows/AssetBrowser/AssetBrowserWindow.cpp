@@ -260,7 +260,12 @@ void AssetBrowserWindow::StartAssetDragAndDrop(const std::filesystem::path& entr
     {
         auto elementName = entry.stem().string();
         auto elementType = std::to_string(ElementTypeId::SPRITE);
-        s_currentMovingData = SpriteReference(elementName, entry).ToJson();
+
+        auto relativeToAssets = std::filesystem::relative(
+            std::filesystem::weakly_canonical(entry),
+            std::filesystem::weakly_canonical(EditorInterfaceGetters::GetAssetsPath())
+        );
+        s_currentMovingData = SpriteReference(elementName, relativeToAssets).ToJson();
         ImGui::SetDragDropPayload(elementType.c_str(), &s_currentMovingData, sizeof(nlohmann::json));
 
         ImGui::Text("Moving %s", elementName.c_str());

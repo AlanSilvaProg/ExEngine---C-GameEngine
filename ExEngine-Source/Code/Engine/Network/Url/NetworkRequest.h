@@ -93,11 +93,11 @@ public:
     /** 
     * @param contentType Can be application/octet-stream or application/x-www-form-urlencoded or application/json
     */
-    inline RequestComposition* AddContentType(const std::string contentType) { AddCustomHeader(CONTENT_TYPE_HEADER+contentType); };
+    inline RequestComposition* AddContentType(const std::string contentType) { AddCustomHeader(CONTENT_TYPE_HEADER+contentType); return this; };
 
-    inline RequestComposition* AddContentTypeAsJson() { AddCustomHeader(CONTENT_TYPE_JSON); };
-    inline RequestComposition* AddContentTypeAsForm() { AddCustomHeader(CONTENT_TYPE_FORM); };
-    inline RequestComposition* AddContentTypeAsBytes() { AddCustomHeader(CONTENT_TYPE_BYTE); };
+    inline RequestComposition* AddContentTypeAsJson() { AddCustomHeader(CONTENT_TYPE_JSON); return this; };
+    inline RequestComposition* AddContentTypeAsForm() { AddCustomHeader(CONTENT_TYPE_FORM); return this; };
+    inline RequestComposition* AddContentTypeAsBytes() { AddCustomHeader(CONTENT_TYPE_BYTE); return this; };
 
     //ToDo make it awaitable
     inline const bool Finished() const { return hasFinished; };

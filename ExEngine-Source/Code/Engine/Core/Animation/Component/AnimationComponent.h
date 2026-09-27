@@ -7,19 +7,21 @@
 #include <vector>
 
 struct AnimationComponent : public EComponentS<AnimationComponent>{
-private: 
-    bool startAutomatically;
-    unsigned int currentAnimation;
+private:
+    bool startAutomatically = false;
+    unsigned int currentAnimation = 0;
 public:
     static constexpr unsigned int ComponentId = 4;
 
-    float currentTime;
+    float currentTime = 0;
     std::vector<AnimationInfo> animationInfo = { AnimationInfo{} }; // always has at least one entry
 
     AnimationComponent() = default;
     AnimationComponent(const AnimationComponent& animationComponent){
         currentTime = animationComponent.currentTime;
         animationInfo = animationComponent.animationInfo;
+        currentAnimation = animationComponent.currentAnimation;
+        startAutomatically = animationComponent.startAutomatically;
     };
     ~AnimationComponent() = default;
 
@@ -76,6 +78,7 @@ public:
             animationInfo[currentAnimation].SetIsRunning();
             return animationInfo[currentAnimation].GetCurrentAnimationStep(currentTime);
         }
+        return nullptr;
     };
 
     inline AnimationStep* Restart(){

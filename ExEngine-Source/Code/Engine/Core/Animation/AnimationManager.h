@@ -13,9 +13,9 @@ private:
 public:
     static void InitializeAnimationSystem();
 
-    static int ScheduleEntityToAnimate(const int id);
-    static int ScheduleEntityToStopAnimation(const int id);
-    static int InsertEntityPlayingAnimation(const int id);
+    static void ScheduleEntityToAnimate(const int id);
+    static void ScheduleEntityToStopAnimation(const int id);
+    static void InsertEntityPlayingAnimation(const int id);
 
     static std::unordered_set<int>& GetEntitiesToTriggerAnimationQueue();
     static std::unordered_set<int>& GetEntitiesToStopAnimationQueue();

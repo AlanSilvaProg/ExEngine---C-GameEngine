@@ -11,15 +11,15 @@ void AnimationManager::InitializeAnimationSystem(){
     context->Register(typeid(AnimationSystem), animationSystem);
 };
 
-int AnimationManager::ScheduleEntityToAnimate(const int id){
+void AnimationManager::ScheduleEntityToAnimate(const int id){
     entityToTriggerAnimation.emplace(id);
 };
 
-int AnimationManager::ScheduleEntityToStopAnimation(const int id){
+void AnimationManager::ScheduleEntityToStopAnimation(const int id){
     entityToStopAnimation.emplace(id);
 };
 
-int AnimationManager::InsertEntityPlayingAnimation(const int id){
+void AnimationManager::InsertEntityPlayingAnimation(const int id){
     entityWithPlayingAnimation.emplace(id);
 };
 

@@ -17,11 +17,11 @@ enum AnimationLoopType{
 
 struct AnimationInfo : public ISerializable, public IJsonConvertable{
 private:
-    bool running;
+    bool running = false;
     int lastCalledIndex = -1;
 public:
     std::string name = "New Animation";
-    AnimationLoopType animationLoopType;
+    AnimationLoopType animationLoopType = AnimationLoopType::NONE;
     std::vector<AnimationStep> animationSteps;
 
     inline AnimationStep* GetCurrentAnimationStep(float currentTime){

@@ -6,7 +6,7 @@
 class AnimationStep : public IJsonConvertable{
 private:
     EntityContent stepContent;
-    bool returned;
+    bool returned = false;
 public:
     float secondsToTrigger;
 

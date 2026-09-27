@@ -37,4 +37,10 @@ public:
     };
     
     inline static std::filesystem::path GetEngineAssetsPath() { return Engine::GetEnginePath() / std::string("Assets"); };
+
+    inline static std::filesystem::path gameAssetsRootOverride;
+
+    inline static std::filesystem::path GetGameAssetsPath(){
+        return gameAssetsRootOverride.empty() ? GetEngineAssetsPath() : gameAssetsRootOverride;
+    };
 };

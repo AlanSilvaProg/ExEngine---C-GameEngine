@@ -1,20 +1,45 @@
 #include "AssetReference.h"
+#include "../Engine.h"
 #include "../Rendering/Renderer/ExRendererGetters.h"
 #include "../../Logger/Logger.h"
 #include <SDL2/SDL_image.h>
 #include <string>
-#include <filesystem> 
+#include <filesystem>
+
+namespace{
+    std::filesystem::path ResolveAssetPath(const std::string& storedPath){
+        std::filesystem::path path = storedPath;
+
+        if(path.empty())
+            return path;
+
+        if(!path.is_absolute())
+            return Engine::GetGameAssetsPath() / path;
+
+        if(std::filesystem::exists(path))
+            return path;
+
+        std::string pathStr = path.generic_string();
+        const std::string marker = "/Assets/";
+        auto assetsPos = pathStr.rfind(marker);
+        if(assetsPos != std::string::npos)
+            return Engine::GetGameAssetsPath() / pathStr.substr(assetsPos + marker.size());
+
+        return path;
+    }
+}
 
 AssetReference::~AssetReference(){
     FreeAllResources();
 };
 
 SDL_Texture* AssetReference::GetNewReference(){
-    if(texture == nullptr){ 
-        auto surface = IMG_Load(path.c_str());
+    if(texture == nullptr){
+        auto resolvedPath = ResolveAssetPath(path);
+        auto surface = IMG_Load(resolvedPath.string().c_str());
 
         if(surface == nullptr){
-            Logger::LogError("Fail to load Image at path : " + path + " \n With the follow message: " + IMG_GetError());
+            Logger::LogError("Fail to load Image at path : " + resolvedPath.string() + " \n With the follow message: " + IMG_GetError());
             return NULL;
         }
 

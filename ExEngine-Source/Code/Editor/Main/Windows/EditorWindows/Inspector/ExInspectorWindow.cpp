@@ -240,9 +240,13 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
         auto spriteReference = static_cast<SpriteReference*>(exSerializedField.field_ptr);
         bool spriteReferenceBtn = false;
         auto buttonSize = ImVec2(150,150);
-        
-        if(std::filesystem::exists(spriteReference->path)) {
-            auto texture = assetManager->GetTextureAsset(spriteReference->id, spriteReference->path);
+
+        auto resolvedSpritePath = spriteReference->path.empty() ? spriteReference->path
+            : spriteReference->path.is_absolute() ? spriteReference->path
+            : EditorInterfaceGetters::GetAssetsPath() / spriteReference->path;
+
+        if(std::filesystem::exists(resolvedSpritePath)) {
+            auto texture = assetManager->GetTextureAsset(spriteReference->id, resolvedSpritePath.string());
         
             ImTextureID textureId = (ImTextureID)(intptr_t)texture;
             spriteReferenceBtn = ImGui::ImageButton(spriteReference->id.c_str(), textureId, buttonSize);
@@ -272,24 +276,29 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
 
         if(spriteReferenceBtn)
         {
-            auto assetsPath =
-            std::filesystem::exists(spriteReference->path) ?
-                spriteReference->path :
-                EditorInterfaceGetters::currentProjectPath/"Assets/";
+            // Just a UX starting point for the dialog - the existing sprite's folder if it
+            // resolves to a real file on this machine, otherwise the project's Assets root.
+            auto dialogStartPath = std::filesystem::exists(resolvedSpritePath) ?
+                resolvedSpritePath :
+                EditorInterfaceGetters::GetAssetsPath();
 
             const char* filterPatterns[] = { "*.png", "*.jpg", "*.jpeg" };
             const char* selectedFile = tinyfd_openFileDialog(
                 "Select Sprite",
-                assetsPath.c_str(),
+                dialogStartPath.c_str(),
                 3, filterPatterns, "Image files", 0
             );
 
             if(selectedFile != nullptr)
             {
                 std::filesystem::path selectedPath(selectedFile);
+                // Always relative to the actual Assets directory - dialogStartPath may be a file
+                // (the sprite currently assigned), not a directory, so it can't be used as the base
+                // here (std::filesystem::relative treats a file base as a path component, producing
+                // a bogus extra ".." when the newly picked file is just a sibling of the old one).
                 auto relativeToAssets = std::filesystem::relative(
                     std::filesystem::weakly_canonical(selectedPath),
-                    std::filesystem::weakly_canonical(assetsPath)
+                    std::filesystem::weakly_canonical(EditorInterfaceGetters::GetAssetsPath())
                 );
                 bool isInsideAssets = !relativeToAssets.empty()
                     && relativeToAssets.native().rfind(std::filesystem::path("..").native(), 0) != 0;
@@ -300,9 +309,13 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
                 }
                 else
                 {
+                    // Relative to Assets, not the absolute selectedPath - an absolute dev-machine
+                    // path doesn't exist inside a Web export's virtual filesystem (only the project's
+                    // own Assets folder gets bundled there), and won't exist at all if the project is
+                    // ever moved or opened on a different machine.
                     ExSerializedFieldSetter::TrySetValue(
                         exSerializedField,
-                        SpriteReference(selectedPath.stem().string(), selectedPath)
+                        SpriteReference(selectedPath.stem().string(), relativeToAssets)
                     );
                 }
             }

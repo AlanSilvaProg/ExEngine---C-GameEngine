@@ -15,6 +15,9 @@
 #include "Animation/AnimationManager.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
 
 Engine::Engine(){
     if(!ConfigurationFileManager::Load())
@@ -47,10 +50,23 @@ void Engine::CreateEngineBaseEventHandlers(){
 };
 
 void Engine::RunLoop(){
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop_arg([](void* enginePtr){
+        auto* engine = static_cast<Engine*>(enginePtr);
+        if(!engine->running)
+        {
+            emscripten_cancel_main_loop();
+            return;
+        }
+
+        engine->gameLoop->ExecuteGameLoop();
+    }, this, 0, 1);
+#else
     while(running)
-    {   
+    {
         gameLoop->ExecuteGameLoop();
     }
+#endif
 };
 
 void Engine::StartEngine(){

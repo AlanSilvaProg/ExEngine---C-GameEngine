@@ -57,7 +57,9 @@ if(EMSCRIPTEN)
     # Emscripten's bundled SDL2/SDL2_ttf/SDL2_image ports replace the Homebrew find_package calls
     # above. These flags must be visible at both compile time (so <SDL.h> etc. resolve to the
     # port's headers) and link time (to pull the port library in), so apply them to every target.
-    set(EMSCRIPTEN_SDL_FLAGS -sUSE_SDL=2 -sUSE_SDL_TTF=2 -sUSE_SDL_IMAGE=2)
+    # SDL2_image's port ships with zero decoders compiled in by default (SDL2_IMAGE_FORMATS
+    # defaults to an empty list) - USE_SDL_IMAGE alone still leaves every IMG_Load call failing.
+    set(EMSCRIPTEN_SDL_FLAGS -sUSE_SDL=2 -sUSE_SDL_TTF=2 -sUSE_SDL_IMAGE=2 -sSDL2_IMAGE_FORMATS=png,jpg)
     add_compile_options(${EMSCRIPTEN_SDL_FLAGS})
     add_link_options(${EMSCRIPTEN_SDL_FLAGS})
 
@@ -74,6 +76,13 @@ if(EMSCRIPTEN)
     # headers SharedArrayBuffer needs, or thread creation fails at runtime.
     add_compile_options(-pthread)
     add_link_options(-pthread)
+
+    # Emscripten's pthread emulation spawns real Web Workers lazily by default (pool size 0) -
+    # SDL2's own port creates at least one internal thread during SDL_Init(), and requesting that
+    # from the main thread with no spare worker ready deadlock-risks the page ("Tried to spawn a
+    # new thread, but the thread pool is exhausted" / "Blocking on the main thread is very
+    # dangerous"). Pre-spawning a small pool up front avoids that lazy on-demand spawn entirely.
+    add_link_options(-sPTHREAD_POOL_SIZE=4)
 endif()
 
 # CURL and msquic back the native TCPWebSocketConnection/UDPQUICConnection transports, neither

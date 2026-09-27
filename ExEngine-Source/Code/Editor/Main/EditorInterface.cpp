@@ -29,6 +29,8 @@ EditorInterface::EditorInterface(std::shared_ptr<Engine> engine, std::string& ga
     EditorInterfaceGetters::engine = engine;
     EditorInterfaceGetters::currentProjectPath = gamePath;
 
+    Engine::gameAssetsRootOverride = EditorInterfaceGetters::GetAssetsPath();
+
     auto assetsPath = EditorInterfaceGetters::GetAssetsPath();
     if(!std::filesystem::exists(assetsPath))
     {

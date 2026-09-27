@@ -10,7 +10,15 @@ std::shared_ptr<RenderingSystem2D> ExRenderer::renderingSystem2D = nullptr;
 std::shared_ptr<ECSystemContext> ExRenderer::preRenderSystemContext = nullptr;
 
 void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
-    if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
+#ifdef __EMSCRIPTEN__
+    // Emscripten's SDL2 port has no haptic (force-feedback) implementation - requesting it makes
+    // SDL_Init() fail outright for every subsystem, not just skip that one.
+    const Uint32 sdlInitFlags = SDL_INIT_EVERYTHING & ~SDL_INIT_HAPTIC;
+#else
+    const Uint32 sdlInitFlags = SDL_INIT_EVERYTHING;
+#endif
+
+    if(SDL_Init(sdlInitFlags) != 0){
         Logger::LogError("SDL initialization error with the message: " + std::string(SDL_GetError()));
         return;
     }
