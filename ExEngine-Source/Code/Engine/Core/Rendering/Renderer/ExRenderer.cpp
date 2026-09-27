@@ -23,9 +23,10 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
         return;
     }
 
-    int renderWidth, renderHeight;
-    ExRendererGetters::GetRenderResolution(renderWidth, renderHeight);
-    ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, renderWidth, renderHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
+    // A normal resizable/maximized window - WorldToScreen/ScreenToWorld read the actual drawable
+    // size each call (see ExRendererGetters.cpp), so the camera stays centered regardless of
+    // whatever size the window ends up being.
+    ExRendererGetters::window = SDL_CreateWindow(EngineSettings::GetEngineStringId().c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED);
 
     if(!ExRendererGetters::window)
     {

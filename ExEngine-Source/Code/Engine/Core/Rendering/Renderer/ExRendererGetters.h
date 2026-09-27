@@ -11,14 +11,10 @@ public:
     static SDL_Window* window;
     static std::shared_ptr<TransformComponent> currentRenderCameraTransform;
 
-    // Resolution management
-    static int renderWidth;
-    static int renderHeight;
-
-    // Resolution methods
-    static void SetRenderResolution(int width, int height);
-    static void GetRenderResolution(int& width, int& height);
-
+    // World<->screen conversion. The camera's position is the world point that lands on the
+    // center of the screen (not the top-left corner), so every conversion re-centers around half
+    // the window's actual current drawable size - the window is always full canvas, there's no
+    // separate configurable render resolution to track.
     static glm::vec2 WorldToScreen(const glm::vec2& worldPosition, const glm::vec2& cameraPosition);
     static glm::vec2 ScreenToWorld(const glm::vec2& screenPosition, const glm::vec2& cameraPosition);
 };
