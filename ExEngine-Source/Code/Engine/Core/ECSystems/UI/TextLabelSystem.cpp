@@ -3,6 +3,8 @@
 #include "../../Rendering/Renderer/ExRendererGetters.h"
 #include "../../Rendering/Renderer/RenderQueue/FontRenderElement.h"
 #include "../../Utils/Anchor/AnchorUtils.h"
+#include "../../Utils/Transform/TransformUtils.h"
+#include "../../Rendering/Layer/LayerUtils.h"
 #include "TextLabelSystem.h"
 #include <algorithm>
 
@@ -43,15 +45,16 @@ void TextLabelSystem::UpdateSystem(SystemContext systemContext){
 
         glm::vec2 worldPosition = AnchorUtils::GetPivotAdjustedPosition(entity, transformComponent);
         glm::vec2 screenPosition = ExRendererGetters::WorldToScreen(worldPosition, cameraPosition);
+        auto worldTransform = TransformUtils::GetWorldTransform(entity);
 
-        double angle = transformComponent->rotation.x;
+        double angle = worldTransform.rotation;
 
         // The texture is rendered once at a fixed, high-resolution font size (MAX_FONT_SIZE, see
         // FontAssetReference) and scaled down here to the requested display `size`, so changing
         // `size` never needs the glyphs to be re-rendered.
         float sizeScale = static_cast<float>(textLabelComponent->size) / static_cast<float>(MAX_FONT_SIZE);
-        float naturalWidth = textureRect->w * sizeScale * transformComponent->scale.x * cameraZoom;
-        float naturalHeight = textureRect->h * sizeScale * transformComponent->scale.y * cameraZoom;
+        float naturalWidth = textureRect->w * sizeScale * worldTransform.scale.x * cameraZoom;
+        float naturalHeight = textureRect->h * sizeScale * worldTransform.scale.y * cameraZoom;
 
         SDL_Rect dstRect;
 
@@ -88,7 +91,7 @@ void TextLabelSystem::UpdateSystem(SystemContext systemContext){
             };
         }
 
-        auto renderElementPtr = std::make_shared<FontRenderElement>(texture, textureRect, dstRect, angle, textLabelComponent->layerAttributes);
+        auto renderElementPtr = std::make_shared<FontRenderElement>(texture, textureRect, dstRect, angle, LayerUtils::ResolveLayerAttributes(entity, textLabelComponent->layerAttributes));
         ExRendererGetters::AddToRenderQueue(renderElementPtr);
     }
 };

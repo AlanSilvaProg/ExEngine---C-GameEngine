@@ -1,6 +1,7 @@
 #include "EditorDrawAnchorSystem.h"
 #include "../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../Engine/Core/Utils/Color.h"
+#include "../../../Engine/Core/Utils/Transform/TransformUtils.h"
 #include "../../../Engine/Core/Input/Input.h"
 #include "../../Main/EditorInterfaceGetters.h"
 #include "../../Main/Windows/EditorWindows/ElementSelectionController.h"
@@ -82,16 +83,21 @@ void EditorDrawAnchorSystem::UpdateSystem(SystemContext systemContext){
         // mouse and re-derive anchor from the fixed top-left captured on drag start, so the
         // sprite itself doesn't shift on screen while dragging.
         if(isDragging && draggedEntityId == entity->GetId()){
-            transformComponent->position.x = worldMousePosition.x;
-            transformComponent->position.y = worldMousePosition.y;
+            auto parent = entity->GetParent();
+            const glm::vec2 localPosition = parent != nullptr
+                ? TransformUtils::WorldToLocal(worldMousePosition, parent)
+                : worldMousePosition;
 
-            const glm::vec2 newEntityPosition(transformComponent->position.x, transformComponent->position.y);
+            transformComponent->position.x = localPosition.x;
+            transformComponent->position.y = localPosition.y;
+
+            const glm::vec2 newEntityPosition = TransformUtils::GetWorldTransform(entity).position;
             const glm::vec2 newAnchorLocal = newEntityPosition - dragStartSpriteTopLeft;
             anchorComponent->position.x = newAnchorLocal.x;
             anchorComponent->position.y = newAnchorLocal.y;
         }
 
-        const glm::vec2 entityPosition(transformComponent->position.x, transformComponent->position.y);
+        const glm::vec2 entityPosition = TransformUtils::GetWorldTransform(entity).position;
         const glm::vec2 screenPosition = ExRendererGetters::WorldToScreen(entityPosition, cameraPosition);
 
         SDL_SetRenderDrawColor(renderer, reticleColor->r, reticleColor->g, reticleColor->b, 255);

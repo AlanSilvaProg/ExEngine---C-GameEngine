@@ -7,6 +7,10 @@ struct EntityContainer : public IJsonConvertable{
 public:
     std::string name;
     std::string guid;
+    // Empty when the entity has no parent. Stored as a GUID (not the parent's numeric id, which
+    // isn't stable across a save/load - ids get reassigned/recycled by ECSManager) and resolved
+    // back to a runtime id by ECSWorld once every entity in the world has been created.
+    std::string parentGuid;
     nlohmann::json components;
     int currentId;
 
@@ -18,6 +22,10 @@ public:
         guid = entityCS->GetGuid();
 
         auto ecsManager = EngineGetters::GetEnginePtr()->GetECSManagerPtr();
+
+        auto parent = entityCS->GetParent();
+        parentGuid = parent != nullptr ? parent->GetGuid() : "";
+
         const auto componentsPool = ecsManager->GetEntityComponentPools();
 
         components = nlohmann::json::array();
@@ -50,6 +58,7 @@ public:
         return {
             {"name", name},
             {"guid", guid},
+            {"parentGuid", parentGuid},
             {"components", components}
         };
     }
@@ -57,6 +66,7 @@ public:
     virtual void FromJson(const nlohmann::json& json) override {
         if (json.contains("name")) name = json["name"];
         if (json.contains("guid")) guid = json["guid"];
+        if (json.contains("parentGuid")) parentGuid = json["parentGuid"];
         if (json.contains("components")) components = json["components"];
     }
 };

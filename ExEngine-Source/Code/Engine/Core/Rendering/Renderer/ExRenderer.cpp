@@ -90,7 +90,7 @@ const bool ExRenderer::RenderOrderCheck(const LayerAttributes& a, const LayerAtt
         return aLayer.layerOrderIndex < bLayer.layerOrderIndex;
     }
 
-    return aLayer.layerIndex < bLayer.layerOrderIndex;
+    return aLayer.layerIndex < bLayer.layerIndex;
 };
 
 std::shared_ptr<RenderingSystem2D> ExRenderer::GetRenderingSystem2D(){

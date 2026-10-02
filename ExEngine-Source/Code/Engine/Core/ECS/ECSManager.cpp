@@ -137,40 +137,142 @@ std::shared_ptr<EntityCS> ECSManager::GetEntity(const int entityId){
 };
 
 void ECSManager::DuplicateEntity(const int entityId){
+    DuplicateEntityInternal(entityId, -1);
+};
+
+std::shared_ptr<EntityCS> ECSManager::DuplicateEntityInternal(const int entityId, const int forcedParentId){
     auto entityToDuplicate = GetEntity(entityId);
 
-    if(entityToDuplicate != nullptr)
-    {
-        auto entityToDuplicateSignature = GetEntitySignature(entityId);
+    if(entityToDuplicate == nullptr) return nullptr;
 
-        auto entity = CreateEntity(entityToDuplicate->GetName() + "_duplicate");
-        auto newEntityId = entity->GetId();
-        auto& newEntitySignature = GetEntitySignature(newEntityId);
-        
-        //duplicating signatures
-        newEntitySignature.resize(entityToDuplicateSignature.size());
-        
-        for(auto i = 0; i < newEntitySignature.size(); i++)
-        {   
-            newEntitySignature[i] = entityToDuplicateSignature[i];
-        }
-        
-        //duplicating component content
-        for(auto componentId = 0; componentId < newEntitySignature.size(); componentId++)
+    auto entityToDuplicateSignature = GetEntitySignature(entityId);
+
+    auto entity = CreateEntity(entityToDuplicate->GetName() + "_duplicate");
+    auto newEntityId = entity->GetId();
+    auto& newEntitySignature = GetEntitySignature(newEntityId);
+
+    //duplicating signatures
+    newEntitySignature.resize(entityToDuplicateSignature.size());
+
+    for(auto i = 0; i < newEntitySignature.size(); i++)
+    {
+        newEntitySignature[i] = entityToDuplicateSignature[i];
+    }
+
+    //duplicating component content
+    for(auto componentId = 0; componentId < newEntitySignature.size(); componentId++)
+    {
+        if(newEntitySignature[componentId])
         {
-            if(newEntitySignature[componentId])
-            {
-                componentPools[componentId]->CopyComponent(entityId, newEntityId);
-            }
+            componentPools[componentId]->CopyComponent(entityId, newEntityId);
         }
     }
+
+    // Root of the duplication keeps the original's parent (becomes a sibling); duplicated
+    // descendants are re-parented under their own duplicated parent instead.
+    const int parentForNewEntity = forcedParentId >= 0 ? forcedParentId : entityToDuplicate->parentId;
+    if(parentForNewEntity >= 0){
+        SetParent(parentForNewEntity, newEntityId);
+    }
+
+    auto childrenSnapshot = entityToDuplicate->childrenId;
+    for(auto childId : childrenSnapshot){
+        DuplicateEntityInternal(childId, newEntityId);
+    }
+
+    return entity;
+};
+
+bool ECSManager::WouldCreateCycle(const unsigned int parentId, const unsigned int childrenId) const{
+    if(parentId == childrenId) return true;
+
+    // Walking up from the prospective parent: if we ever reach childrenId, parenting childrenId
+    // under parentId would make childrenId its own ancestor.
+    int currentId = static_cast<int>(parentId);
+    while(currentId >= 0){
+        if(static_cast<unsigned int>(currentId) == childrenId) return true;
+
+        auto current = entities[currentId];
+        if(current == nullptr) break;
+
+        currentId = current->parentId;
+    }
+
+    return false;
+};
+
+bool ECSManager::SetParent(const unsigned int parentId, const unsigned int childrenId){
+    auto parent = GetEntity(parentId);
+    if(parent == nullptr) return false;
+    auto children = GetEntity(childrenId);
+    if(children == nullptr) return false;
+
+    if(WouldCreateCycle(parentId, childrenId)){
+        Logger::LogError("Cannot set parent " + std::to_string(parentId) + " for entity " + std::to_string(childrenId) + ": would create a cycle in the entity hierarchy.");
+        return false;
+    }
+
+    auto childrenParentId = children->parentId;
+    if(childrenParentId >= 0){
+        RemoveChildren(childrenParentId, childrenId);
+    }
+
+    parent->SetChildren(childrenId);
+    children->SetParent(parentId);
+
+    return true;
+};
+
+bool ECSManager::RemoveChildren(const unsigned int parentId, const unsigned int childrenId){
+    auto parent = GetEntity(parentId);
+    if(parent == nullptr) return false;
+
+    if(parent->IsChildren(childrenId)){
+        parent->RemoveChildren(childrenId);
+    }
+
+    auto children = GetEntity(childrenId);
+    if(children == nullptr) return true;
+
+    if(children->IsParent(parentId)){
+        children->RemoveParent();
+    }
+
+    return true;
+};
+
+bool ECSManager::RemoveParent(const unsigned int entityId){
+    auto entity = GetEntity(entityId);
+    if(entity == nullptr){
+        Logger::LogError("Error when trying to remove parent from a unexistent entity id: " + std::to_string(entityId));
+        return false;
+    }
+
+    entity->RemoveParent();
+    return true;
 };
 
 void ECSManager::DestroyEntityImmediately(int entityId){
+    if(!aliveEntities.contains(entityId)) return;
+
+    auto entity = entities[entityId];
+
+    // Snapshot first - destroying a child mutates this same vector out from under the loop.
+    auto childrenSnapshot = entity->childrenId;
+    for(auto childId : childrenSnapshot){
+        DestroyEntityImmediately(childId);
+    }
+
+    if(entity->parentId >= 0){
+        RemoveChildren(entity->parentId, entityId);
+    }
+    entity->childrenId.clear();
+    entity->enabled = true;
+
     RemoveAllComponents(entities[entityId]);
     aliveEntities.erase(entityId);
     freeEntities.push_back(entityId);
-    
+
     Logger::Log("Entity with ID: " + std::to_string(entityId) + " has been killed.");
 };
 
@@ -317,6 +419,71 @@ const std::string EntityCS::GetName() const{
     return name;
 };
 
+void EntityCS::SetParent(const unsigned int parentId){
+    this->parentId = parentId;
+};
+
+void EntityCS::SetChildren(const unsigned int childrenId){
+    if(IsChildren(childrenId)) return;
+
+    this->childrenId.push_back(childrenId);
+};
+
+const unsigned int EntityCS::GetParentId() const{
+    return parentId;
+};
+
+std::shared_ptr<EntityCS> EntityCS::GetParent() const{
+    if(parentId < 0) return nullptr;
+    return ecsManager->GetEntity(parentId);
+};
+
+const std::vector<unsigned int>& EntityCS::GetChildrens() const{
+    return childrenId;
+};
+
+void EntityCS::RemoveParent(){
+    parentId = -1;
+};
+
+bool EntityCS::RemoveChildren(const unsigned int childrenId){
+    auto it = std::find(this->childrenId.begin(), this->childrenId.end(), childrenId);
+
+    if (it == this->childrenId.end())
+        return false;
+
+    this->childrenId.erase(it);
+    return true;
+};
+
+bool EntityCS::IsChildren(const unsigned int entityId) const{
+    return std::find(this->childrenId.begin(), this->childrenId.end(), entityId) != this->childrenId.end();
+};
+
+bool EntityCS::IsParent(const unsigned int entityId) const{
+    return parentId == entityId;
+};
+
+bool EntityCS::SetEnabled(const bool value){
+    if(value){
+        auto parent = GetParent();
+        if(parent != nullptr && !parent->IsEnabled()){
+            Logger::LogWarning("Cannot enable entity '" + name + "' while its parent is inactive.");
+            return false;
+        }
+    }
+
+    enabled = value;
+    ecsManager->SetToValidation(id);
+
+    for(auto childId : childrenId){
+        auto child = ecsManager->GetEntity(childId);
+        if(child != nullptr) child->SetEnabled(value);
+    }
+
+    return true;
+};
+
 void EntityCS::UpdateComponentsByJson(const nlohmann::json& componentsContent){
     ecsManager->UpdateEntityComponentsByJson(id, componentsContent);
 };
@@ -372,11 +539,13 @@ void ECSystem::AddEntity(const std::shared_ptr<EntityCS> entity){
 void ECSystem::ValidateEntity(std::shared_ptr<EntityCS> entity)
 {
     auto entityId = entity->GetId();
+    const bool eligible = entity->IsEnabled() && CheckEntitySignatureMatch(entity->GetComponentSignature());
+
     for(int i = 0; i < systemEntities.size(); i++)
     {
         if(systemEntities[i]->GetId() == entityId)
         {
-            if(!CheckEntitySignatureMatch(entity->GetComponentSignature()))
+            if(!eligible)
             {
                 RemoveEntity(entityId);
             }
@@ -384,7 +553,7 @@ void ECSystem::ValidateEntity(std::shared_ptr<EntityCS> entity)
         }
     }
 
-    if(CheckEntitySignatureMatch(entity->GetComponentSignature()))
+    if(eligible)
     {
         AddEntity(entity);
     }

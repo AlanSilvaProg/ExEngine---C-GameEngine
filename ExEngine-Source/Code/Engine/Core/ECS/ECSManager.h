@@ -28,7 +28,22 @@ private:
     std::string guid;
     std::string name;
 
+    //Hierarchical ids ( parent -1 == no parents )
+    int parentId = -1;
+    std::vector<unsigned int> childrenId;
+
+    // Entities default to enabled - a disabled ancestor forces every descendant inactive too
+    // (see SetEnabled), so systems never need to walk the hierarchy themselves to know whether
+    // to skip an entity.
+    bool enabled = true;
+
+    void SetParent(const unsigned int parentId);
+    void SetChildren(const unsigned int childrenId);
+    bool RemoveChildren(const unsigned int childrenId);
+    void RemoveParent();
+
     class ECSManager* ecsManager;
+    friend ECSManager;
 public:
     unsigned int GetId() const { return id; };
     const std::string GetGuid() const { return guid; };
@@ -42,6 +57,18 @@ public:
 
     void ChangeName(const std::string name);
     const std::string GetName() const;
+
+    const unsigned int GetParentId() const;
+    std::shared_ptr<EntityCS> GetParent() const;
+    const std::vector<unsigned int>& GetChildrens() const;
+    bool IsChildren(const unsigned int entityId) const;
+    bool IsParent(const unsigned int entityId) const;
+
+    // Rejects enabling while any ancestor is disabled (returns false, no-op); disabling always
+    // succeeds and cascades to every descendant, and enabling cascades down too (each descendant
+    // re-checks its own now-active parent, so it succeeds in turn).
+    bool SetEnabled(const bool value);
+    bool IsEnabled() const { return enabled; };
 
     void UpdateComponentsByJson(const nlohmann::json& componentsContent);
 
@@ -196,6 +223,10 @@ private:
 
     void LifeCycleCheck();
     void CreateSystemContexts();
+    // true if parentId is childrenId itself, or already one of childrenId's ancestors - either
+    // way, linking them would close a loop in the hierarchy.
+    bool WouldCreateCycle(const unsigned int parentId, const unsigned int childrenId) const;
+    std::shared_ptr<EntityCS> DuplicateEntityInternal(const int entityId, const int forcedParentId);
 public:
     ECSManager();
     ~ECSManager() = default;
@@ -206,6 +237,9 @@ public:
     std::shared_ptr<EntityCS> CreateEntity(const std::string entityName);
     std::shared_ptr<EntityCS> GetEntity(const int entityId); 
     void DuplicateEntity(const int entityId);
+    bool SetParent(const unsigned int parentId, const unsigned int childrenId);
+    bool RemoveChildren(const unsigned int parentId, const unsigned int childrenId);
+    bool RemoveParent(const unsigned int entityId);
     void DestroyEntityImmediately(const int entityId);
     void DestroyEntity(const int entity);
     void DestroyEntity(const std::shared_ptr<EntityCS> entity);

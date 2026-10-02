@@ -110,6 +110,13 @@ void ExInspectorWindow::DrawEntity(const EntityBrowserSelection* entityBrowserSe
 
     ImGui::PopID();
 
+    ImGui::SameLine();
+    bool entityEnabled = entity->IsEnabled();
+    if(ImGui::Checkbox("Enabled", &entityEnabled))
+    {
+        entity->SetEnabled(entityEnabled);
+    }
+
     ImGui::Text("%s", "Entity Id: ");
     ImGui::SameLine();
     ImGui::Text("%s", std::to_string(entity->GetId()).c_str());

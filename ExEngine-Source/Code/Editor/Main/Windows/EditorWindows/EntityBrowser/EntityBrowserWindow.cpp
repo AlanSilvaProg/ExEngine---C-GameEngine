@@ -98,8 +98,13 @@ void EntityBrowserWindow::Draw(const int phase){
 
     if (ImGui::BeginTable("##bg", 1, ImGuiTableFlags_RowBg))
     {
+        auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
         for(auto entityId : visibleEntities)
         {
+            // Children are drawn recursively by their own parent node below, not flattened here.
+            auto entity = ecsManager->GetEntity(entityId);
+            if(entity != nullptr && entity->GetParentId() != static_cast<unsigned int>(-1)) continue;
+
             DrawEntity(entityId);
         }
 
@@ -117,6 +122,24 @@ void EntityBrowserWindow::Draw(const int phase){
         }
 
         ImGui::EndTable();
+    }
+
+    // Drop zone for the leftover empty space below the tree - dragging an entity here detaches it
+    // from its current parent instead of re-parenting it onto something.
+    ImGui::InvisibleButton("##EntityHierarchyEmptySpace", ImGui::GetContentRegionAvail());
+    if(ImGui::BeginDragDropTarget()){
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityHierarchyDrag")){
+            const int draggedEntityId = *static_cast<const int*>(payload->Data);
+            auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+            auto draggedEntity = ecsManager->GetEntity(draggedEntityId);
+
+            if(draggedEntity != nullptr){
+                const auto currentParentId = draggedEntity->GetParentId();
+                if(currentParentId != static_cast<unsigned int>(-1))
+                    ecsManager->RemoveChildren(currentParentId, draggedEntityId);
+            }
+        }
+        ImGui::EndDragDropTarget();
     }
 
     ImGui::EndChild();
@@ -145,14 +168,21 @@ void EntityBrowserWindow::NavigateSelectionWithArrows(const std::vector<int>& vi
 };
 
 void EntityBrowserWindow::DrawEntity(int entityId){
-    auto entity = EditorInterfaceGetters::engine->GetECSManagerPtr()->GetEntity(entityId);
+    auto ecsManager = EditorInterfaceGetters::engine->GetECSManagerPtr();
+    auto entity = ecsManager->GetEntity(entityId);
+    if(entity == nullptr) return;
 
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
     ImGui::PushID(entityId);
+
+    const auto& children = entity->GetChildrens();
+
     ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_None;
-    tree_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;    
-    tree_flags |= ImGuiTreeNodeFlags_NavLeftJumpsBackHere;   
+    tree_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+    tree_flags |= ImGuiTreeNodeFlags_NavLeftJumpsBackHere;
+    if(children.empty())
+        tree_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
 
     bool rightClick = ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
     (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::GetIO().KeyCtrl);
@@ -161,7 +191,13 @@ void EntityBrowserWindow::DrawEntity(int entityId){
         tree_flags |= ImGuiTreeNodeFlags_Selected;
 
     auto entityName = entity->GetName();
+
+    // Inactive (or inside an inactive ancestor, which cascades) reads as dimmed, matching how it
+    // behaves at runtime - stopped, not just visually hidden.
+    const bool isEntityEnabled = entity->IsEnabled();
+    if(!isEntityEnabled) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
     bool entityElement = ImGui::TreeNodeEx("", tree_flags, "%s",  entityName.c_str());
+    if(!isEntityEnabled) ImGui::PopStyleColor();
 
     if (ImGui::IsItemClicked() ||
     ImGui::IsItemHovered() && rightClick)
@@ -170,10 +206,32 @@ void EntityBrowserWindow::DrawEntity(int entityId){
         selectionDetected = true;
     }
 
+    // Drag this node onto another one to re-parent it there.
+    if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)){
+        ImGui::SetDragDropPayload("EntityHierarchyDrag", &entityId, sizeof(int));
+        ImGui::Text("%s", entityName.c_str());
+        ImGui::EndDragDropSource();
+    }
+
+    if(ImGui::BeginDragDropTarget()){
+        if(const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EntityHierarchyDrag")){
+            const int draggedEntityId = *static_cast<const int*>(payload->Data);
+            if(draggedEntityId != entityId)
+                ecsManager->SetParent(entityId, draggedEntityId);
+        }
+        ImGui::EndDragDropTarget();
+    }
+
     if(entityId == entityBrowserSelection->GetSelectedEntityId())
     {
         if(ImGui::BeginPopupContextItem())
         {
+            if(ImGui::MenuItem("Create Child Entity"))
+            {
+                auto child = ecsManager->CreateEntity(defaultEntityName);
+                ecsManager->SetParent(entityId, child->GetId());
+                ECSWorldManager::GetCurrentWorld()->AttachEntity(child);
+            }
             if(ImGui::MenuItem("Delete"))
             {
                 ECSWorldManager::GetCurrentWorld()->DetachEntity(entity);
@@ -185,13 +243,11 @@ void EntityBrowserWindow::DrawEntity(int entityId){
         }
     }
 
-    //if (node->Childs.Size == 0)
-        tree_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet;
-
     if (entityElement)
     {
-        //for (ExampleTreeNode* child : node->Childs)
-          //  DrawTreeNode(child);
+        for(auto childId : children)
+            DrawEntity(static_cast<int>(childId));
+
         ImGui::TreePop();
     }
 

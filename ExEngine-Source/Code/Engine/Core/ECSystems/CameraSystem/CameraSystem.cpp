@@ -5,6 +5,7 @@
 #include "../../Components/Rendering/CameraSafeAreaComponent.h"
 #include "../../Utils/Color.h"
 #include "../../CameraSystem/NoCameraEventHandler.h"
+#include "../../Utils/Transform/TransformUtils.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 #include <algorithm>
@@ -16,6 +17,7 @@ CameraSystem::CameraSystem(std::shared_ptr<RenderingSystem2D> renderingSystem, s
 
     this->renderingSystem = renderingSystem;
     this->textLabelSystem = textLabelSystem;
+    resolvedCameraTransform = std::make_shared<TransformComponent>();
 };
 
 void CameraSystem::UpdateSystem(SystemContext systemContext){
@@ -55,7 +57,17 @@ void CameraSystem::RenderCamera(std::shared_ptr<EntityCS> camera, SystemContext 
     }
 
     auto cameraComponent = camera->GetComponent<CameraComponent>();
-    ExRendererGetters::currentRenderCameraTransform = camera->GetComponent<TransformComponent>();
+    auto cameraLocalTransform = camera->GetComponent<TransformComponent>();
+
+    // Camera entities are usually root-level, but if one has a parent its position needs to be
+    // composed through it too - Z stays local, it's only used for depth/occlusion, not part of
+    // the 2D hierarchy composition.
+    auto worldTransform = TransformUtils::GetWorldTransform(camera);
+    resolvedCameraTransform->position = glm::vec3(worldTransform.position.x, worldTransform.position.y, cameraLocalTransform->position.z);
+    resolvedCameraTransform->rotation = glm::vec3(worldTransform.rotation, cameraLocalTransform->rotation.y, cameraLocalTransform->rotation.z);
+    resolvedCameraTransform->scale = glm::vec3(worldTransform.scale.x, worldTransform.scale.y, cameraLocalTransform->scale.z);
+
+    ExRendererGetters::currentRenderCameraTransform = resolvedCameraTransform;
 
     //Needed to guarantee the expected visualization
     std::shared_ptr<CameraSafeAreaComponent> cameraSafePtr = nullptr;

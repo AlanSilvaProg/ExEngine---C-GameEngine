@@ -1,5 +1,6 @@
 #include "ECSWorld.h"
 #include "../../File/FileManagement.h"
+#include <unordered_map>
 
 bool ECSWorld::SaveCurrentState(){ return CreateOrSave(); };
 
@@ -68,11 +69,28 @@ void ECSWorld::ConfigureEntityByData(std::shared_ptr<EntityCS>& entity, EntityCo
 
 void ECSWorld::GenerateWorldEntities(){
     worldEntities.clear();
+
+    std::unordered_map<std::string, std::shared_ptr<EntityCS>> entityByGuid;
+
     for(auto entityInfo : worldInformation.entityContainer)
     {
         std::shared_ptr<EntityCS> entity = CreateEntity(entityInfo);
         ConfigureEntityByData(entity, entityInfo);
         AttachEntity(entity);
+        entityByGuid[entity->GetGuid()] = entity;
+    }
+
+    // Second pass: ids were freshly (re)assigned above, so parent links can only be resolved by
+    // GUID once every entity in the world actually exists.
+    for(auto& entityInfo : worldInformation.entityContainer)
+    {
+        if(entityInfo.parentGuid.empty()) continue;
+
+        auto parentIt = entityByGuid.find(entityInfo.parentGuid);
+        auto childIt = entityByGuid.find(entityInfo.guid);
+        if(parentIt == entityByGuid.end() || childIt == entityByGuid.end()) continue;
+
+        ecsManager->SetParent(parentIt->second->GetId(), childIt->second->GetId());
     }
 };
 

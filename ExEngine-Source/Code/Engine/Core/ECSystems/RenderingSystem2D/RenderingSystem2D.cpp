@@ -4,6 +4,8 @@
 #include "../../Components/Core/TransformComponent.h"
 #include "../../Components/Rendering/SpriteComponent.h"
 #include "../../Utils/Anchor/AnchorUtils.h"
+#include "../../Utils/Transform/TransformUtils.h"
+#include "../../Rendering/Layer/LayerUtils.h"
 #include "../../../Logger/Logger.h"
 #include <algorithm>
 #include <SDL2/SDL.h>
@@ -46,6 +48,7 @@ void RenderingSystem2D::UpdateSystem(SystemContext systemContext) {
         if(texture == nullptr) continue;
 
         glm::vec2 worldPosition = AnchorUtils::GetPivotAdjustedPosition(entity, transformComponent);
+        auto worldTransform = TransformUtils::GetWorldTransform(entity);
 
         glm::vec2 cameraPosition(cameraTransformComponent->position.x, cameraTransformComponent->position.y);
         glm::vec2 screenPosition = ExRendererGetters::WorldToScreen(worldPosition, cameraPosition);
@@ -54,11 +57,11 @@ void RenderingSystem2D::UpdateSystem(SystemContext systemContext) {
         SDL_Rect dstRect = {
             static_cast<int>(screenPosition.x),
             static_cast<int>(screenPosition.y),
-            static_cast<int>((spriteComponent->srcRect->w * transformComponent->scale.x) * cameraZoom),
-            static_cast<int>((spriteComponent->srcRect->h * transformComponent->scale.y) * cameraZoom)
+            static_cast<int>((spriteComponent->srcRect->w * worldTransform.scale.x) * cameraZoom),
+            static_cast<int>((spriteComponent->srcRect->h * worldTransform.scale.y) * cameraZoom)
         };
 
-        double angle = transformComponent->rotation.x;
+        double angle = worldTransform.rotation;
         int flip = SDL_FLIP_NONE;
 
         if(spriteComponent->flipX)
@@ -71,7 +74,7 @@ void RenderingSystem2D::UpdateSystem(SystemContext systemContext) {
             flip |= SDL_FLIP_VERTICAL;
         }
 
-        auto renderElementPtr = std::make_shared<TextureRenderElement>(texture, spriteComponent->srcRect, dstRect, angle, nullptr, static_cast<SDL_RendererFlip>(flip), spriteComponent->layerAttributes);
+        auto renderElementPtr = std::make_shared<TextureRenderElement>(texture, spriteComponent->srcRect, dstRect, angle, nullptr, static_cast<SDL_RendererFlip>(flip), LayerUtils::ResolveLayerAttributes(entity, spriteComponent->layerAttributes));
         ExRendererGetters::AddToRenderQueue(renderElementPtr);
     }
 };
