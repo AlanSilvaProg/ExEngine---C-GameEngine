@@ -1,6 +1,6 @@
 #pragma once
 #include "../../EditorWindow.h"
-#include "../../../../../Engine/Core/Animation/Component/AnimationComponent.h"
+#include "../../../../../Engine/Core/Components/Animation/AnimationComponent.h"
 #include "../../../../../Engine/Core/ECS/ECSManager.h"
 #include "nlohmann/json.hpp"
 #include <functional>

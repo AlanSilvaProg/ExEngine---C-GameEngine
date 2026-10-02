@@ -27,6 +27,7 @@ std::map<std::string, std::unique_ptr<SpriteInformation>> EditorInterfaceGetters
 
 bool EditorInterfaceGetters::worldWithoutPath;
 bool EditorInterfaceGetters::buildWindowEnabled;
+float EditorInterfaceGetters::editorCameraZoom = 1;
 
 void EditorInterfaceGetters::Save(){
     if(App::isPlaying) return;

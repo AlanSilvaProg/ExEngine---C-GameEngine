@@ -1,7 +1,7 @@
 #pragma once
 #include "../../../Engine/Core/ECS/ECSManager.h"
-#include "../../../Engine/Core/Components/AnchorComponent.h"
-#include "../../../Engine/Core/Components/TransformComponent.h"
+#include "../../../Engine/Core/Components/Core/AnchorComponent.h"
+#include "../../../Engine/Core/Components/Core/TransformComponent.h"
 #include <glm/glm.hpp>
 
 class EditorDrawAnchorSystem : public ECSystem{

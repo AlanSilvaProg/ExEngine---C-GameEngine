@@ -229,10 +229,15 @@ if(DEFINED GAME_PATH AND NOT EDITOR AND EXISTS "${GAME_PATH}/Assets")
 
     add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${GAME_PATH}/Assets" "${GAME_ASSETS_DEST}")
 
+    # Engine-owned assets (e.g. the default font) ship with every game build regardless of
+    # project, so they're merged into the same Assets folder alongside the project's own.
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${PROJECT_SOURCE_DIR}/Assets/Engine" "${GAME_ASSETS_DEST}/Engine")
+
     if(EMSCRIPTEN)
         # That plain directory isn't reachable from inside the browser sandbox - preload it into
         # the wasm virtual filesystem at the same relative path instead.
         target_link_options(${PROJECT_NAME} PRIVATE "--preload-file" "${GAME_PATH}/Assets@Assets")
+        target_link_options(${PROJECT_NAME} PRIVATE "--preload-file" "${PROJECT_SOURCE_DIR}/Assets/Engine@Assets/Engine")
     endif()
 endif()
 

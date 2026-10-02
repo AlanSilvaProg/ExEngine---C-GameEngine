@@ -8,12 +8,13 @@
 #include "../../../../../Engine/Core/Serializer/ExSerializedFieldSetter.h"
 #include "../../../../../Engine/Core/Rendering/Layer/LayerAttributes.h"
 #include "../../../../../Engine/Core/ECS/Component/EComponentS.h"
-#include "../../../../../Engine/Core/Components/TransformComponent.h"
+#include "../../../../../Engine/Core/Components/Core/TransformComponent.h"
 #include "../../../../../Engine/Core/ECS/InternalRegistry/ComponentRegistry.h"
 #include "../../../../../Engine/Core/Utils/Algorithms/ExMath.h"
 #include "../../../../../Engine/Core/Utils/ExRect.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/SpecialFields/SpriteReferenceField/SpriteReference.h"
+#include "../../../../../Engine/Core/SpecialFields/FontReferenceField/FontReference.h"
 #include "../../../../../Engine/Core/Animation/AnimationInfo.h"
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include <imgui.h>
@@ -232,8 +233,12 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
         char buf[256]{};
         std::snprintf(buf, sizeof(buf), "%s", s->c_str());
         if (ImGui::InputText(label, buf, sizeof(buf))) {
-            *s = buf;
+            ExSerializedFieldSetter::TrySetValue(exSerializedField, std::string(buf));
         }
+    }
+    else if (exSerializedField.fieldType == typeid(glm::vec2)) {
+        glm::vec2* v = static_cast<glm::vec2*>(exSerializedField.field_ptr);
+        ImGui::DragFloat2(label, &(*v)[0], 0.1f);
     }
     else if (exSerializedField.fieldType == typeid(glm::vec3)) {
         glm::vec3* v = static_cast<glm::vec3*>(exSerializedField.field_ptr);
@@ -249,7 +254,7 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
             : EditorInterfaceGetters::GetAssetsPath() / spriteReference->path;
 
         if(std::filesystem::exists(resolvedSpritePath)) {
-            auto texture = assetManager->GetTextureAsset(spriteReference->id, resolvedSpritePath.string());
+            auto texture = assetManager->GetTexture(spriteReference->id, resolvedSpritePath.string());
         
             ImTextureID textureId = (ImTextureID)(intptr_t)texture;
             spriteReferenceBtn = ImGui::ImageButton(spriteReference->id.c_str(), textureId, buttonSize);
@@ -319,6 +324,86 @@ void ExInspectorWindow::DrawComponentField(const ExSerializedField& exSerialized
                     ExSerializedFieldSetter::TrySetValue(
                         exSerializedField,
                         SpriteReference(selectedPath.stem().string(), relativeToAssets)
+                    );
+                }
+            }
+        }
+    }
+    else if (exSerializedField.fieldType == typeid(FontReference)){
+        auto fontReference = static_cast<FontReference*>(exSerializedField.field_ptr);
+        bool fontReferenceBtn = false;
+        auto buttonSize = ImVec2(150,30);
+
+        auto resolvedFontPath = fontReference->path.empty() ? fontReference->path
+            : fontReference->path.is_absolute() ? fontReference->path
+            : EditorInterfaceGetters::GetAssetsPath() / fontReference->path;
+
+        if(std::filesystem::exists(resolvedFontPath)) {
+            fontReferenceBtn = ImGui::Button(fontReference->id.c_str(), buttonSize);
+
+            ImGui::SameLine();
+            if(ImGui::SmallButton("Clear"))
+            {
+                ExSerializedFieldSetter::TrySetValue(exSerializedField, FontReference());
+            }
+        }
+        else{
+            fontReferenceBtn = ImGui::Button("empty ( Drag or Select file )", buttonSize);
+        }
+
+        if(ImGui::BeginDragDropTarget()){
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(std::to_string(ElementTypeId::FONT).c_str())){
+                auto fontPayload = *(const nlohmann::json*)payload->Data;
+                FontReference updatedFontReference = *fontReference;
+                updatedFontReference.FromJson(fontPayload);
+
+                ExSerializedFieldSetter::TrySetValue(exSerializedField, updatedFontReference);
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        if(fontReferenceBtn)
+        {
+            // Just a UX starting point for the dialog - the existing font's folder if it
+            // resolves to a real file on this machine, otherwise the project's Assets root.
+            auto dialogStartPath = std::filesystem::exists(resolvedFontPath) ?
+                resolvedFontPath :
+                EditorInterfaceGetters::GetAssetsPath();
+
+            const char* filterPatterns[] = { "*.ttf", "*.otf" };
+            const char* selectedFile = tinyfd_openFileDialog(
+                "Select Font",
+                dialogStartPath.c_str(),
+                2, filterPatterns, "Font files", 0
+            );
+
+            if(selectedFile != nullptr)
+            {
+                std::filesystem::path selectedPath(selectedFile);
+                // Always relative to the actual Assets directory - dialogStartPath may be a file
+                // (the font currently assigned), not a directory, so it can't be used as the base
+                // here (std::filesystem::relative treats a file base as a path component, producing
+                // a bogus extra ".." when the newly picked file is just a sibling of the old one).
+                auto relativeToAssets = std::filesystem::relative(
+                    std::filesystem::weakly_canonical(selectedPath),
+                    std::filesystem::weakly_canonical(EditorInterfaceGetters::GetAssetsPath())
+                );
+                bool isInsideAssets = !relativeToAssets.empty()
+                    && relativeToAssets.native().rfind(std::filesystem::path("..").native(), 0) != 0;
+
+                if(!isInsideAssets)
+                {
+                    tinyfd_messageBox("Invalid Font", "Selected file must be inside the project's Assets folder.", "ok", "error", 1);
+                }
+                else
+                {
+                    // Relative to Assets, not the absolute selectedPath - an absolute dev-machine
+                    // path doesn't exist inside a Web export's virtual filesystem (only the project's
+                    // own Assets folder gets bundled there), and won't exist at all if the project is
+                    // ever moved or opened on a different machine.
+                    ExSerializedFieldSetter::TrySetValue(
+                        exSerializedField,
+                        FontReference(selectedPath.stem().string(), relativeToAssets)
                     );
                 }
             }
@@ -448,12 +533,14 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
             auto size = spriteInformation->GetSpriteSize();
             auto difference = size.x - availableSize;
 
+            constexpr float imageMargin = 25.0f;
+
             if(difference > 0)
             {
                 auto viewportGCD = ExMath::GetGCD(size.x, size.y);
-                
-                auto sizeW = ImGui::GetContentRegionAvail().x;
-                auto sizeH = ImGui::GetContentRegionAvail().y;
+
+                auto sizeW = ImGui::GetContentRegionAvail().x - (imageMargin * 2.0f);
+                auto sizeH = ImGui::GetContentRegionAvail().y - (imageMargin * 2.0f);
                 auto aspectW = size.x / viewportGCD;
                 auto aspectH = size.y / viewportGCD;
 
@@ -472,6 +559,8 @@ void ExInspectorWindow::DrawAsset(AssetBrowserSelection* assetBrowserSelection){
                 }
             }
 
+            auto imageCursorPos = ImGui::GetCursorPos();
+            ImGui::SetCursorPos({imageCursorPos.x + imageMargin, imageCursorPos.y + imageMargin});
             ImGui::Image((ImTextureID)(spriteInformation->GetTexture()), {size.x, size.y}, {0,0}, {1,1}, {1,1,1,1}, {1,1,1,1});
             return;
         }

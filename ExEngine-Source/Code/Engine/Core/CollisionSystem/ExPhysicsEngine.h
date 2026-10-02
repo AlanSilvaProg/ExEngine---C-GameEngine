@@ -1,5 +1,5 @@
 #pragma once
-#include "ClickSystem.h"
+#include "../ECSystems/ClickSystem/ClickSystem.h"
 #include "PhysicsEngineEventHandler.h"
 #include "../ECS/ECSManager.h"
 #include <memory>

@@ -16,28 +16,55 @@ AssetManager::~AssetManager(){
     Release();
 };
 
-SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path)
+SDL_Texture* AssetManager::GetTexture(const std::string& id, const std::string& path)
 {
     auto textureFinded = textureMap.find(id);
-    
+
     if(textureFinded != textureMap.end()){
         return textureFinded->second->GetNewReference();
     }
 
-    auto assetReference = new AssetReference(path);
-    textureMap[id] =  assetReference;
+    auto textureReference = new TextureAssetReference(path);
+    auto receivedTextureReference = textureReference->GetNewReference();
 
-    return assetReference->GetNewReference();
+    if(receivedTextureReference == nullptr){
+        delete(textureReference);
+        return nullptr;
+    }
+
+    textureMap[id] =  textureReference;
+
+    return receivedTextureReference;
 };
 
-SDL_Texture* AssetManager::GetTextureAsset(std::string id, std::string path, TTF_Font* font)
+
+TTF_Font* AssetManager::GetFont(const std::string& id, const std::string& path)
 {
-    return nullptr;
+    auto fontFinded = fontMap.find(id);
+
+    if(fontFinded != fontMap.end()){
+        return fontFinded->second->GetNewReference();
+    }
+
+    auto fontReference = new FontAssetReference(path);
+    auto receivedNewReference = fontReference->GetNewReference();
+
+    if(receivedNewReference == nullptr){
+        delete(fontReference);
+        return nullptr;
+    }
+
+    fontMap[id] =  fontReference;
+
+    return receivedNewReference;
 };
 
 void AssetManager::FreeAsset(std::string id){
     if(textureMap[id])
         textureMap[id]->ReleaseReference();
+
+    if(fontMap[id])
+        fontMap[id]->ReleaseReference();
 };
 
 void AssetManager::Release(){

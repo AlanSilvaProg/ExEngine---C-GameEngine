@@ -68,7 +68,7 @@ bool EditorClickSystem::TrySelectEntity(const std::vector<std::shared_ptr<Entity
 bool EditorClickSystem::CheckBounds(const std::shared_ptr<EntityCS> entity, const glm::vec2& worldMousePosition) const{
     auto transformComponent = entity->GetComponent<TransformComponent>();
     auto boxColliderComponent = entity->GetComponent<BoxColliderComponent>();
-    glm::vec2 entityPosition = AnchorComponent::GetPivotAdjustedPosition(entity, transformComponent);
+    glm::vec2 entityPosition = AnchorUtils::GetPivotAdjustedPosition(entity, transformComponent);
 
     glm::vec2 rectMin = entityPosition + glm::min(boxColliderComponent->exRect.beginRect, boxColliderComponent->exRect.endRect);
     glm::vec2 rectMax = entityPosition + glm::max(boxColliderComponent->exRect.beginRect, boxColliderComponent->exRect.endRect);

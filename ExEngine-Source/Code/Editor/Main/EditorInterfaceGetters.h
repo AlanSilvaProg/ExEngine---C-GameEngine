@@ -39,6 +39,7 @@ public:
     //don't need to be saved
     static bool worldWithoutPath;
     static bool buildWindowEnabled;
+    static float editorCameraZoom;
 
     static std::map<std::string, std::unique_ptr<SpriteInformation>> defaultIconsInformation;
 

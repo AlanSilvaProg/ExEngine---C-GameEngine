@@ -14,6 +14,7 @@
 #include "EditorWindows/GameShortcuts/GameShortcutsWindow.h"
 #include "EditorWindows/Animation/AnimationEditorWindow.h"
 #include "EditorWindows/NetworkTest/NetworkTestWindow.h"
+#include "EditorWindows/Toolbox/ToolboxWindow.h"
 
 std::vector<std::shared_ptr<EditorWindow>> ExEditor::EditorWindowDrawer::windows;
 
@@ -32,6 +33,7 @@ ExEditor::EditorWindowDrawer::EditorWindowDrawer(){
     AddWindow(std::make_shared<GameShortcutsWindow>());
     AddWindow(std::make_shared<AnimationEditorWindow>());
     AddWindow(std::make_shared<NetworkTestWindow>());
+    AddWindow(std::make_shared<ToolboxWindow>());
 
     *EditorUpdateEventHandler::earlyHandler += [this](){ this->Draw(0); };
     *EditorUpdateEventHandler::lateHandler += [this](){ this->Draw(1); };

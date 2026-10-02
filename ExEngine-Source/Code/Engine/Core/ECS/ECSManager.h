@@ -57,6 +57,9 @@ public:
     bool HasComponent() const;
 
     template<typename TComponent>
+    bool HasComponent(std::shared_ptr<TComponent>& component) const;
+
+    template<typename TComponent>
     void RemoveComponent() const;
     void RemoveComponent(const int componentId) const;
     void ApplyComponentUpdate(const ComponentUpdate& update) const;
@@ -217,6 +220,8 @@ public:
     std::shared_ptr<TComponent> GetComponent(std::shared_ptr<EntityCS> entity) const;
     template<typename TComponent>
     bool HasComponent(std::shared_ptr<EntityCS> entity) const;
+    template<typename TComponent>
+    bool HasComponent(std::shared_ptr<EntityCS> entity, std::shared_ptr<TComponent>& component) const;
     bool HasComponent(const int entityId, const int componentId);
     template<typename TComponent>
     void RemoveComponent(std::shared_ptr<EntityCS> entity);
@@ -322,6 +327,12 @@ bool ECSManager::HasComponent(std::shared_ptr<EntityCS> entity) const{
 };
 
 template<typename TComponent>
+bool ECSManager::HasComponent(std::shared_ptr<EntityCS> entity, std::shared_ptr<TComponent>& component) const{
+    component = GetComponent<TComponent>(entity); 
+    return component != nullptr;
+};
+
+template<typename TComponent>
 void ECSManager::RemoveComponent(std::shared_ptr<EntityCS> entity){
     auto entityId = entity->GetId();
     auto entitySignature = entitiesSignature[entityId];
@@ -383,8 +394,13 @@ std::shared_ptr<TComponent> EntityCS::GetComponent() const{
 };
 
 template<typename TComponent>
-bool EntityCS::HasComponent() const{    
-    return ecsManager->HasComponent<TComponent>(*this);
+bool EntityCS::HasComponent() const{
+    return ecsManager->HasComponent<TComponent>(ecsManager->GetEntity(id));
+};
+
+template<typename TComponent>
+bool EntityCS::HasComponent(std::shared_ptr<TComponent>& component) const{
+    return ecsManager->HasComponent(ecsManager->GetEntity(id), component);
 };
 
 template<typename TComponent>

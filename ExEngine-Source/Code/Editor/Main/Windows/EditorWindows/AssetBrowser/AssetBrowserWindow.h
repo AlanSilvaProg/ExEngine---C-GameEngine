@@ -45,6 +45,11 @@ private:
     bool showNameErrorPopup = false;
     std::string nameErrorMessage;
 
+    // Folder tree node the mouse is over as of the last Draw() call - used to target an OS file
+    // drop (SDL_DROPFILE), which arrives before this frame's Draw() runs.
+    std::filesystem::path hoveredDropFolder;
+    void ImportDroppedFile(const std::string& sourcePath);
+
     void UpdatePositionTarget(float& targetPosition, float& currentPosition, int& h);
     void DrawFolderTree(const std::filesystem::path& path);
     void DrawRightClickContextMenu(const std::string id);

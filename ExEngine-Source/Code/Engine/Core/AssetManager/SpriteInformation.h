@@ -78,7 +78,7 @@ public:
     inline SDL_Texture* CacheContent() 
     {
         if(texture == nullptr)
-            texture = AssetManager::GetInstance()->GetTextureAsset(spriteId, spritePath);
+            texture = AssetManager::GetInstance()->GetTexture(spriteId, spritePath);
         int w = 0,h = 0;
         SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
         spriteSize.x = (static_cast<float>(w)/spriteDivision.x);

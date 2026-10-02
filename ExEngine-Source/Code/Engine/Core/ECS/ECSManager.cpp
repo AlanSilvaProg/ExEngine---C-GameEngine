@@ -431,6 +431,8 @@ bool ECSystem::CheckForRegisteredId(const int componentId) const{
 // System Context
 
 void ECSystemContext::UpdateContext(){
+    if(!enabled) return;
+
     for(auto& systemEntry : systemEntries)
     {
         systemEntry.system->UpdateSystem(systemContext);

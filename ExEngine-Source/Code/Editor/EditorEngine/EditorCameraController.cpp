@@ -10,20 +10,42 @@
 #include <imgui.h>
 #include <glm/glm.hpp>
 #include <SDL.h>
+#include <algorithm>
+
+namespace{
+    constexpr float ZOOM_STEP = 0.1f;
+    constexpr float MIN_ZOOM = 0.1f;
+    constexpr float MAX_ZOOM = 5.0f;
+}
 
 EditorCameraController::EditorCameraController(){
     lastMousePos = glm::vec2(0,0);
     transform = std::make_shared<TransformComponent>(glm::vec3(0,0,0), glm::vec3(0,0,0), glm::vec3(1,1,1));
     renderingSystem = ExRenderer::GetRenderingSystem2D();
+    textLabelSystem = ExRenderer::GetTextLabelSystem();
 
     *EditorUpdateEventHandler::earlyHandler += [this](){ this->Update(); };
     *EditorCommandEventHandler::focusSelected += [this](){ this->FocusOnSelection(); };
 };
 
 void EditorCameraController::Update(){
-    if(EditorInterfaceGetters::viewMode != EditorViewMode::SceneView) return;
+    const bool sceneViewActive = EditorInterfaceGetters::viewMode == EditorViewMode::SceneView;
+
+    // Only one camera pass may drive currentRenderCameraTransform/globalCameraZoom and push into
+    // the render queue each frame - the Editor takes exclusive control while the Scene View is
+    // open, handing it back to the gameplay camera (CameraSystem) otherwise.
+    ExRenderer::SetGameplayCameraEnabled(!sceneViewActive);
+
+    if(!sceneViewActive){
+        if(overridingGlobalZoom){
+            ExRendererGetters::globalCameraZoom = savedGlobalZoom;
+            overridingGlobalZoom = false;
+        }
+        return;
+    }
 
     HandlePan();
+    HandleZoom();
 
     ExRendererGetters::currentRenderCameraTransform = transform;
 
@@ -31,7 +53,15 @@ void EditorCameraController::Update(){
     SDL_SetRenderDrawColor(ExRendererGetters::renderer, color->r, color->g, color->b, color->a);
     SDL_RenderClear(ExRendererGetters::renderer);
 
+    if(!overridingGlobalZoom){
+        savedGlobalZoom = ExRendererGetters::globalCameraZoom;
+        overridingGlobalZoom = true;
+    }
+    
+    ExRendererGetters::globalCameraZoom = EditorInterfaceGetters::editorCameraZoom;
+
     renderingSystem->UpdateSystem(SystemContext::PRE_RENDER);
+    textLabelSystem->UpdateSystem(SystemContext::PRE_RENDER);
 };
 
 void EditorCameraController::HandlePan(){
@@ -55,6 +85,14 @@ void EditorCameraController::HandlePan(){
     transform->Move(mouseMovement);
 
     lastMousePos = currentMousePos;
+};
+
+void EditorCameraController::HandleZoom(){
+    ImGuiIO& io = ImGui::GetIO();
+    if(io.WantCaptureMouse || io.MouseWheel == 0.0f) return;
+
+    float zoom = EditorInterfaceGetters::editorCameraZoom + io.MouseWheel * ZOOM_STEP;
+    EditorInterfaceGetters::editorCameraZoom = std::clamp(zoom, MIN_ZOOM, MAX_ZOOM);
 };
 
 void EditorCameraController::FocusOnSelection(){

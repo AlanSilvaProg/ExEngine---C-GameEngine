@@ -12,6 +12,7 @@
 #include "CollisionSystem/ExPhysicsEngine.h"
 #include "Runtime/Settings/RuntimeSettings.h"
 #include "Animation/AnimationManager.h"
+#include "AssetManager/AssetManager.h"
 #include <SDL.h>
 #include <glm/glm.hpp>
 #ifdef __EMSCRIPTEN__
@@ -71,7 +72,9 @@ void Engine::StartEngine(){
     running = true;
 
     gameLoop->Initialize();
-    
+
+    AssetManager::GetInstance()->GetFont(AssetManager::DEFAULT_FONT_ID, (Engine::GetEngineAssetsPath() / "Engine" / "ProggyClean.ttf").string());
+
     if(RuntimeSettings::GetPhysicsEnabled())
         ExPhysicsEngine::Initialize(ecsManager);
 

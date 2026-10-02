@@ -1,8 +1,8 @@
 #pragma once
 #include "../../../Engine/Core/ECS/ECSManager.h"
-#include "../../../Engine/Core/Components/BoxColliderComponent.h"
-#include "../../../Engine/Core/Components/TransformComponent.h"
-#include "../../../Engine/Core/Components/AnchorComponent.h"
+#include "../../../Engine/Core/Components/Physics/BoxColliderComponent.h"
+#include "../../../Engine/Core/Components/Core/TransformComponent.h"
+#include "../../../Engine/Core/Utils/Anchor/AnchorUtils.h"
 #include "../../Main/Windows/EditorWindows/EntityBrowser/EntityBrowserSelection.h"
 #include <glm/glm.hpp>
 #include <unordered_set>

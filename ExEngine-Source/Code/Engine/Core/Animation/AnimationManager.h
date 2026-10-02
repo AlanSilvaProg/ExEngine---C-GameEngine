@@ -2,7 +2,7 @@
 #include <unordered_set>
 #include "../ECS/ECSManager.h"
 #include "../EngineGetters.h"
-#include "System/AnimationSystem.h"
+#include "../ECSystems/AnimationSystem/AnimationSystem.h"
 
 struct AnimationManager{
 private:

@@ -5,9 +5,17 @@
 void ToolbarWindow::Draw(const int phase){
     if(phase != 1) return;
 
-    ImGui::SetNextWindowPos(ImVec2(10, 30), ImGuiCond_FirstUseEver);
+    // Glued to the right edge, right below the main menu bar - ImGui shrinks the main
+    // viewport's work area by the menu bar's height, so WorkPos.y already points just past it.
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const float rightX = viewport->WorkPos.x + viewport->WorkSize.x;
+    ImGui::SetNextWindowPos(ImVec2(rightX, viewport->WorkPos.y), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 
-    if(!ImGui::Begin("Toolbar", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar))
+    ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize
+        | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_NoResize;
+
+    if(!ImGui::Begin("Toolbar", nullptr, windowFlags))
     {
         ImGui::End();
         return;

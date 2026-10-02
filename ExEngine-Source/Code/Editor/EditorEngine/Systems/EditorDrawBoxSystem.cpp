@@ -1,6 +1,7 @@
 #include "EditorDrawBoxSystem.h"
 #include "../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../Engine/Core/Utils/Color.h"
+#include "../../../Engine/Core/Utils/Anchor/AnchorUtils.h"
 #include "../../../Engine/Core/Input/Input.h"
 #include "../../../Engine/Core/Runtime/Settings/RuntimeSettings.h"
 #include "../../Main/EditorInterfaceGetters.h"
@@ -67,7 +68,7 @@ void EditorDrawBoxSystem::UpdateSystem(SystemContext systemContext){
         const auto transformComponent = entity->GetComponent<TransformComponent>();
         const auto boxColliderComponent = entity->GetComponent<BoxColliderComponent>();
 
-        const glm::vec2 entityPosition = AnchorComponent::GetPivotAdjustedPosition(entity, transformComponent);
+        const glm::vec2 entityPosition = AnchorUtils::GetPivotAdjustedPosition(entity, transformComponent);
 
         // Corner being dragged moves with the mouse while the opposite corner (captured on drag start) stays put.
         if(isDragging && draggedEntityId == entity->GetId()){

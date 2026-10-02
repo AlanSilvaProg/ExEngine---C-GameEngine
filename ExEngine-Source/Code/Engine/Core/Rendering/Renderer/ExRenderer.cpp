@@ -7,6 +7,7 @@
 bool ExRenderer::initialized = false;
 std::shared_ptr<ECSManager> ExRenderer::ecsManager = nullptr;
 std::shared_ptr<RenderingSystem2D> ExRenderer::renderingSystem2D = nullptr;
+std::shared_ptr<TextLabelSystem> ExRenderer::textLabelSystem = nullptr;
 std::shared_ptr<ECSystemContext> ExRenderer::preRenderSystemContext = nullptr;
 
 void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
@@ -49,7 +50,8 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
 
     //camera system creation and context registry
     renderingSystem2D = ecsManager->CreateSystem<RenderingSystem2D>();
-    auto cameraSystem = ecsManager->CreateSystem<CameraSystem>(renderingSystem2D);
+    textLabelSystem = ecsManager->CreateSystem<TextLabelSystem>();
+    auto cameraSystem = ecsManager->CreateSystem<CameraSystem>(renderingSystem2D, textLabelSystem);
     auto cameraSystemTypeId = std::type_index(typeid(CameraSystem));
     preRenderSystemContext->Register(cameraSystemTypeId, cameraSystem);
 
@@ -59,14 +61,48 @@ void ExRenderer::Initialize(std::shared_ptr<ECSManager> ecsManagerPtr){
 void ExRenderer::RenderSequence(){
     if(!initialized) return;
     
-    //CameraSystem (registered in the PRE_RENDER context) drives renderingSystem2D per active camera
+    //CameraSystem (registered in the PRE_RENDER context) drives renderings per active camera
     PreRenderEventHandler::preRenderHandler->Invoke();
-
+    RenderQueue();
     PreRenderEventHandler::postRenderHandler->Invoke();
+};
+
+void ExRenderer::RenderQueue(){
+    auto& currentRenderQueue = ExRendererGetters::currentRenderQueue;
+
+    std::sort(currentRenderQueue.begin(), currentRenderQueue.end(), [](const std::shared_ptr<IRenderElement> a, const std::shared_ptr<IRenderElement> b) { 
+            return ExRenderer::RenderOrderCheck(a->GetLayerAttributes(), b->GetLayerAttributes()); 
+        });
+
+    for(auto& renderElement : currentRenderQueue){
+        renderElement->Render(ExRendererGetters::renderer);
+    }
+
+    currentRenderQueue.clear();
+};
+
+const bool ExRenderer::RenderOrderCheck(const LayerAttributes& a, const LayerAttributes& b){
+    const auto& aLayer = a;
+    const auto& bLayer = b;
+
+    if(aLayer.layerIndex == bLayer.layerIndex)
+    {
+        return aLayer.layerOrderIndex < bLayer.layerOrderIndex;
+    }
+
+    return aLayer.layerIndex < bLayer.layerOrderIndex;
 };
 
 std::shared_ptr<RenderingSystem2D> ExRenderer::GetRenderingSystem2D(){
     return renderingSystem2D;
+};
+
+std::shared_ptr<TextLabelSystem> ExRenderer::GetTextLabelSystem(){
+    return textLabelSystem;
+};
+
+void ExRenderer::SetGameplayCameraEnabled(bool enabled){
+    if(preRenderSystemContext != nullptr) preRenderSystemContext->enabled = enabled;
 };
 
 void ExRenderer::Quit(){

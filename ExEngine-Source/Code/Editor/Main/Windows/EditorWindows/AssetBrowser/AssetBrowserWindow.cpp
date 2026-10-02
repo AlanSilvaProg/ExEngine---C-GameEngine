@@ -7,20 +7,33 @@
 #include "../../../../../Engine/Core/Rendering/Renderer/ExRendererGetters.h"
 #include "../../../../../Engine/Core/Runtime/Time/Time.h"
 #include "../../../../../Engine/Core/Input/Input.h"
+#include "../../../../../Engine/Core/Input/InputEvents/InputEventHandler.h"
 #include "../../../../../Engine/Core/Scene/ECSWorldManager.h"
 #include "../../../../../Engine/Core/Utils/Path/PathUtils.h"
 #include "../../../../../Engine/Logger/Logger.h"
 #include "../../../../../Engine/Core/SpecialFields/SpriteReferenceField/SpriteReference.h"
+#include "../../../../../Engine/Core/SpecialFields/FontReferenceField/FontReference.h"
 #include <imgui.h>
 #include <SDL.h>
 #include <fstream>
 #include <sstream>
 #include <regex>
 #include <cstring>
+#include <algorithm>
 
 AssetBrowserWindow::AssetBrowserWindow(){
     assetManager = AssetManager::GetInstance();
     assetBrowserSelection = std::make_unique<AssetBrowserSelection>();
+
+    // Native OS drag-and-drop (e.g. a file dragged in from Finder/Explorer).
+    *InputEventHandler::handler += [this](SDL_Event& sdlEvent){
+        if(sdlEvent.type != SDL_DROPFILE) return;
+
+        std::string droppedPath = sdlEvent.drop.file;
+        SDL_free(sdlEvent.drop.file);
+
+        ImportDroppedFile(droppedPath);
+    };
 };
 
 void AssetBrowserWindow::Draw(const int phase){
@@ -100,6 +113,7 @@ void AssetBrowserWindow::Draw(const int phase){
     ImGui::TextUnformatted("Assets");
     ImGui::Separator();
 
+    hoveredDropFolder.clear();
     DrawFolderTree(assetsPath);
 
     // Right-click context menu for empty space
@@ -173,6 +187,8 @@ void AssetBrowserWindow::DrawFolderTree(const std::filesystem::path& path)
 
             if(ImGui::TreeNode((subElementPath.stem().string() + treeNodeId).c_str()))
             {
+                if(ImGui::IsItemHovered()) hoveredDropFolder = subElementPath;
+
                 HandleRenameClick(treeNodeId, subElementPath);
 
                 if(ImGui::IsItemFocused())
@@ -197,6 +213,8 @@ void AssetBrowserWindow::DrawFolderTree(const std::filesystem::path& path)
             }
             else
             {
+                if(ImGui::IsItemHovered()) hoveredDropFolder = subElementPath;
+
                 HandleRenameClick(treeNodeId, subElementPath);
 
                 // Handle right-click on collapsed tree nodes
@@ -259,13 +277,25 @@ void AssetBrowserWindow::StartAssetDragAndDrop(const std::filesystem::path& entr
     if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
     {
         auto elementName = entry.stem().string();
-        auto elementType = std::to_string(ElementTypeId::SPRITE);
 
         auto relativeToAssets = std::filesystem::relative(
             std::filesystem::weakly_canonical(entry),
             std::filesystem::weakly_canonical(EditorInterfaceGetters::GetAssetsPath())
         );
-        s_currentMovingData = SpriteReference(elementName, relativeToAssets).ToJson();
+
+        auto extension = entry.extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+
+        ElementTypeId elementTypeId = ElementTypeId::SPRITE;
+        if(extension == ".ttf" || extension == ".otf"){
+            elementTypeId = ElementTypeId::FONT;
+            s_currentMovingData = FontReference(elementName, relativeToAssets).ToJson();
+        }
+        else{
+            s_currentMovingData = SpriteReference(elementName, relativeToAssets).ToJson();
+        }
+
+        auto elementType = std::to_string(elementTypeId);
         ImGui::SetDragDropPayload(elementType.c_str(), &s_currentMovingData, sizeof(nlohmann::json));
 
         ImGui::Text("Moving %s", elementName.c_str());
@@ -444,6 +474,33 @@ std::filesystem::path AssetBrowserWindow::ResolveCreateTargetFolder() const
     }
 
     return targetFolder;
+};
+
+void AssetBrowserWindow::ImportDroppedFile(const std::string& sourcePathStr)
+{
+    std::filesystem::path sourcePath(sourcePathStr);
+    if(!std::filesystem::exists(sourcePath)) return;
+
+    auto targetFolder = !hoveredDropFolder.empty() ? hoveredDropFolder : ResolveCreateTargetFolder();
+    if(!std::filesystem::exists(targetFolder)) targetFolder = EditorInterfaceGetters::GetAssetsPath();
+
+    auto destinationPath = targetFolder / sourcePath.filename();
+
+    if(std::filesystem::exists(destinationPath))
+    {
+        nameErrorMessage = "A file or folder named \"" + sourcePath.filename().string() + "\" already exists in that folder.";
+        showNameErrorPopup = true;
+        return;
+    }
+
+    std::error_code errorCode;
+    if(std::filesystem::is_directory(sourcePath))
+        std::filesystem::copy(sourcePath, destinationPath, std::filesystem::copy_options::recursive, errorCode);
+    else
+        std::filesystem::copy_file(sourcePath, destinationPath, errorCode);
+
+    if(errorCode)
+        Logger::LogError("Failed to import dropped item '" + sourcePath.string() + "': " + errorCode.message());
 };
 
 // Draws a name input; when extension isn't empty it's shown as a fixed, non-editable suffix.
